@@ -1,19 +1,13 @@
 import mongoose from "mongoose";
 
-export const dbConnect = async (mongoUri) => {
+const connectDB = async () => {
   try {
-    if (!mongoUri) {
-      throw new Error("❌ Mongo URI not found in env file");
-    }
-
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB Connected Successfully");
   } catch (err) {
-    console.error("🔥 MongoDB Connection Error:", err);
+    console.error("🔥 MongoDB Connection Error:", err.message);
     process.exit(1);
   }
 };
+
+export default connectDB;
