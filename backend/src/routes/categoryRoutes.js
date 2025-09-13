@@ -23,6 +23,7 @@ router.get("/:id", async (req, res) => {
     }
     res.json(category);
   } catch (error) {
+    console.error("❌ Error fetching category:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -30,16 +31,11 @@ router.get("/:id", async (req, res) => {
 // ✅ নির্দিষ্ট ক্যাটাগরির products আনো
 router.get("/:id/products", async (req, res) => {
   try {
-    const categoryId = req.params.id;
-
-    // category আছে কিনা চেক করো
-    const category = await Category.findOne({ id: categoryId });
+    const category = await Category.findOne({ id: req.params.id });
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
-
-    // products খুঁজে বের করো
-    const products = await Product.find({ category: categoryId });
+    const products = await Product.find({ category: req.params.id });
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: "Server error" });

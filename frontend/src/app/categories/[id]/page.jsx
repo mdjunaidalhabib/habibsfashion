@@ -1,39 +1,54 @@
 import ProductCard from "../../../../components/home/ProductCard";
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-// 🔹 নির্দিষ্ট ক্যাটাগরি ফেচ
+// 🔹 নির্দিষ্ট category ফেচ
 async function getCategory(id) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`,
-    { cache: "no-store" }
-  );
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return res.json();
+  } catch (err) {
+    console.error("❌ Error fetching category:", err.message);
+    return null;
+  }
 }
 
-// 🔹 নির্দিষ্ট ক্যাটাগরির products ফেচ
+// 🔹 নির্দিষ্ট category এর products ফেচ
 async function getCategoryProducts(id) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/categories/${id}/products`,
-    { cache: "no-store" }
-  );
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}/products`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return [];
+    return res.json();
+  } catch (err) {
+    console.error("❌ Error fetching category products:", err.message);
+    return [];
+  }
 }
 
-// 🔹 Static params জেনারেট করা (id ভিত্তিক)
+// 🔹 Static params জেনারেট (slug id ফিল্ড দিয়ে)
 export async function generateStaticParams() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`);
-  if (!res.ok) return [];
-  const categories = await res.json();
-  // নিশ্চিতভাবে _id ব্যবহার করা হচ্ছে
-  return categories.map((c) => ({ id: String(c._id) }));
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
+    );
+    if (!res.ok) return [];
+    const categories = await res.json();
+    return categories.map((c) => ({ id: c.id })); // ✅ slug (id ফিল্ড) ব্যবহার
+  } catch (err) {
+    console.error("❌ Error generating static params:", err.message);
+    return [];
+  }
 }
 
 export default async function CategoryPage({ params }) {
-  const { id } = params;
+  const { id } = await params;
 
   // ক্যাটাগরি + products ফেচ
   const [category, items] = await Promise.all([

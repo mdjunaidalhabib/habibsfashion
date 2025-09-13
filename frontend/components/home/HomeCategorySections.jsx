@@ -3,10 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
 import { apiFetch } from "../../utils/api";
-
-
-// Utility: group products by category id
-const groupByCategory = (all, catId) => all.filter((p) => p.category === catId);
+import { motion, AnimatePresence } from "framer-motion";
 
 // Skeleton for loading ProductCard
 const ProductCardSkeleton = () => (
@@ -17,6 +14,9 @@ const ProductCardSkeleton = () => (
     <div className="mt-auto h-10 bg-gray-200 rounded"></div>
   </div>
 );
+
+// Utility: group products by category id
+const groupByCategory = (all, catId) => all.filter((p) => p.category === catId);
 
 // CategoryRow: reusable slider per category
 const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
@@ -29,9 +29,9 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
   useEffect(() => {
     const calc = () => {
       const w = window.innerWidth;
-      if (w < 640) return 2; // mobile
-      if (w < 1024) return 3; // tablet
-      return 4; // desktop
+      if (w < 640) return 2;
+      if (w < 1024) return 3;
+      return 4;
     };
     const apply = () => setSlidesPerView(calc());
     apply();
@@ -115,7 +115,12 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
   const transform = `translateX(calc(${basePercent}% + ${dragPercent()}%))`;
 
   return (
-    <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="container mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl sm:text-2xl font-semibold">
           {loading ? (
@@ -124,7 +129,7 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
             category.name
           )}
         </h2>
-        {!loading && (
+        {!loading && category.id && (
           <Link
             href={`/categories/${category.id}`}
             className="text-blue-600 hover:underline text-sm sm:text-base"
@@ -148,7 +153,7 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
           onPointerCancel={onPointerUp}
           onPointerLeave={onPointerUp}
         >
-          {loading
+          {loading || !items.length
             ? Array.from({ length: slidesPerView * 2 }).map((_, i) => (
                 <div
                   key={i}
@@ -169,7 +174,7 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
               ))}
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 
@@ -195,10 +200,11 @@ export default function HomeCategorySections() {
         ]);
         setProducts(pRes);
         setCategories(cRes);
+        setLoading(false);
       } catch (err) {
         console.error("❌ Failed to fetch products or categories", err);
-      } finally {
-        setLoading(false);
+        // ⚠️ Error হলে loading true রাখব → skeleton সবসময় দেখাবে
+        setLoading(true);
       }
     };
     fetchData();
@@ -206,24 +212,25 @@ export default function HomeCategorySections() {
 
   return (
     <div className="space-y-4">
-      {loading
-        ? // show placeholder sections during loading
-          Array.from({ length: 3 }).map((_, i) => (
-            <CategoryRow key={i} category={{ name: "" }} items={[]} loading />
-          ))
-        : categories.map((cat) => {
-            const items = groupByCategory(products, cat.id);
-            if (!items.length) return null;
-            return (
-              <CategoryRow
-                key={cat.id}
-                category={cat}
-                items={items}
-                autoPlayMs={speedByCategory[cat.id] ?? 3000}
-                loading={false}
-              />
-            );
-          })}
+      <AnimatePresence>
+        {loading
+          ? // সবসময় placeholder sections
+            Array.from({ length: 3 }).map((_, i) => (
+              <CategoryRow key={i} category={{ name: "" }} items={[]} loading />
+            ))
+          : categories.map((cat) => {
+              const items = groupByCategory(products, cat.id);
+              return (
+                <CategoryRow
+                  key={cat.id}
+                  category={cat}
+                  items={items}
+                  autoPlayMs={speedByCategory[cat.id] ?? 3000}
+                  loading={false}
+                />
+              );
+            })}
+      </AnimatePresence>
     </div>
   );
 }
