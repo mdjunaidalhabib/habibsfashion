@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
+import { apiFetch } from "../../utils/api";
+
 
 // Utility: group products by category id
 const groupByCategory = (all, catId) => all.filter((p) => p.category === catId);
@@ -188,10 +190,8 @@ export default function HomeCategorySections() {
     const fetchData = async () => {
       try {
         const [pRes, cRes] = await Promise.all([
-          fetch("http://localhost:4000/api/products").then((res) => res.json()),
-          fetch("http://localhost:4000/api/categories").then((res) =>
-            res.json()
-          ),
+          apiFetch("/api/products"),
+          apiFetch("/api/categories"),
         ]);
         setProducts(pRes);
         setCategories(cRes);

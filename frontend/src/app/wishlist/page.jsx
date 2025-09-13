@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { FaHeart, FaShoppingCart, FaPlus, FaMinus } from "react-icons/fa";
 import { useCart } from "../../../context/CartContext";
+import { apiFetch } from "../../../utils/api"; // ✅ আমাদের helper ব্যবহার করা হলো
 
 const WishlistPage = () => {
   const { cart, updateCart, wishlist, toggleWishlist } = useCart();
@@ -10,8 +11,7 @@ const WishlistPage = () => {
 
   // ✅ সব প্রোডাক্ট লোড করব DB থেকে
   useEffect(() => {
-    fetch("http://localhost:4000/api/products")
-      .then((res) => res.json())
+    apiFetch("/api/products")
       .then(setAllProducts)
       .catch((err) => console.error("❌ Failed to fetch products", err));
   }, []);
@@ -21,12 +21,13 @@ const WishlistPage = () => {
     return allProducts.filter((p) => wishlist.includes(String(p._id)));
   }, [allProducts, wishlist]);
 
-  if (wishlistProducts.length === 0)
+  if (wishlistProducts.length === 0) {
     return (
       <div>
         <p className="text-center mt-20">No products in wishlist!</p>
       </div>
     );
+  }
 
   return (
     <div>

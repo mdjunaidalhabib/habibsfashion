@@ -1,16 +1,12 @@
 import ProductCard from "../../../components/home/ProductCard";
 import Link from "next/link";
+import { apiFetch } from "../../../utils/api";
+
 
 async function getProducts() {
-  const res = await fetch("http://localhost:4000/api/products", {
-    cache: "no-store", // fresh data every time
+  return await apiFetch("/api/products", {
+    cache: "no-store",
   });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch products");
-  }
-
-  return res.json();
 }
 
 export default async function AllProductsPage() {

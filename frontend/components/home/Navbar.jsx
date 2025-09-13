@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "../../context/CartContext";
@@ -33,21 +33,16 @@ const Navbar = () => {
 
   // ✅ Load current user
   useEffect(() => {
-    apiFetch("/auth/me", { credentials: "include" })
-      .then(async (res) => {
-        if (!res.ok) {
-          setMe(null);
-          setLoadingUser(false);
-          return;
-        }
-        const data = await res.json();
+    (async () => {
+      try {
+        const data = await apiFetch("/auth/me", { credentials: "include" });
         setMe(data);
-        setLoadingUser(false);
-      })
-      .catch(() => {
+      } catch {
         setMe(null);
+      } finally {
         setLoadingUser(false);
-      });
+      }
+    })();
   }, []);
 
   // ✅ fetch products from backend on search query
@@ -59,10 +54,8 @@ const Navbar = () => {
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/products");
-        if (!res.ok) return;
-        const data = await res.json();
-        const filtered = data.filter((p) =>
+        const products = await apiFetch("/api/products");
+        const filtered = products.filter((p) =>
           p.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
         setSearchResults(filtered);
@@ -356,7 +349,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
     return (
       <button
         onClick={() =>
-          (window.location.href = "http://localhost:4000/auth/google")
+          (window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`)
         }
         className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
       >

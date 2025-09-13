@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaStar, FaPlus, FaMinus, FaHeart, FaPalette } from "react-icons/fa";
+import { FaStar, FaPlus, FaMinus, FaHeart } from "react-icons/fa";
 import ProductCard from "./ProductCard";
 import { useCart } from "../../context/CartContext";
 
@@ -34,7 +34,7 @@ export default function ProductDetailsClient({
 
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // ✅ এখন সবখানে _id ব্যবহার হবে
+  // ✅ Cart & Wishlist
   const quantity = cart[product._id] || 0;
   const totalPrice = product.price * quantity;
   const discountPct = product.oldPrice
@@ -60,31 +60,30 @@ export default function ProductDetailsClient({
   };
 
   // ✅ Single checkout handler
-const handleSingleCheckout = async () => {
-  try {
-    const checkoutUrl = `/checkout?productId=${product._id}&qty=${
-      quantity || 1
-    }`;
+  const handleSingleCheckout = async () => {
+    try {
+      const checkoutUrl = `/checkout?productId=${product._id}&qty=${
+        quantity || 1
+      }`;
 
-    const res = await fetch("http://localhost:4000/auth/checkout", {
-      credentials: "include",
-    });
-
-    if (res.status === 401) {
-      const redirectUrl = encodeURIComponent(
-        `http://localhost:3000${checkoutUrl}`
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/checkout`,
+        { credentials: "include" }
       );
-      window.location.href = `http://localhost:4000/auth/google?redirect=${redirectUrl}`;
-      return;
-    }
 
-    // ❌ আর cart-এ add করার দরকার নেই
-    // শুধু checkout page এ redirect করব
-    router.push(checkoutUrl);
-  } catch (err) {
-    console.error("🔥 Checkout error:", err);
-  }
-};
+      if (res.status === 401) {
+        const redirectUrl = encodeURIComponent(
+          `${window.location.origin}${checkoutUrl}`
+        );
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google?redirect=${redirectUrl}`;
+        return;
+      }
+
+      router.push(checkoutUrl);
+    } catch (err) {
+      console.error("🔥 Checkout error:", err);
+    }
+  };
 
   const [tab, setTab] = useState("desc"); // desc | info | reviews
   const tabBtn = (key, label) => (

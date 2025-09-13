@@ -3,28 +3,25 @@ import React, { useEffect, useState } from "react";
 import { apiFetch } from "../../../utils/api";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  FaUserCircle,
-  FaPhone,
-  FaVenusMars,
-  FaBirthdayCake,
-} from "react-icons/fa";
+import { FaUserCircle } from "react-icons/fa";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
+  const [ordersCount, setOrdersCount] = useState(0); // ✅ নতুন state
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    // ✅ ইউজার লোড
     apiFetch("/auth/me")
-      .then(async (res) => {
-        if (!res.ok) {
-          router.push("/login");
-          return;
-        }
-        const data = await res.json();
+      .then(async (data) => {
         setUser(data);
+
+        // ✅ অর্ডার সংখ্যা লোড
+        const orders = await apiFetch("/api/orders/me");
+        setOrdersCount(orders.length || 0);
+
         setLoading(false);
       })
       .catch(() => {
@@ -36,6 +33,14 @@ export default function ProfilePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <p className="text-gray-500">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <p className="text-red-500">Not logged in</p>
       </div>
     );
   }
@@ -75,7 +80,11 @@ export default function ProfilePage() {
           </div>
           <div className="flex justify-between">
             <span>User ID:</span>
-            <span>{user.userId}</span> 
+            <span>{user._id || user.userId}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Total Orders:</span>
+            <span>{ordersCount}</span> {/* ✅ মোট order সংখ্যা */}
           </div>
         </div>
 

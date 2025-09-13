@@ -7,15 +7,29 @@ export default function OrderSummary({ orderId }) {
 
   useEffect(() => {
     if (!orderId) return;
-    fetch(`http://localhost:4000/api/orders/${orderId}`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
+
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}`,
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) throw new Error("Order fetch failed");
+
+        const data = await res.json();
         setOrder(data);
+      } catch (err) {
+        console.error("❌ Failed to fetch order:", err);
+        setOrder(null);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+
+    fetchOrder();
   }, [orderId]);
 
   if (loading) return <p className="p-8">Loading...</p>;
@@ -77,7 +91,7 @@ export default function OrderSummary({ orderId }) {
       <div className="mt-6 flex gap-4">
         {/* 🚀 Clean Download Receipt Link */}
         <a
-          href={`http://localhost:4000/api/orders/${order._id}/receipt`}
+          href={`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${order._id}/receipt`}
           target="_blank"
           rel="noopener noreferrer"
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

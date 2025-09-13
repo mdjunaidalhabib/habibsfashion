@@ -9,9 +9,9 @@ function isLoggedIn(req, res, next) {
   return res.status(401).json({ error: "Not logged in" });
 }
 
-// 🔹 Google Login (redirect সরাসরি state param এ পাঠাও)
+// 🔹 Google Login
 router.get("/google", (req, res, next) => {
-  const redirect = req.query.redirect || "http://localhost:3000/checkout";
+  const redirect = req.query.redirect || `${process.env.CLIENT_URL}/checkout`;
   console.log("👉 /auth/google called. Redirect param =", redirect);
 
   passport.authenticate("google", {
@@ -26,13 +26,13 @@ router.get("/google", (req, res, next) => {
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:3000/login",
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
   }),
   (req, res) => {
     // ✅ state থেকে redirect URL বের করো
     const redirectUrl = req.query.state
       ? decodeURIComponent(req.query.state)
-      : "http://localhost:3000/checkout";
+      : `${process.env.CLIENT_URL}/checkout`;
 
     console.log("➡️ Redirecting user to:", redirectUrl);
     res.redirect(redirectUrl);
@@ -40,10 +40,16 @@ router.get(
 );
 
 // 🔹 Logout
-router.post("/logout", (req, res) => {
-  req.logout(() => {
+router.post("/logout", (req, res, next) => {
+  req.logout((err) => {
+    if (err) return next(err);
+
     req.session.destroy(() => {
-      res.clearCookie("connect.sid");
+      res.clearCookie("connect.sid", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      });
       res.status(200).json({ message: "Logged out" });
     });
   });
@@ -55,7 +61,7 @@ router.get("/me", (req, res) => {
   res.json(req.user);
 });
 
-// 🔹 Checkout secure route (protected)
+// 🔹 Checkout secure route
 router.get("/checkout", isLoggedIn, (req, res) => {
   res.json({ user: req.user, message: "Proceed to checkout" });
 });

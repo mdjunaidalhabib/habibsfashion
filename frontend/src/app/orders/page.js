@@ -9,18 +9,13 @@ export default function OrdersPage() {
 
   useEffect(() => {
     apiFetch("/api/orders/me")
-      .then((res) => {
-        if (res.status === 401) {
-          window.location.href = "http://localhost:4000/auth/google";
-          return [];
-        }
-        return res.json();
-      })
       .then((data) => {
         setOrders(data || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+      });
   }, []);
 
   if (loading) return <p className="p-8">Loading...</p>;
@@ -28,6 +23,7 @@ export default function OrdersPage() {
   return (
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-2xl font-semibold mb-6">My Orders</h1>
+
       {!orders.length ? (
         <div className="bg-white rounded-xl shadow p-6 text-center">
           <p>You have no orders yet.</p>
@@ -42,6 +38,7 @@ export default function OrdersPage() {
               key={o._id}
               className="bg-white rounded-xl shadow p-4 border border-gray-200"
             >
+              {/* Header */}
               <div className="flex items-center justify-between mb-2">
                 <p className="font-semibold">Order #{o._id.slice(-6)}</p>
                 <span className="text-sm text-gray-600">
@@ -51,6 +48,7 @@ export default function OrdersPage() {
 
               <p className="text-sm mb-2">Status: {o.status}</p>
 
+              {/* Items */}
               <ul className="text-sm list-disc pl-5 mb-2">
                 {o.items.map((it, idx) => (
                   <li key={idx}>
@@ -64,18 +62,18 @@ export default function OrdersPage() {
                 <span>৳{o.total}</span>
               </div>
 
+              {/* Actions */}
               <div className="mt-3 flex gap-3">
-                {/* ✅ View Summary */}
-                <a
+                <Link
                   href={`/order-summary/${o._id}`}
                   className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
                 >
                   View Summary
-                </a>
-
-                {/* ✅ Direct Receipt Download */}
+                </Link>
                 <a
-                  href={`http://localhost:4000/api/orders/${o._id}/receipt`}
+                  href={`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${o._id}/receipt`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                 >
                   Download Receipt
