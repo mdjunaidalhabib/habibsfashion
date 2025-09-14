@@ -8,7 +8,7 @@ export function configurePassport() {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.API_URL}/auth/google/callback`,
+        callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/auth/google/callback`,
         scope: ["profile", "email"],
         passReqToCallback: true,
       },
