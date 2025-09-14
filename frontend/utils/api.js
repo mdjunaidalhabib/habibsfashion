@@ -1,6 +1,6 @@
 // frontend/utils/api.js
 export async function apiFetch(path, options = {}) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const url = `${baseUrl}${path}`;
 
   try {
