@@ -4,7 +4,7 @@ import cors from "cors";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import passport from "passport";
-import { dbConnect } from "./src/lib/db.js";
+import dbConnect from "./src/lib/db.js";
 import { configurePassport } from "./src/auth/passport.js";
 import authRoutes from "./src/routes/auth.js";
 import locationRoutes from "./src/routes/locationRoutes.js";
