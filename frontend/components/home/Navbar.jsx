@@ -348,9 +348,12 @@ function AccountMenu({ me, setMe, loadingUser }) {
   if (!me) {
     return (
       <button
-        onClick={() =>
-          (window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`)
-        }
+        onClick={() => {
+          const currentUrl = window.location.href; // ✅ বর্তমান পেজ ক্যাপচার
+          window.location.href = `${
+            process.env.NEXT_PUBLIC_API_URL
+          }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
+        }}
         className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
       >
         <FaUser className="w-5 h-5" /> Login

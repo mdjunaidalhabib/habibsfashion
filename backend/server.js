@@ -4,6 +4,8 @@ import cors from "cors";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import passport from "passport";
+import helmet from "helmet";
+
 import dbConnect from "./src/lib/db.js";
 import { configurePassport } from "./src/auth/passport.js";
 import authRoutes from "./src/routes/auth.js";
@@ -14,24 +16,24 @@ import categoryRoutes from "./src/routes/categoryRoutes.js";
 
 dotenv.config();
 const app = express();
-
-// ✅ Connect DB
-await dbConnect(process.env.MONGO_URI);
+const PORT = process.env.PORT || 4000;
 
 // ✅ Middleware
+app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL.split(","), // একাধিক URL সাপোর্ট
+    origin: process.env.CLIENT_URL
+      ? process.env.CLIENT_URL.split(",")
+      : ["http://localhost:3000"],
     credentials: true,
   })
 );
-
 app.use(express.json());
 
 // ✅ Session setup
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "supersecret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -40,9 +42,9 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // লোকালে false, production এ true
+      secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 24, // 1 দিন
+      maxAge: 1000 * 60 * 60 * 24,
     },
   })
 );
@@ -59,11 +61,23 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 
-// ✅ Health check route
+// ✅ Health check
 app.get("/", (req, res) => {
-  res.json({ message: "✅ API is running" });
+  res.status(200).json({
+    status: "ok",
+    message: "✅ API is running",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// ✅ Server start
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
+// ✅ Start server
+const startServer = async () => {
+  try {
+    await dbConnect(process.env.MONGO_URI);
+    app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
+  } catch (err) {
+    console.error("❌ Failed to connect DB:", err);
+    process.exit(1);
+  }
+};
+startServer();
