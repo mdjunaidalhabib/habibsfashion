@@ -7,6 +7,18 @@ import { useRouter } from "next/navigation";
 import { FaPlus, FaMinus, FaTrash, FaHeart } from "react-icons/fa";
 import { apiFetch } from "../../../utils/api";
 
+// Skeleton Loader
+const CartSkeleton = () => (
+  <div className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row items-center gap-4 animate-pulse">
+    <div className="w-24 h-24 bg-gray-200 rounded"></div>
+    <div className="flex-1 space-y-2">
+      <div className="h-4 w-32 bg-gray-200 rounded"></div>
+      <div className="h-4 w-20 bg-gray-200 rounded"></div>
+    </div>
+    <div className="h-10 w-20 bg-gray-200 rounded"></div>
+  </div>
+);
+
 export default function CartPage() {
   const router = useRouter();
   const {
@@ -19,10 +31,18 @@ export default function CartPage() {
   } = useCart();
 
   const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ Loading state
+
   useEffect(() => {
     apiFetch("/api/products")
-      .then(setAllProducts)
-      .catch((err) => console.error("❌ Failed to fetch products", err));
+      .then((data) => {
+        setAllProducts(data);
+        setLoading(false); // ✅ ডেটা এলে লোডিং false
+      })
+      .catch((err) => {
+        console.error("❌ Failed to fetch products", err);
+        setLoading(false);
+      });
   }, []);
 
   const items = useMemo(() => {
@@ -68,7 +88,7 @@ export default function CartPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl sm:text-3xl font-semibold">Your Cart</h1>
 
-        {items.length > 0 && (
+        {items.length > 0 && !loading && (
           <button
             onClick={handleClearCart}
             className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600"
@@ -78,7 +98,14 @@ export default function CartPage() {
         )}
       </div>
 
-      {!items.length ? (
+      {loading ? (
+        // ✅ লোডিং হলে skeleton দেখাবে
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <CartSkeleton key={i} />
+          ))}
+        </div>
+      ) : !items.length ? (
         <div className="bg-white rounded-xl shadow p-6 text-center">
           <p>Your cart is empty.</p>
         </div>
@@ -129,7 +156,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Qty control (min 1) */}
+                {/* Qty control */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {

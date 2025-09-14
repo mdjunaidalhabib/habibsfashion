@@ -5,6 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { useCart } from "../../context/CartContext";
 import { FaTrashAlt, FaPlus, FaMinus } from "react-icons/fa";
 
+// 🔹 Skeleton for dropdown
+const SelectSkeleton = () => (
+  <div className="h-10 w-full bg-gray-200 rounded animate-pulse mt-1"></div>
+);
+
 export default function CheckoutPage() {
   const { cart, setCart, updateCart, removeFromCart } = useCart();
   const searchParams = useSearchParams();
@@ -12,22 +17,25 @@ export default function CheckoutPage() {
   const productId = searchParams.get("productId");
   const initialQty = Number(searchParams.get("qty")) || 1;
 
-  // ✅ শুধু single checkout এর জন্য local qty state
+  // ✅ Single checkout এর জন্য local qty
   const [checkoutQty, setCheckoutQty] = useState(initialQty);
 
-  // ✅ সব products DB থেকে লোড
+  // ✅ Products লোড
   const [allProducts, setAllProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
   useEffect(() => {
     apiFetch("/api/products")
-      .then(setAllProducts)
-      .catch((err) => console.error("❌ Failed to load products", err));
+      .then((data) => setAllProducts(data))
+      .catch((err) => console.error("❌ Failed to load products", err))
+      .finally(() => setProductsLoading(false));
   }, []);
 
-  // ✅ cartItems বানানো
+  // ✅ Cart items বানানো
   const cartItems = useMemo(() => {
     if (!allProducts.length) return [];
 
-    // ---- Single Checkout Mode ----
+    // ---- Single Checkout ----
     if (productId) {
       const p = allProducts.find((x) => String(x._id) === String(productId));
       if (!p) return [];
@@ -36,13 +44,13 @@ export default function CheckoutPage() {
           productId: p._id,
           name: p.name,
           price: p.price,
-          qty: checkoutQty, // ✅ এখন state থেকে আসছে
+          qty: checkoutQty,
           image: p.image,
         },
       ];
     }
 
-    // ---- Full Cart Mode ----
+    // ---- Full Cart ----
     return Object.keys(cart)
       .map((id) => {
         const p = allProducts.find((x) => String(x._id) === String(id));
@@ -77,9 +85,12 @@ export default function CheckoutPage() {
   const [divisions, setDivisions] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [thanas, setThanas] = useState([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch("/api/locations/divisions").then(setDivisions);
+    apiFetch("/api/locations/divisions")
+      .then(setDivisions)
+      .finally(() => setLocationsLoading(false));
   }, []);
   useEffect(() => {
     if (division) {
@@ -162,7 +173,9 @@ export default function CheckoutPage() {
 
       {error && <p className="text-center text-red-600 mb-4">{error}</p>}
 
-      {!cartItems.length ? (
+      {productsLoading ? (
+        <p className="text-center text-gray-600">⏳ প্রোডাক্ট লোড হচ্ছে...</p>
+      ) : !cartItems.length ? (
         <p className="text-center text-gray-600">🛒 আপনার কার্ট খালি</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -195,60 +208,79 @@ export default function CheckoutPage() {
                 rows="2"
               />
             </label>
+
+            {/* Division */}
             <label className="block mb-3">
               <span className="text-sm font-medium">বিভাগ *</span>
-              <select
-                value={division}
-                onChange={(e) => {
-                  setDivision(e.target.value);
-                  setDistrict("");
-                  setThana("");
-                }}
-                className="mt-1 w-full p-2 border rounded-md"
-              >
-                <option value="">বিভাগ সিলেক্ট করুন</option>
-                {divisions.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+              {locationsLoading ? (
+                <SelectSkeleton />
+              ) : (
+                <select
+                  value={division}
+                  onChange={(e) => {
+                    setDivision(e.target.value);
+                    setDistrict("");
+                    setThana("");
+                  }}
+                  className="mt-1 w-full p-2 border rounded-md"
+                >
+                  <option value="">বিভাগ সিলেক্ট করুন</option>
+                  {divisions.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
+
+            {/* District */}
             <label className="block mb-3">
               <span className="text-sm font-medium">জেলা *</span>
-              <select
-                value={district}
-                onChange={(e) => {
-                  setDistrict(e.target.value);
-                  setThana("");
-                }}
-                disabled={!division}
-                className="mt-1 w-full p-2 border rounded-md"
-              >
-                <option value="">জেলা সিলেক্ট করুন</option>
-                {districts.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist}
-                  </option>
-                ))}
-              </select>
+              {locationsLoading ? (
+                <SelectSkeleton />
+              ) : (
+                <select
+                  value={district}
+                  onChange={(e) => {
+                    setDistrict(e.target.value);
+                    setThana("");
+                  }}
+                  disabled={!division}
+                  className="mt-1 w-full p-2 border rounded-md"
+                >
+                  <option value="">জেলা সিলেক্ট করুন</option>
+                  {districts.map((dist) => (
+                    <option key={dist} value={dist}>
+                      {dist}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
+
+            {/* Thana */}
             <label className="block mb-3">
               <span className="text-sm font-medium">থানা *</span>
-              <select
-                value={thana}
-                onChange={(e) => setThana(e.target.value)}
-                disabled={!district}
-                className="mt-1 w-full p-2 border rounded-md"
-              >
-                <option value="">থানা সিলেক্ট করুন</option>
-                {thanas.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+              {locationsLoading ? (
+                <SelectSkeleton />
+              ) : (
+                <select
+                  value={thana}
+                  onChange={(e) => setThana(e.target.value)}
+                  disabled={!district}
+                  className="mt-1 w-full p-2 border rounded-md"
+                >
+                  <option value="">থানা সিলেক্ট করুন</option>
+                  {thanas.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
+
             <label className="block">
               <span className="text-sm font-medium">নোট (ঐচ্ছিক)</span>
               <textarea
