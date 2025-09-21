@@ -7,7 +7,6 @@ export default function OrderSummary({ orderId }) {
 
   useEffect(() => {
     if (!orderId) return;
-
     const fetchOrder = async () => {
       try {
         const res = await fetch(
@@ -28,51 +27,57 @@ export default function OrderSummary({ orderId }) {
   }, [orderId]);
 
   if (loading)
-    return <p className="p-8 text-center text-gray-600">⏳ Loading order...</p>;
+    return (
+      <p className="p-3 text-center text-xs text-gray-500 animate-pulse">
+        ⏳ Loading order...
+      </p>
+    );
   if (!order)
-    return <p className="p-8 text-center text-red-500">❌ Order not found</p>;
+    return (
+      <p className="p-3 text-center text-xs text-red-500">❌ Order not found</p>
+    );
 
   return (
-    <div className="max-w-lg mx-auto bg-white shadow-lg rounded-lg border my-16">
+    <div className="max-w-xs mx-auto my-4 bg-white shadow rounded-lg overflow-hidden text-xs">
       {/* Header */}
-      <div className="border-b p-6 text-center">
-        <h2 className="text-2xl font-bold text-green-700">🧾 Order Summary</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Thank you for your purchase!
+      <div className="border-b px-2 py-3 text-center">
+        <h2 className="text-sm font-semibold text-green-700">🧾 Order Summary</h2>
+        <p className="text-[11px] text-gray-500 mt-0.5">
+          Thank you for your purchase
         </p>
       </div>
 
-      {/* Order Info (ID + Date left, Status right) */}
-      <div className="flex items-center justify-between p-6 border-b text-sm">
+      {/* Order Info */}
+      <div className="flex justify-between gap-2 px-2 py-3 border-b">
         <div>
           <p className="text-gray-500">Order ID</p>
           <p className="font-medium break-all">{order._id}</p>
-          <p className="text-gray-500 mt-2">Date</p>
+          <p className="text-gray-500 mt-1">Date</p>
           <p className="font-medium">
             {new Date(order.createdAt).toLocaleString()}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-gray-500 mb-1 pr-6">Status</p>
+          <p className="text-gray-500 mb-1">Status</p>
           <span
-            className={`inline-block px-3 py-1 text-sm font-semibold rounded-full shadow 
-            ${
-              order.status === "pending"
-                ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                : order.status === "completed"
-                ? "bg-green-100 text-green-700 border border-green-300"
-                : "bg-gray-200 text-gray-600 border border-gray-400"
-            }`}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium 
+              ${
+                order.status === "pending"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : order.status === "completed"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-200 text-gray-600"
+              }`}
           >
             {order.status.toUpperCase()}
           </span>
         </div>
       </div>
 
-      {/* Billing Info */}
-      <div className="p-6 border-b">
-        <h3 className="font-semibold text-lg mb-2">🧍 Billing Details</h3>
-        <p className="text-gray-700">
+      {/* Billing */}
+      <div className="px-2 py-3 border-b">
+        <h3 className="font-semibold mb-1">🧍 Billing</h3>
+        <p>
           <span className="font-medium">{order.billing?.name}</span> —{" "}
           {order.billing?.phone}
         </p>
@@ -81,29 +86,29 @@ export default function OrderSummary({ orderId }) {
           {order.billing?.district}, {order.billing?.division}
         </p>
         {order.billing?.note && (
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-gray-500">
             <span className="font-medium">Note:</span> {order.billing.note}
           </p>
         )}
       </div>
 
       {/* Items */}
-      <div className="p-6 border-b">
-        <h3 className="font-semibold text-lg mb-2">📦 Items</h3>
-        <table className="w-full text-sm border-collapse">
+      <div className="px-2 py-3 border-b overflow-x-auto">
+        <h3 className="font-semibold mb-1">📦 Items</h3>
+        <table className="w-full border-collapse text-[11px] min-w-[240px]">
           <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-2">Product</th>
-              <th className="p-2 text-center">Qty</th>
-              <th className="p-2 text-right">Total</th>
+            <tr className="bg-gray-100">
+              <th className="p-1 text-left">Product</th>
+              <th className="p-1 text-center">Qty</th>
+              <th className="p-1 text-right">Total</th>
             </tr>
           </thead>
           <tbody>
             {order.items.map((it, idx) => (
               <tr key={idx} className="border-t">
-                <td className="p-2">{it.name}</td>
-                <td className="p-2 text-center">{it.qty}</td>
-                <td className="p-2 text-right font-medium">
+                <td className="p-1">{it.name}</td>
+                <td className="p-1 text-center">{it.qty}</td>
+                <td className="p-1 text-right font-medium">
                   ৳{it.price * it.qty}
                 </td>
               </tr>
@@ -113,36 +118,36 @@ export default function OrderSummary({ orderId }) {
       </div>
 
       {/* Totals */}
-      <div className="p-6 border-b space-y-2 text-sm sm:text-base">
+      <div className="px-2 py-3 border-b space-y-1">
         <div className="flex justify-between">
-          <span className="text-gray-600">Subtotal:</span>
+          <span className="text-gray-600">Subtotal</span>
           <span className="font-medium">৳{order.subtotal}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">Delivery:</span>
+          <span className="text-gray-600">Delivery</span>
           <span className="font-medium">৳{order.deliveryCharge}</span>
         </div>
-        <div className="flex justify-between text-lg font-bold text-green-700 border-t pt-2">
-          <span>Total:</span>
+        <div className="flex justify-between text-green-700 font-semibold border-t pt-1">
+          <span>Total</span>
           <span>৳{order.total}</span>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="p-6 flex flex-col sm:flex-row gap-4 justify-center">
+      <div className="px-2 py-3 flex flex-col sm:flex-row gap-2">
         <a
           href={`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${order._id}/receipt`}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
+          className="flex-1 px-2 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-center"
         >
-          ⬇️ Download Receipt
+          ⬇️ Receipt
         </a>
         <a
           href="/orders"
-          className="px-5 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center"
+          className="flex-1 px-2 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 text-center"
         >
-          📂 Go to My Orders
+          📂 My Orders
         </a>
       </div>
     </div>
