@@ -23,6 +23,13 @@ const productSchema = new mongoose.Schema({
   images: [String],
   colors: [colorSchema],
 
+  // 🏷️ Stock field
+  stock: {
+    type: Number,
+    required: true,
+    default: 0,   // ডিফল্ট 0 রাখলাম, যাতে না দিলে Out of Stock ধরে নেওয়া যায়
+  },
+
   // 🔗 Category Relation
   category: {
     type: mongoose.Schema.Types.ObjectId,

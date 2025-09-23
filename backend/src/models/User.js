@@ -7,7 +7,12 @@ const userSchema = new mongoose.Schema(
     userId: { type: Number, unique: true }, // ✅ auto incremented ID
     name: String,
     email: { type: String, required: true, unique: true },
-    avatar: String,
+
+    // ✅ Avatar field with default image
+    avatar: {
+      type: String,
+      default: "https://i.pravatar.cc/150?u=default"
+    },
   },
   { timestamps: true }
 );
@@ -25,4 +30,4 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-export default mongoose.model("User", userSchema);
+export default mongoose.models.User || mongoose.model("User", userSchema);

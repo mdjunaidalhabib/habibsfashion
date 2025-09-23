@@ -11,8 +11,9 @@ import { configurePassport } from "./src/auth/passport.js";
 import authRoutes from "./src/routes/auth.js";
 import locationRoutes from "./src/routes/locationRoutes.js";
 import orderRoutes from "./src/routes/order.js";
-import productRoutes from "./src/routes/productRoutes.js";
-import categoryRoutes from "./src/routes/categoryRoutes.js";
+import categoriesRoute from "./src/routes/categories.js";
+import productsRoute from "./src/routes/products.js";
+import usersRoute from "./src/routes/users.js";
 
 dotenv.config();
 const app = express();
@@ -58,8 +59,11 @@ app.use(passport.session());
 app.use("/auth", authRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/categories", categoryRoutes);
+app.use("/api/categories", categoriesRoute);
+app.use("/api/products", productsRoute);
+app.use("/api/users", usersRoute);
+app.use("/uploads", express.static("uploads"));
+
 
 // ✅ Health check
 app.get("/", (req, res) => {
