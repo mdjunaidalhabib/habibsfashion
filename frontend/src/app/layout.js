@@ -10,7 +10,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <CartProvider>
-          <Navbar />
+ 
           {children}
           <Footer />
         </CartProvider>

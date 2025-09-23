@@ -103,47 +103,34 @@ export default function DashboardPage() {
   })();
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+    <div className="space-y-6 p-2 sm:p-4">
+      <h1 className="text-xl sm:text-2xl font-bold">Dashboard Overview</h1>
 
       {/* 📊 Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white shadow rounded-lg p-4">
-          <div className="text-sm text-gray-500">Total Orders</div>
-          <div className="text-xl font-bold">{stats.totalOrders}</div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+        <div className="bg-white shadow rounded-lg p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-gray-500">Total Orders</div>
+          <div className="text-lg sm:text-xl font-bold">{stats.totalOrders}</div>
         </div>
-        <div className="bg-white shadow rounded-lg p-4">
-          <div className="text-sm text-gray-500">Total Sales (Lifetime)</div>
-          <div className="text-xl font-bold">৳{stats.totalSales}</div>
+        <div className="bg-white shadow rounded-lg p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-gray-500">Total Sales (Lifetime)</div>
+          <div className="text-lg sm:text-xl font-bold">৳{stats.totalSales}</div>
         </div>
-        <div className="bg-white shadow rounded-lg p-4">
-          <div className="text-sm text-gray-500">Pending Orders</div>
-          <div className="text-xl font-bold">{stats.pendingOrders}</div>
+        <div className="bg-white shadow rounded-lg p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-gray-500">Pending Orders</div>
+          <div className="text-lg sm:text-xl font-bold">{stats.pendingOrders}</div>
         </div>
-        <div className="bg-white shadow rounded-lg p-4">
-          <div className="text-sm text-gray-500">Delivered Orders</div>
-          <div className="text-xl font-bold">{stats.deliveredOrders}</div>
+        <div className="bg-white shadow rounded-lg p-3 sm:p-4">
+          <div className="text-xs sm:text-sm text-gray-500">Delivered Orders</div>
+          <div className="text-lg sm:text-xl font-bold">{stats.deliveredOrders}</div>
         </div>
-      </div>
-
-      {/* Sales Chart (Last 7 days) */}
-      <div className="bg-white shadow rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-4">Sales (Last 7 Days)</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={salesData}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="total" fill="#4f46e5" />
-          </BarChart>
-        </ResponsiveContainer>
       </div>
 
       {/* Top Products */}
-      <div className="bg-white shadow rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-4">Top Selling Products</h2>
+      <div className="bg-white shadow rounded-lg p-3 sm:p-4">
+        <h2 className="text-base sm:text-lg font-semibold mb-4">Top Selling Products</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full text-xs sm:text-sm">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 text-left">Product</th>
@@ -170,8 +157,8 @@ export default function DashboardPage() {
           </table>
         </div>
         {topProducts.length > 0 && (
-          <div className="mt-6">
-            <ResponsiveContainer width="100%" height={250}>
+          <div className="mt-6 w-full h-56 sm:h-64">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topProducts}>
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -184,18 +171,22 @@ export default function DashboardPage() {
       </div>
 
       {/* Monthly Sales */}
-      <div className="bg-white shadow rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-4">Monthly Sales (Last 12 Months)</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={monthlySales}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="sales" stroke="#4f46e5" />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="bg-white shadow rounded-lg p-3 sm:p-4">
+        <h2 className="text-base sm:text-lg font-semibold mb-4">
+          Monthly Sales (Last 12 Months)
+        </h2>
+        <div className="w-full h-64 sm:h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlySales}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="sales" stroke="#4f46e5" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
