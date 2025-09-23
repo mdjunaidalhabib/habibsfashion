@@ -3,9 +3,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProductCard from "./ProductCard";
 import { apiFetch } from "../../utils/api";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
-// Skeleton for loading ProductCard
+// Skeleton Loader
 const ProductCardSkeleton = () => (
   <div className="bg-white shadow-md p-3 rounded-lg animate-pulse flex flex-col">
     <div className="h-40 sm:h-48 md:h-52 bg-gray-200 rounded-lg mb-3"></div>
@@ -15,17 +15,14 @@ const ProductCardSkeleton = () => (
   </div>
 );
 
-// Utility: group products by category id
-const groupByCategory = (all, catId) => all.filter((p) => p.category === catId);
-
-// CategoryRow: reusable slider per category
-const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
+// Category Row Component
+const CategoryRow = ({ category, items, autoPlayMs = 3000, delay = 0 }) => {
   const trackRef = useRef(null);
   const [index, setIndex] = useState(0);
   const [enableTransition, setEnableTransition] = useState(true);
   const [slidesPerView, setSlidesPerView] = useState(2);
 
-  // slides per view from viewport width
+  // responsive slides per view
   useEffect(() => {
     const calc = () => {
       const w = window.innerWidth;
@@ -33,15 +30,15 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
       if (w < 1024) return 3;
       return 4;
     };
-    const apply = () => setSlidesPerView(calc());
-    apply();
-    window.addEventListener("resize", apply);
-    return () => window.removeEventListener("resize", apply);
+    setSlidesPerView(calc());
+    const resizeHandler = () => setSlidesPerView(calc());
+    window.addEventListener("resize", resizeHandler);
+    return () => window.removeEventListener("resize", resizeHandler);
   }, []);
 
-  // extended list for looping autoplay
+  // extended list for infinite loop
   const extended = useMemo(() => {
-    if (!items || items.length === 0) return [];
+    if (!items?.length) return [];
     const minLen = items.length + slidesPerView * 2;
     const out = [];
     let i = 0;
@@ -52,26 +49,34 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
     return out;
   }, [items, slidesPerView]);
 
-  // autoplay
+  // autoplay with delay
   useEffect(() => {
     if (!extended.length || !autoPlayMs) return;
-    const id = setInterval(() => setIndex((i) => i + 1), autoPlayMs);
-    return () => clearInterval(id);
-  }, [extended.length, autoPlayMs]);
 
-  // reset index if overflow
+    let intervalId;
+    const startTimeout = setTimeout(() => {
+      intervalId = setInterval(() => setIndex((i) => i + 1), autoPlayMs);
+    }, delay);
+
+    return () => {
+      clearTimeout(startTimeout);
+      clearInterval(intervalId);
+    };
+  }, [extended.length, autoPlayMs, delay]);
+
+  // loop back
   useEffect(() => {
     if (!extended.length) return;
     const maxSafe = items.length + slidesPerView;
     if (index > maxSafe) {
-      const normalized = ((index % items.length) + items.length) % items.length;
+      const normalized = index % items.length;
       setEnableTransition(false);
       setIndex(normalized);
       requestAnimationFrame(() => setEnableTransition(true));
     }
   }, [index, extended.length, items.length, slidesPerView]);
 
-  // pointer swipe
+  // swipe/drag handlers
   const startXRef = useRef(0);
   const draggingRef = useRef(false);
   const deltaXRef = useRef(0);
@@ -106,13 +111,11 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
   };
 
   const basePercent = -(index * (100 / slidesPerView));
-  const dragPercent = () => {
-    if (!draggingRef.current) return 0;
-    const el = trackRef.current;
-    const width = el ? el.clientWidth : 1;
-    return (deltaXRef.current / width) * 100;
-  };
-  const transform = `translateX(calc(${basePercent}% + ${dragPercent()}%))`;
+  const dragPercent =
+    draggingRef.current && trackRef.current
+      ? (deltaXRef.current / trackRef.current.clientWidth) * 100
+      : 0;
+  const transform = `translateX(calc(${basePercent}% + ${dragPercent}%))`;
 
   return (
     <motion.section
@@ -121,24 +124,18 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
       transition={{ duration: 0.6 }}
       className="container mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl sm:text-2xl font-semibold">
-          {loading ? (
-            <span className="bg-gray-200 h-6 w-32 rounded animate-pulse inline-block"></span>
-          ) : (
-            category.name
-          )}
-        </h2>
-        {!loading && category.id && (
-          <Link
-            href={`/categories/${category.id}`}
-            className="text-blue-600 hover:underline text-sm sm:text-base"
-          >
-            View all
-          </Link>
-        )}
+        <h2 className="text-xl sm:text-2xl font-semibold">{category.name}</h2>
+        <Link
+          href={`/categories/${category._id}`}
+          className="text-blue-600 hover:underline text-sm sm:text-base"
+        >
+          View all
+        </Link>
       </div>
 
+      {/* Slider */}
       <div className="relative overflow-hidden">
         <div
           ref={trackRef}
@@ -153,23 +150,23 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
           onPointerCancel={onPointerUp}
           onPointerLeave={onPointerUp}
         >
-          {loading || !items.length
-            ? Array.from({ length: slidesPerView * 2 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="shrink-0 px-2"
-                  style={{ width: `${100 / slidesPerView}%` }}
-                >
-                  <ProductCardSkeleton />
-                </div>
-              ))
-            : extended.map((prod, i) => (
+          {extended.length
+            ? extended.map((prod, i) => (
                 <div
                   key={`${prod._id || prod.id}-${i}`}
                   className="shrink-0 px-2"
                   style={{ width: `${100 / slidesPerView}%` }}
                 >
                   <ProductCard product={prod} />
+                </div>
+              ))
+            : Array.from({ length: slidesPerView * 2 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shrink-0 px-2"
+                  style={{ width: `${100 / slidesPerView}%` }}
+                >
+                  <ProductCardSkeleton />
                 </div>
               ))}
         </div>
@@ -178,19 +175,17 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, loading }) => {
   );
 };
 
-// Custom autoplay speed
-const speedByCategory = {
-  electronics: 2500,
-  fashion: 3200,
-  home: 4000,
-};
-
 export default function HomeCategorySections() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // fetch products + categories from backend
+  // category._id অনুযায়ী speed সেট করুন
+  const speedByCategoryId = {
+    "68d2645569c371024fb0f519": 4000, 
+    "68d2a92d28415e4dc80bc4d2": 5000,
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -203,34 +198,35 @@ export default function HomeCategorySections() {
         setLoading(false);
       } catch (err) {
         console.error("❌ Failed to fetch products or categories", err);
-        // ⚠️ Error হলে loading true রাখব → skeleton সবসময় দেখাবে
-        setLoading(true);
+        setLoading(false);
       }
     };
     fetchData();
   }, []);
 
+  if (loading) return <p className="text-center py-10">Loading...</p>;
+
   return (
-    <div className="space-y-4">
-      <AnimatePresence>
-        {loading
-          ? // সবসময় placeholder sections
-            Array.from({ length: 3 }).map((_, i) => (
-              <CategoryRow key={i} category={{ name: "" }} items={[]} loading />
-            ))
-          : categories.map((cat) => {
-              const items = groupByCategory(products, cat.id);
-              return (
-                <CategoryRow
-                  key={cat.id}
-                  category={cat}
-                  items={items}
-                  autoPlayMs={speedByCategory[cat.id] ?? 3000}
-                  loading={false}
-                />
-              );
-            })}
-      </AnimatePresence>
+    <div className="space-y-10">
+      {categories.map((cat, idx) => {
+        const items = products.filter(
+          (p) => String(p.category?._id) === String(cat._id)
+        );
+        if (!items.length) return null;
+
+        const speed = speedByCategoryId[cat._id] ?? 3000;
+        const delay = idx * 1000; // প্রতিটি row stagger করে শুরু হবে
+
+        return (
+          <CategoryRow
+            key={cat._id}
+            category={cat}
+            items={items}
+            autoPlayMs={speed}
+            delay={delay}
+          />
+        );
+      })}
     </div>
   );
 }

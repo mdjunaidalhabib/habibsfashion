@@ -6,7 +6,9 @@ import Product from "../models/Product.js";
 
 const router = express.Router();
 
+// =========================
 // Multer config
+// =========================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const dir = "uploads";
@@ -21,7 +23,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ✅ সব products আনবে
+/**
+ * ✅ সব products আনবে
+ * GET /api/products
+ */
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find().populate("category", "name");
@@ -31,7 +36,46 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ নতুন product add
+/**
+ * ✅ নির্দিষ্ট Category অনুযায়ী products আনবে
+ * GET /api/products/category/:categoryId
+ */
+router.get("/category/:categoryId", async (req, res) => {
+  try {
+    const products = await Product.find({ category: req.params.categoryId })
+      .populate("category", "name");
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch products by category" });
+  }
+});
+
+/**
+ * ✅ নির্দিষ্ট Product আনবে (Single Product Page এর জন্য দরকারি)
+ * GET /api/products/:id
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate("category", "name");
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({
+      error: "Failed to fetch product",
+      details: err.message,
+    });
+  }
+});
+
+/**
+ * ✅ নতুন product add
+ * POST /api/products
+ */
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const {
@@ -72,15 +116,24 @@ router.post("/", upload.single("image"), async (req, res) => {
     });
 
     await product.save();
-    const savedProduct = await Product.findById(product._id).populate("category", "name");
+    const savedProduct = await Product.findById(product._id).populate(
+      "category",
+      "name"
+    );
 
     res.status(201).json(savedProduct);
   } catch (err) {
-    res.status(400).json({ error: "Failed to create product", details: err.message });
+    res.status(400).json({
+      error: "Failed to create product",
+      details: err.message,
+    });
   }
 });
 
-// ✅ update product
+/**
+ * ✅ update product
+ * PUT /api/products/:id
+ */
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -90,19 +143,27 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     if (req.body.images) updateData.images = JSON.parse(req.body.images);
     if (req.body.colors) updateData.colors = JSON.parse(req.body.colors);
 
-    const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-    }).populate("category", "name");
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).populate("category", "name");
 
     if (!product) return res.status(404).json({ error: "Product not found" });
 
     res.json(product);
   } catch (err) {
-    res.status(400).json({ error: "Failed to update product", details: err.message });
+    res.status(400).json({
+      error: "Failed to update product",
+      details: err.message,
+    });
   }
 });
 
-// ✅ delete product
+/**
+ * ✅ delete product
+ * DELETE /api/products/:id
+ */
 router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);

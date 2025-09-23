@@ -1,69 +1,74 @@
-import Link from "next/link";
-import Image from "next/image";
+"use client";
 
-// 🔹 সব ক্যাটাগরি ফেচ ফাংশন
-async function getCategories() {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/categories`,
-      {
-        cache: "no-store",
-      }
-    );
+import { useEffect, useState } from "react";
+import axios from "axios";
+import ProductCard from "../../../components/home/ProductCard"; // ✅ আপনার তৈরি করা Card ব্যবহার
 
-    if (!res.ok) {
-      return [];
-    }
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-    const data = await res.json();
-    // API সরাসরি array দিলে সেটা return হবে
-    return Array.isArray(data) ? data : data.categories || [];
-  } catch (err) {
-    return [];
-  }
-}
+export default function CategoryPage() {
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [products, setProducts] = useState([]);
 
-export default async function ShopByCategoryPage() {
-  const categories = await getCategories();
+  // ✅ সব Category আনবে
+  useEffect(() => {
+    axios
+      .get(`${API_URL}/api/categories`) // 🔥 এখন /api path flow
+      .then((res) => setCategories(res.data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // ✅ Category অনুযায়ী Product আনবে
+  const fetchProducts = (categoryId) => {
+    setSelectedCategory(categoryId);
+    axios
+      .get(`${API_URL}/api/products/category/${categoryId}`) // 🔥 এখন /api path flow
+      .then((res) => setProducts(res.data))
+      .catch((err) => console.error(err));
+  };
 
   return (
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Heading */}
-      <h1 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
-        Shop by Category
-      </h1>
-
-      {/* যদি কোন ক্যাটাগরি না থাকে */}
-      {categories.length === 0 ? (
-        <p className="text-center text-gray-500">No categories found</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="flex gap-6 p-6">
+      {/* === Category Sidebar === */}
+      <div className="w-64 bg-white shadow-md rounded-xl p-4">
+        <h3 className="text-lg font-semibold mb-4 border-b pb-2">🗂️ Categories</h3>
+        <ul className="space-y-2">
           {categories.map((cat) => (
-            <Link
+            <li
               key={cat._id}
-              href={`/categories/${cat.id}`} // ✅ slug ফিল্ড দিয়ে route
-              className="block bg-white shadow rounded-xl overflow-hidden hover:shadow-md transition"
+              onClick={() => fetchProducts(cat._id)}
+              className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${
+                selectedCategory === cat._id
+                  ? "bg-blue-100 text-blue-700 font-medium"
+                  : "hover:bg-gray-100"
+              }`}
             >
-              {/* Category Image */}
-              <div className="relative w-full h-32 sm:h-40 bg-gray-100">
-                <Image
-                  src={cat.image || "/photo/default-category.jpg"}
+              {cat.image && (
+                <img
+                  src={`${API_URL}${cat.image}`} // ✅ ইমেজ path backend থেকে
                   alt={cat.name}
-                  fill
-                  className="object-cover"
+                  className="w-10 h-10 rounded-md object-cover border"
                 />
-              </div>
+              )}
+              <span>{cat.name}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-              {/* Category Name */}
-              <div className="p-3 text-center">
-                <h3 className="text-base sm:text-lg font-medium group-hover:text-blue-600">
-                  {cat.name}
-                </h3>
-              </div>
-            </Link>
+      {/* === Product List === */}
+      <div className="flex-1">
+        <h3 className="text-xl font-semibold mb-4">
+          {selectedCategory ? "Products" : "👉 প্রথমে কোনো Category সিলেক্ট করুন"}
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {products.map((p) => (
+            <ProductCard key={p._id} product={p} />
           ))}
         </div>
-      )}
-    </main>
+      </div>
+    </div>
   );
 }

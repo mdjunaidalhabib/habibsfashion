@@ -14,7 +14,14 @@ export async function apiFetch(path, options = {}) {
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
+      let errorText = "";
+      try {
+        errorText = await res.text();
+      } catch {
+        errorText = "Unknown error";
+      }
+
+      // ❌ এখানে console.error নেই
       throw new Error(
         `API error: ${res.status} ${res.statusText} → ${errorText}`
       );
@@ -22,7 +29,8 @@ export async function apiFetch(path, options = {}) {
 
     return await res.json(); // ✅ সবসময় JSON ফেরত দেবে
   } catch (err) {
-    console.error("apiFetch error:", err.message);
+    // ❌ এখানে আর console.error করা হবে না
+    // শুধু error throw করবো → caller (Navbar, ProductPage ইত্যাদি) handle করবে
     throw err;
   }
 }

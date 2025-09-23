@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   FaStar,
@@ -14,13 +13,13 @@ import { useCart } from "../../context/CartContext";
 const ProductCard = ({ product }) => {
   const { cart, setCart, wishlist, setWishlist } = useCart();
 
-  // MongoDB এর _id অথবা static data এর id fallback
   const productId = product._id || product.id;
-
   const quantity = cart[productId] || 0;
+
   const discount = product.oldPrice
     ? (((product.oldPrice - product.price) / product.oldPrice) * 100).toFixed(1)
     : 0;
+
   const isInWishlist = wishlist.includes(productId);
   const totalPrice = product.price * quantity;
 
@@ -45,7 +44,7 @@ const ProductCard = ({ product }) => {
   return (
     <Link
       href={`/products/${productId}`}
-      className="relative bg-white shadow-md  rounded-lg hover:shadow-lg transition flex flex-col"
+      className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col"
     >
       {/* Discount badge */}
       {product.oldPrice && (
@@ -68,18 +67,30 @@ const ProductCard = ({ product }) => {
       </button>
 
       {/* Image */}
-      <Image
-        src={product.image}
+      <img
+        src={
+          product.image?.startsWith("http")
+            ? product.image
+            : `${process.env.NEXT_PUBLIC_API_URL}${product.image}`
+        }
         alt={product.name}
-        width={300}
-        height={300}
         className="rounded-lg mb-3 w-full h-40 sm:h-48 md:h-52 object-cover"
       />
-      <div className="px-4">
+
+      <div className="px-4 pb-3">
         {/* Title */}
         <h4 className="font-semibold text-base sm:text-lg mb-1 truncate">
           {product.name}
         </h4>
+
+        {/* ✅ Stock Info */}
+        <p
+          className={`text-xs font-medium mb-2 ${
+            product.stock > 0 ? "text-green-600" : "text-red-500"
+          }`}
+        >
+          {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
+        </p>
 
         {/* Rating */}
         <div className="flex items-center mb-2">
@@ -94,7 +105,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Price */}
-        <div className="flex items-center space-x-2 ">
+        <div className="flex items-center space-x-2">
           <p className="text-blue-600 font-bold text-sm sm:text-base">
             ৳{product.price}
           </p>
@@ -112,15 +123,16 @@ const ProductCard = ({ product }) => {
               e.preventDefault();
               updateCart(productId, +1);
             }}
-            className="my-3 sm:mt-4 sm:mb-2 bg-blue-900 w-full text-white px-3 py-1 sm:px-4 sm:py-2  rounded-lg flex items-center justify-center gap-2 hover:bg-blue-800 text-sm sm:text-base"
+            className="my-3 sm:mt-4 sm:mb-2 bg-blue-900 w-full text-white px-3 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-800 text-sm sm:text-base"
+            disabled={product.stock <= 0} // ✅ Out of stock হলে disable
           >
             <FaShoppingCart /> Add
           </button>
         ) : (
-          <div className=" ">
+          <div>
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm ">Quantity:</span>
-              <div className="flex items-center space-x-1 sm:space-x-2 rounded-lg ">
+              <span className="font-semibold text-sm">Quantity:</span>
+              <div className="flex items-center space-x-1 sm:space-x-2 rounded-lg">
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -128,22 +140,23 @@ const ProductCard = ({ product }) => {
                   }}
                   className="bg-gray-50 text-black p-1 sm:p-2 rounded-lg hover:bg-gray-100"
                 >
-                  <FaMinus className="w-3 h-3 sm:w-3 sm:h-3" />
+                  <FaMinus className="w-3 h-3" />
                 </button>
-                <span className="text-sm  font-bold">{quantity}</span>
+                <span className="text-sm font-bold">{quantity}</span>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     updateCart(productId, +1);
                   }}
-                  className="bg-gray-50 text-black p-1 sm:p-2 rounded-lg hover:bg-gray-100"
+                  disabled={quantity >= product.stock} // ✅ stock সীমার বেশি add করতে না দেয়
+                  className="bg-gray-50 text-black p-1 sm:p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
                 >
-                  <FaPlus className="w-2 h-3 sm:w-3 sm:h-3" />
+                  <FaPlus className="w-2 h-3" />
                 </button>
               </div>
             </div>
             <hr className="border-t border-gray-300 m-1" />
-            <p className="text-center font-semibold text-gray-700 text-sm sm:text-base ">
+            <p className="text-center font-semibold text-gray-700 text-sm sm:text-base">
               Total: <span className="text-blue-600">৳{totalPrice}</span>
             </p>
           </div>

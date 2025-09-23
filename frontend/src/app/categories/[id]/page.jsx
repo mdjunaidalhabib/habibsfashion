@@ -1,97 +1,86 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import ProductCard from "../../../../components/home/ProductCard";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import { apiFetch } from "../../../../utils/api";
 
-// 🔹 নির্দিষ্ট category ফেচ
-async function getCategory(id) {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`,
-      { cache: "no-store" }
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export default function CategoryPage() {
+  const { id } = useParams(); // 🔥 URL থেকে categoryId আসবে
+  const [category, setCategory] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Fetch category info + products
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchData = async () => {
+      try {
+        const [catRes, prodRes] = await Promise.all([
+          apiFetch(`/api/categories`),
+          apiFetch(`/api/products/category/${id}`),
+        ]);
+
+        const cat = Array.isArray(catRes)
+          ? catRes.find((c) => String(c._id) === String(id))
+          : null;
+
+        setCategory(cat || null);
+        setProducts(prodRes || []);
+      } catch (err) {
+        console.error("❌ Failed to fetch category page data:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-6 py-10">
+        <h2 className="text-2xl font-semibold mb-6">Loading...</h2>
+        <p className="text-gray-500">Please wait while we load products...</p>
+      </div>
     );
-    if (!res.ok) return null;
-    return res.json();
-  } catch (err) {
-    console.error("❌ Error fetching category:", err.message);
-    return null;
   }
-}
 
-// 🔹 নির্দিষ্ট category এর products ফেচ
-async function getCategoryProducts(id) {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}/products`,
-      { cache: "no-store" }
+  if (!category) {
+    return (
+      <div className="container mx-auto px-6 py-10">
+        <h2 className="text-2xl font-semibold mb-6">Category not found ❌</h2>
+      </div>
     );
-    if (!res.ok) return [];
-    return res.json();
-  } catch (err) {
-    console.error("❌ Error fetching category products:", err.message);
-    return [];
   }
-}
-
-// 🔹 Static params জেনারেট (slug id ফিল্ড দিয়ে)
-export async function generateStaticParams() {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
-    );
-    if (!res.ok) return [];
-    const categories = await res.json();
-    return categories.map((c) => ({ id: c.id })); // ✅ slug (id ফিল্ড) ব্যবহার
-  } catch (err) {
-    console.error("❌ Error generating static params:", err.message);
-    return [];
-  }
-}
-
-export default async function CategoryPage({ params }) {
-  const { id } = await params;
-
-  // ক্যাটাগরি + products ফেচ
-  const [category, items] = await Promise.all([
-    getCategory(id),
-    getCategoryProducts(id),
-  ]);
-
-  if (!category) return notFound();
 
   return (
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500 mb-4">
-        <Link href="/" className="hover:underline">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-gray-700">{category.name}</span>
-      </nav>
-
-      {/* Heading */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl sm:text-3xl font-semibold">{category.name}</h1>
-        <Link
-          href="/products"
-          className="text-blue-600 hover:underline text-sm sm:text-base"
-        >
-          All Products
-        </Link>
+    <div className="container mx-auto px-6 py-10">
+      {/* Header */}
+      <div className="mb-6 flex items-center gap-4">
+        {category.image && (
+          <img
+            src={`${API_URL}${category.image}`}
+            alt={category.name}
+            className="w-16 h-16 rounded-lg object-cover border"
+          />
+        )}
+        <h2 className="text-2xl font-bold">{category.name}</h2>
       </div>
 
-      {/* Products grid */}
-      {items.length ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((p) => (
+      {/* Products */}
+      {products.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {products.map((p) => (
             <ProductCard key={p._id} product={p} />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow p-6 text-center">
-          <p>No products found in this category.</p>
-        </div>
+        <p className="text-gray-500">No products found in this category.</p>
       )}
-    </main>
+    </div>
   );
 }

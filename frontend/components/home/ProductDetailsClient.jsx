@@ -1,21 +1,16 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FaStar, FaPlus, FaMinus, FaHeart } from "react-icons/fa";
 import ProductCard from "./ProductCard";
 import { useCart } from "../../context/CartContext";
 
-export default function ProductDetailsClient({
-  product,
-  category,
-  related = [],
-}) {
+export default function ProductDetailsClient({ product, category, related = [] }) {
   const router = useRouter();
   const { cart, setCart, wishlist, setWishlist } = useCart();
 
-  // ---- Color Variant state ----
+  // ---- Color Variant ----
   const [activeColor, setActiveColor] = useState(
     product.colors?.length ? product.colors[0].name : null
   );
@@ -44,13 +39,19 @@ export default function ProductDetailsClient({
 
   const updateCart = (id, change) => {
     setCart((prev) => {
-      const qty = (prev[id] || 0) + change;
-      if (qty <= 0) {
+      const currentQty = prev[id] || 0;
+      const newQty = currentQty + change;
+
+      if (newQty <= 0) {
         const copy = { ...prev };
         delete copy[id];
         return copy;
       }
-      return { ...prev, [id]: qty };
+
+      // ✅ Stock check
+      if (newQty > product.stock) return prev;
+
+      return { ...prev, [id]: newQty };
     });
   };
 
@@ -59,17 +60,14 @@ export default function ProductDetailsClient({
     else setWishlist([...wishlist, id]);
   };
 
-  // ✅ Single checkout handler
+  // ✅ Checkout Handler (login check সহ)
   const handleSingleCheckout = async () => {
     try {
-      const checkoutUrl = `/checkout?productId=${product._id}&qty=${
-        quantity || 1
-      }`;
+      const checkoutUrl = `/checkout?productId=${product._id}&qty=${quantity || 1}`;
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/checkout`,
-        { credentials: "include" }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        credentials: "include",
+      });
 
       if (res.status === 401) {
         const redirectUrl = encodeURIComponent(
@@ -85,7 +83,8 @@ export default function ProductDetailsClient({
     }
   };
 
-  const [tab, setTab] = useState("desc"); // desc | info | reviews
+  // ✅ Tabs
+  const [tab, setTab] = useState("desc");
   const tabBtn = (key, label) => (
     <button
       onClick={() => setTab(key)}
@@ -110,7 +109,7 @@ export default function ProductDetailsClient({
         {category && (
           <>
             <Link
-              href={`/categories/${category.id}`}
+              href={`/categories/${category._id}`}
               className="hover:underline"
             >
               {category.name}
@@ -125,18 +124,18 @@ export default function ProductDetailsClient({
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gallery */}
         <div className="bg-white rounded-2xl shadow p-4">
-          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100">
-            <Image
-              src={images[activeIdx]}
+          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
+            <img
+              src={
+                images[activeIdx]?.startsWith("http")
+                  ? images[activeIdx]
+                  : `${process.env.NEXT_PUBLIC_API_URL}${images[activeIdx]}`
+              }
               alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
+              className="w-full h-full object-cover"
             />
           </div>
 
-          {/* Thumbs */}
           {images.length > 1 && (
             <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
               {images.map((src, i) => (
@@ -149,11 +148,14 @@ export default function ProductDetailsClient({
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <Image
-                    src={src}
+                  <img
+                    src={
+                      src?.startsWith("http")
+                        ? src
+                        : `${process.env.NEXT_PUBLIC_API_URL}${src}`
+                    }
                     alt={`${product.name} ${i + 1}`}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </button>
               ))}
@@ -167,11 +169,47 @@ export default function ProductDetailsClient({
             {product.name}
           </h1>
 
-          <p className="text-gray-600 mb-3">
-            {product.subtitle || "Premium quality with elegant design."}
+          {category?.name && (
+            <p className="text-sm text-gray-600 mb-1">
+              Category: {category.name}
+            </p>
+          )}
+
+          <p
+            className={`text-sm font-medium mb-3 ${
+              product.stock > 0 ? "text-green-600" : "text-red-500"
+            }`}
+          >
+            {product.stock > 0
+              ? `✅ In Stock (${product.stock} available)`
+              : "❌ Out of Stock"}
           </p>
 
-          {/* Rating */}
+          {/* ✅ Color Variants */}
+          {product.colors?.length > 0 && (
+            <div className="mb-4">
+              <p className="font-medium text-sm mb-2">Available Colors:</p>
+              <div className="flex gap-2 flex-wrap">
+                {product.colors.map((c) => (
+                  <button
+                    key={c.name}
+                    onClick={() => {
+                      setActiveColor(c.name);
+                      setActiveIdx(0);
+                    }}
+                    className={`px-3 py-1 rounded-lg border text-sm font-medium transition ${
+                      activeColor === c.name
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 mb-3">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
@@ -190,7 +228,6 @@ export default function ProductDetailsClient({
             </span>
           </div>
 
-          {/* Price + Wishlist */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <p className="text-blue-600 font-bold text-2xl">
@@ -219,12 +256,17 @@ export default function ProductDetailsClient({
             </button>
           </div>
 
-          {/* Add to cart + checkout */}
+          {/* Cart + Checkout */}
           {!quantity ? (
             <div className="flex gap-2">
               <button
+                disabled={product.stock <= 0}
                 onClick={() => updateCart(product._id, +1)}
-                className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700"
+                className={`flex-1 px-4 py-3 rounded-lg font-medium ${
+                  product.stock > 0
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gray-400 text-white cursor-not-allowed"
+                }`}
               >
                 Add to Cart
               </button>
@@ -251,19 +293,17 @@ export default function ProductDetailsClient({
                   </span>
                   <button
                     onClick={() => updateCart(product._id, +1)}
-                    className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                    disabled={quantity >= product.stock}
+                    className={`p-2 rounded ${
+                      quantity >= product.stock
+                        ? "bg-gray-400 text-white cursor-not-allowed"
+                        : "bg-green-500 text-white hover:bg-green-600"
+                    }`}
                   >
                     <FaPlus className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={() => updateCart(product._id, -quantity)}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700"
-                  >
-                    Remove
-                  </button>
                 </div>
               </div>
-
               <div className="flex items-center justify-between">
                 <p className="text-sm">
                   Total:{" "}
@@ -271,14 +311,12 @@ export default function ProductDetailsClient({
                     ৳{totalPrice}
                   </span>
                 </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSingleCheckout}
-                    className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700"
-                  >
-                    Checkout
-                  </button>
-                </div>
+                <button
+                  onClick={handleSingleCheckout}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700"
+                >
+                  Checkout
+                </button>
               </div>
             </div>
           )}
@@ -299,7 +337,8 @@ export default function ProductDetailsClient({
           )}
           {tab === "info" && (
             <p>
-              {product.additionalInfo || "No additional information provided."}
+              {product.additionalInfo ||
+                "No additional information provided."}
             </p>
           )}
           {tab === "reviews" && (
@@ -312,7 +351,9 @@ export default function ProductDetailsClient({
                       <span className="text-yellow-500">
                         {"★".repeat(r.rating)}
                       </span>{" "}
-                      <span className="text-gray-500">{r.rating}/5</span>
+                      <span className="text-gray-500">
+                        {r.rating}/5
+                      </span>
                     </p>
                     <p>{r.comment}</p>
                   </div>
@@ -334,7 +375,7 @@ export default function ProductDetailsClient({
             </h3>
             {category && (
               <Link
-                href={`/categories/${category.id}`}
+                href={`/categories/${category._id}`}
                 className="text-blue-600 hover:underline text-sm"
               >
                 View all in {category.name}

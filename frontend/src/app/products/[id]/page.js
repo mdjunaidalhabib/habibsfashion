@@ -2,25 +2,27 @@ import ProductDetailsClient from "../../../../components/home/ProductDetailsClie
 import { notFound } from "next/navigation";
 import { apiFetch } from "../../../../utils/api";
 
-
-// ✅ সব প্রোডাক্ট আইডি static params বানানোর জন্য
 export async function getProductPageData(id) {
   try {
-    // ১. নির্দিষ্ট প্রোডাক্ট
+    // ১. প্রোডাক্ট
     const product = await apiFetch(`/api/products/${id}`, {
       cache: "no-store",
     });
     if (!product) return null;
 
-    // ২. সব ক্যাটাগরি
+    // ২. ক্যাটাগরি
     const categories = await apiFetch("/api/categories", {
       cache: "no-store",
     });
+
     const category =
       Array.isArray(categories) &&
-      categories.find((c) => c.id === product.category);
+      categories.find(
+        (c) =>
+          String(c._id) === String(product.category?._id || product.category)
+      );
 
-    // ৩. related products (same category, except self)
+    // ৩. related products
     const allProducts = await apiFetch("/api/products", {
       cache: "no-store",
     });
@@ -29,7 +31,8 @@ export async function getProductPageData(id) {
       ? allProducts
           .filter(
             (p) =>
-              p.category === product.category &&
+              String(p.category?._id || p.category) ===
+                String(product.category?._id || product.category) &&
               String(p._id) !== String(product._id)
           )
           .slice(0, 8)
@@ -42,12 +45,8 @@ export async function getProductPageData(id) {
   }
 }
 
-// ✅ পেজ কম্পোনেন্ট
 export default async function ProductPage({ params }) {
-  // params asynchronous হতে পারে, তাই আগে await করুন
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
-
+  const { id } = params;
   const data = await getProductPageData(id);
 
   if (!data || !data.product) return notFound();
