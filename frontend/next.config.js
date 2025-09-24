@@ -1,17 +1,19 @@
 /** @type {import('next').NextConfig} */
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const parsed = new URL(apiUrl);
+
 const nextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_GOOGLE_IMAGE_HOST, // ✅ Google Avatar host
+        hostname: process.env.NEXT_PUBLIC_GOOGLE_IMAGE_HOST || "lh3.googleusercontent.com", // ✅ Google Avatar host fallback
       },
       {
-        protocol: process.env.NEXT_PUBLIC_API_URL.split("://")[0], // http or https
-        hostname: process.env.NEXT_PUBLIC_API_URL.split("://")[1].split(":")[0], // host
-        port: process.env.NEXT_PUBLIC_API_URL.includes(":")
-          ? process.env.NEXT_PUBLIC_API_URL.split(":")[2]
-          : undefined, // port থাকলে নেবে
+        protocol: parsed.protocol.replace(":", ""), // http or https
+        hostname: parsed.hostname, // host (localhost / your domain)
+        port: parsed.port || undefined, // যদি port থাকে (4000) নেবে
         pathname: "/uploads/**", // ✅ শুধু uploads ফোল্ডার allow
       },
     ],
