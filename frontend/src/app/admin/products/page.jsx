@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { makeImageUrl } from "../../../../lib/utils";
+
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -38,8 +41,6 @@ export default function ProductsPage() {
     }
     fetchData();
   }, []);
-
-  const backendBase = process.env.NEXT_PUBLIC_API_URL.replace("/api", "");
 
   // Reset form helper
   function resetForm() {
@@ -121,11 +122,14 @@ export default function ProductsPage() {
                 onChange={handleImageChange}
               />
               {preview && (
-                <img
-                  src={preview}
-                  alt="preview"
-                  className="w-24 h-24 object-cover rounded border"
-                />
+                <div className="relative w-24 h-24">
+                  <Image
+                    src={preview}
+                    alt="preview"
+                    fill
+                    className="object-cover rounded border"
+                  />
+                </div>
               )}
 
               <button
@@ -161,11 +165,14 @@ export default function ProductsPage() {
                 <td className="p-2">{p.category?.name || "—"}</td>
                 <td className="p-2">
                   {p.image ? (
-                    <img
-                      src={`${backendBase}${p.image}`}
-                      alt={p.name}
-                      className="w-10 h-10 rounded border"
-                    />
+                    <div className="relative w-10 h-10">
+                      <Image
+                        src={makeImageUrl(p.image)}
+                        alt={p.name}
+                        fill
+                        className="object-cover rounded border"
+                      />
+                    </div>
                   ) : (
                     "—"
                   )}
@@ -197,11 +204,14 @@ export default function ProductsPage() {
               Category: {p.category?.name || "—"}
             </div>
             {p.image && (
-              <img
-                src={`${backendBase}${p.image}`}
-                alt={p.name}
-                className="w-20 h-20 rounded border mt-2"
-              />
+              <div className="relative w-20 h-20 mt-2">
+                <Image
+                  src={makeImageUrl(p.image)}
+                  alt={p.name}
+                  fill
+                  className="object-cover rounded border"
+                />
+              </div>
             )}
             <div className="mt-2 flex gap-2 flex-wrap">
               <button className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">

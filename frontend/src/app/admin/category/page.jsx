@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { makeImageUrl } from "../../../../lib/utils";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -52,13 +54,10 @@ export default function CategoriesPage() {
 
       if (res.ok) {
         if (isEditing) {
-          setCategories(
-            categories.map((c) => (c._id === currentId ? data : c))
-          );
+          setCategories(categories.map((c) => (c._id === currentId ? data : c)));
         } else {
           setCategories([...categories, data]);
         }
-
         resetForm();
       } else {
         console.error("Save failed:", data.error);
@@ -73,12 +72,9 @@ export default function CategoriesPage() {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${id}`, {
+        method: "DELETE",
+      });
 
       if (res.ok) {
         setCategories(categories.filter((c) => c._id !== id));
@@ -95,11 +91,7 @@ export default function CategoriesPage() {
     setIsEditing(true);
     setCurrentId(cat._id);
     setNewCategory({ name: cat.name, image: null });
-    setPreview(
-      cat.image
-        ? `${process.env.NEXT_PUBLIC_API_URL.replace("/api", "")}${cat.image}`
-        : null
-    );
+    setPreview(cat.image ? makeImageUrl(cat.image) : null);
     setShowForm(true);
   }
 
@@ -121,10 +113,8 @@ export default function CategoriesPage() {
     }
   }
 
-  const backendBase = process.env.NEXT_PUBLIC_API_URL.replace("/api", "");
-
   return (
-    <div>
+    <div className="px-2 sm:px-4">
       <h2 className="text-2xl font-bold mb-4">Categories</h2>
 
       {/* Add Category Button */}
@@ -157,9 +147,7 @@ export default function CategoriesPage() {
                 placeholder="Category Name"
                 className="w-full border p-2 rounded"
                 value={newCategory.name}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, name: e.target.value })
-                }
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
                 required
               />
 
@@ -173,11 +161,14 @@ export default function CategoriesPage() {
               {preview && (
                 <div className="mt-2">
                   <p className="text-sm text-gray-600 mb-1">Preview:</p>
-                  <img
-                    src={preview}
-                    alt="preview"
-                    className="w-24 h-24 object-cover rounded border"
-                  />
+                  <div className="relative w-24 h-24">
+                    <Image
+                      src={preview}
+                      alt="preview"
+                      fill
+                      className="object-cover rounded border"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -207,11 +198,14 @@ export default function CategoriesPage() {
               <td className="p-2">{c.name}</td>
               <td className="p-2">
                 {c.image ? (
-                  <img
-                    src={`${backendBase}${c.image}`}
-                    alt={c.name}
-                    className="w-12 h-12 rounded border object-cover"
-                  />
+                  <div className="relative w-12 h-12">
+                    <Image
+                      src={makeImageUrl(c.image)}
+                      alt={c.name}
+                      fill
+                      className="object-cover rounded border"
+                    />
+                  </div>
                 ) : (
                   "—"
                 )}

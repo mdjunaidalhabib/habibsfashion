@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import ProductCard from "../../../components/home/ProductCard"; // ✅ আপনার তৈরি করা Card ব্যবহার
+import Image from "next/image";
+import ProductCard from "../../../components/home/ProductCard";
+import { makeImageUrl } from "../../../lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -11,19 +13,17 @@ export default function CategoryPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
 
-  // ✅ সব Category আনবে
   useEffect(() => {
     axios
-      .get(`${API_URL}/api/categories`) // 🔥 এখন /api path flow
+      .get(`${API_URL}/api/categories`)
       .then((res) => setCategories(res.data))
       .catch((err) => console.error(err));
   }, []);
 
-  // ✅ Category অনুযায়ী Product আনবে
   const fetchProducts = (categoryId) => {
     setSelectedCategory(categoryId);
     axios
-      .get(`${API_URL}/api/products/category/${categoryId}`) // 🔥 এখন /api path flow
+      .get(`${API_URL}/api/products/category/${categoryId}`)
       .then((res) => setProducts(res.data))
       .catch((err) => console.error(err));
   };
@@ -45,11 +45,14 @@ export default function CategoryPage() {
               }`}
             >
               {cat.image && (
-                <img
-                  src={`${API_URL}${cat.image}`} // ✅ ইমেজ path backend থেকে
-                  alt={cat.name}
-                  className="w-10 h-10 rounded-md object-cover border"
-                />
+                <div className="relative w-10 h-10">
+                  <Image
+                    src={makeImageUrl(cat.image)}
+                    alt={cat.name}
+                    fill
+                    className="rounded-md object-cover border"
+                  />
+                </div>
               )}
               <span>{cat.name}</span>
             </li>

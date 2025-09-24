@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FaStar,
   FaHeart,
@@ -9,19 +10,20 @@ import {
   FaMinus,
 } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
+import { makeImageUrl } from "../../lib/utils"; // ✅ utility import
 
 const ProductCard = ({ product }) => {
   const { cart, setCart, wishlist, setWishlist } = useCart();
 
-  const productId = product._id || product.id;
+  const productId = product?._id || product?.id;
   const quantity = cart[productId] || 0;
 
-  const discount = product.oldPrice
+  const discount = product?.oldPrice
     ? (((product.oldPrice - product.price) / product.oldPrice) * 100).toFixed(1)
     : 0;
 
   const isInWishlist = wishlist.includes(productId);
-  const totalPrice = product.price * quantity;
+  const totalPrice = product?.price * quantity;
 
   const updateCart = (id, change) => {
     setCart((prev) => {
@@ -47,7 +49,7 @@ const ProductCard = ({ product }) => {
       className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col"
     >
       {/* Discount badge */}
-      {product.oldPrice && (
+      {product?.oldPrice && (
         <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-semibold">
           -{discount}%
         </div>
@@ -66,30 +68,30 @@ const ProductCard = ({ product }) => {
         <FaHeart className="w-4 h-4" />
       </button>
 
-      {/* Image */}
-      <img
-        src={
-          product.image?.startsWith("http")
-            ? product.image
-            : `${process.env.NEXT_PUBLIC_API_URL}${product.image}`
-        }
-        alt={product.name}
-        className="rounded-lg mb-3 w-full h-40 sm:h-48 md:h-52 object-cover"
-      />
+      {/* ✅ Next.js Image */}
+      <div className="relative w-full h-40 sm:h-48 md:h-52 mb-3">
+        <Image
+          src={makeImageUrl(product?.image)}
+          alt={product?.name || "Product"}
+          fill
+          className="rounded-lg object-cover"
+          priority
+        />
+      </div>
 
       <div className="px-4 pb-3">
         {/* Title */}
         <h4 className="font-semibold text-base sm:text-lg mb-1 truncate">
-          {product.name}
+          {product?.name}
         </h4>
 
-        {/* ✅ Stock Info */}
+        {/* Stock Info */}
         <p
           className={`text-xs font-medium mb-2 ${
-            product.stock > 0 ? "text-green-600" : "text-red-500"
+            product?.stock > 0 ? "text-green-600" : "text-red-500"
           }`}
         >
-          {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
+          {product?.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
         </p>
 
         {/* Rating */}
@@ -98,7 +100,7 @@ const ProductCard = ({ product }) => {
             <FaStar
               key={i}
               className={
-                i < product.rating ? "text-yellow-500 w-3" : "text-gray-300 w-3"
+                i < product?.rating ? "text-yellow-500 w-3" : "text-gray-300 w-3"
               }
             />
           ))}
@@ -107,9 +109,9 @@ const ProductCard = ({ product }) => {
         {/* Price */}
         <div className="flex items-center space-x-2">
           <p className="text-blue-600 font-bold text-sm sm:text-base">
-            ৳{product.price}
+            ৳{product?.price}
           </p>
-          {product.oldPrice && (
+          {product?.oldPrice && (
             <p className="text-gray-400 line-through text-xs sm:text-sm">
               ৳{product.oldPrice}
             </p>
@@ -124,7 +126,7 @@ const ProductCard = ({ product }) => {
               updateCart(productId, +1);
             }}
             className="my-3 sm:mt-4 sm:mb-2 bg-blue-900 w-full text-white px-3 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-800 text-sm sm:text-base"
-            disabled={product.stock <= 0} // ✅ Out of stock হলে disable
+            disabled={product?.stock <= 0}
           >
             <FaShoppingCart /> Add
           </button>
@@ -148,7 +150,7 @@ const ProductCard = ({ product }) => {
                     e.preventDefault();
                     updateCart(productId, +1);
                   }}
-                  disabled={quantity >= product.stock} // ✅ stock সীমার বেশি add করতে না দেয়
+                  disabled={quantity >= product?.stock}
                   className="bg-gray-50 text-black p-1 sm:p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
                 >
                   <FaPlus className="w-2 h-3" />

@@ -42,7 +42,7 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6 overflow-auto flex-1">{children}</main>
+        <main className="p-2 overflow-auto flex-1">{children}</main>
       </div>
     </div>
   );
