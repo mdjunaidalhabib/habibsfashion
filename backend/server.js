@@ -19,6 +19,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// ✅ Render/Vercel এর proxy trust করতে হবে
+app.set("trust proxy", 1);
+
 // ✅ Middleware
 app.use(helmet());
 app.use(
@@ -26,12 +29,14 @@ app.use(
     origin: process.env.CLIENT_URL
       ? process.env.CLIENT_URL.split(",")
       : ["http://localhost:3000"],
-    credentials: true,
+    credentials: true, // ✅ cookie পাঠানোর জন্য
   })
 );
 app.use(express.json());
 
 // ✅ Session setup
+const isProd = process.env.NODE_ENV === "production";
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -41,11 +46,12 @@ app.use(
       mongoUrl: process.env.MONGO_URI,
       collectionName: "sessions",
     }),
+    proxy: true, // proxy-aware cookie
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 24,
+      secure: isProd, // production এ অবশ্যই true
+      sameSite: isProd ? "none" : "lax", // cross-site cookie allow
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
   })
 );
@@ -62,8 +68,9 @@ app.use("/api/orders", ordersRoute);
 app.use("/api/categories", categoriesRoute);
 app.use("/api/products", productsRoute);
 app.use("/api/users", usersRoute);
-app.use("/uploads", express.static("uploads"));
 
+// ✅ Serve uploads (images)
+app.use("/uploads", express.static("uploads"));
 
 // ✅ Health check
 app.get("/", (req, res) => {

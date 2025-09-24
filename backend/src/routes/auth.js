@@ -47,7 +47,7 @@ router.post("/logout", (req, res, next) => {
     req.session.destroy(() => {
       res.clearCookie("connect.sid", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production", // ✅ production এ অবশ্যই true
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
       res.status(200).json({ message: "Logged out" });
