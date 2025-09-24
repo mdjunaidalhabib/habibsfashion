@@ -1,10 +1,12 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FaStar, FaPlus, FaMinus, FaHeart } from "react-icons/fa";
 import ProductCard from "./ProductCard";
 import { useCart } from "../../context/CartContext";
+import { makeImageUrl } from "../../lib/utils"; // ✅ image utility
 
 export default function ProductDetailsClient({ product, category, related = [] }) {
   const router = useRouter();
@@ -47,10 +49,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
         delete copy[id];
         return copy;
       }
-
-      // ✅ Stock check
-      if (newQty > product.stock) return prev;
-
+      if (newQty > product.stock) return prev; // ✅ stock check
       return { ...prev, [id]: newQty };
     });
   };
@@ -60,11 +59,10 @@ export default function ProductDetailsClient({ product, category, related = [] }
     else setWishlist([...wishlist, id]);
   };
 
-  // ✅ Checkout Handler (login check সহ)
+  // ✅ Checkout Handler
   const handleSingleCheckout = async () => {
     try {
       const checkoutUrl = `/checkout?productId=${product._id}&qty=${quantity || 1}`;
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
         credentials: "include",
       });
@@ -122,19 +120,18 @@ export default function ProductDetailsClient({ product, category, related = [] }
 
       {/* Top: Gallery + Summary */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gallery */}
+        {/* ✅ Gallery */}
         <div className="bg-white rounded-2xl shadow p-4">
-          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
-            <img
-              src={
-                images[activeIdx]?.startsWith("http")
-                  ? images[activeIdx]
-                  : `${process.env.NEXT_PUBLIC_API_URL}${images[activeIdx]}`
-              }
-              alt={product.name}
-              className="w-full h-full object-cover"
+          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100">
+            <Image
+              src={makeImageUrl(product?.image)}
+              alt={product?.name || "Product"}
+              fill
+              className="object-cover rounded-lg"
+              priority
             />
           </div>
+          
 
           {images.length > 1 && (
             <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
@@ -148,14 +145,11 @@ export default function ProductDetailsClient({ product, category, related = [] }
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <img
-                    src={
-                      src?.startsWith("http")
-                        ? src
-                        : `${process.env.NEXT_PUBLIC_API_URL}${src}`
-                    }
+                  <Image
+                    src={makeImageUrl(src)}
                     alt={`${product.name} ${i + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 </button>
               ))}
@@ -163,7 +157,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
           )}
         </div>
 
-        {/* Summary */}
+        {/* ✅ Summary */}
         <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
           <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
             {product.name}
@@ -185,7 +179,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
               : "❌ Out of Stock"}
           </p>
 
-          {/* ✅ Color Variants */}
+          {/* Colors */}
           {product.colors?.length > 0 && (
             <div className="mb-4">
               <p className="font-medium text-sm mb-2">Available Colors:</p>
@@ -210,6 +204,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
             </div>
           )}
 
+          {/* Rating */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
@@ -228,6 +223,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
             </span>
           </div>
 
+          {/* Price + Wishlist */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <p className="text-blue-600 font-bold text-2xl">
@@ -336,10 +332,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
             <p>{product.description || "No description available."}</p>
           )}
           {tab === "info" && (
-            <p>
-              {product.additionalInfo ||
-                "No additional information provided."}
-            </p>
+            <p>{product.additionalInfo || "No additional information provided."}</p>
           )}
           {tab === "reviews" && (
             <div className="text-sm">
@@ -351,9 +344,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
                       <span className="text-yellow-500">
                         {"★".repeat(r.rating)}
                       </span>{" "}
-                      <span className="text-gray-500">
-                        {r.rating}/5
-                      </span>
+                      <span className="text-gray-500">{r.rating}/5</span>
                     </p>
                     <p>{r.comment}</p>
                   </div>
