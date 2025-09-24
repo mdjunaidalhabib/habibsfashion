@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { makeImageUrl } from "../../../../lib/utils";
 
-
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -15,25 +14,29 @@ export default function ProductsPage() {
     name: "",
     price: "",
     oldPrice: "",
-    rating: "",
     stock: "",
     description: "",
     additionalInfo: "",
     category: "",
-    image: null,
+    image: "",
     images: [],
     colors: [],
     reviews: [],
   });
   const [preview, setPreview] = useState(null);
 
+  // Fetch Products + Categories
   useEffect(() => {
     async function fetchData() {
       try {
-        const prodRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+        const prodRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/products`
+        );
         setProducts(await prodRes.json());
 
-        const catRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
+        const catRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
+        );
         setCategories(await catRes.json());
       } catch (err) {
         console.error("Fetch error:", err);
@@ -42,18 +45,17 @@ export default function ProductsPage() {
     fetchData();
   }, []);
 
-  // Reset form helper
+  // Reset form
   function resetForm() {
     setNewProduct({
       name: "",
       price: "",
       oldPrice: "",
-      rating: "",
       stock: "",
       description: "",
       additionalInfo: "",
       category: "",
-      image: null,
+      image: "",
       images: [],
       colors: [],
       reviews: [],
@@ -64,6 +66,32 @@ export default function ProductsPage() {
     setShowForm(false);
   }
 
+  // Handle Input
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setNewProduct({ ...newProduct, [name]: value });
+  }
+
+  // Handle Reviews Change
+  function handleReviewChange(index, field, value) {
+    const updatedReviews = [...newProduct.reviews];
+    updatedReviews[index][field] = value;
+    setNewProduct({ ...newProduct, reviews: updatedReviews });
+  }
+
+  function addReview() {
+    setNewProduct({
+      ...newProduct,
+      reviews: [...newProduct.reviews, { user: "", rating: "", comment: "" }],
+    });
+  }
+
+  function removeReview(index) {
+    const updatedReviews = [...newProduct.reviews];
+    updatedReviews.splice(index, 1);
+    setNewProduct({ ...newProduct, reviews: updatedReviews });
+  }
+
   // Thumbnail preview
   function handleImageChange(e) {
     const file = e.target.files[0];
@@ -71,6 +99,81 @@ export default function ProductsPage() {
       setNewProduct({ ...newProduct, image: file });
       setPreview(URL.createObjectURL(file));
     }
+  }
+
+  // Save Product (Add or Update)
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/products/${currentId}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/api/products`;
+
+    const formData = new FormData();
+
+    formData.append("name", newProduct.name);
+    formData.append("price", newProduct.price);
+    formData.append("oldPrice", newProduct.oldPrice);
+    formData.append("stock", newProduct.stock);
+    formData.append("description", newProduct.description);
+    formData.append("additionalInfo", newProduct.additionalInfo);
+    formData.append("category", newProduct.category);
+
+    if (newProduct.image && typeof newProduct.image !== "string") {
+      formData.append("image", newProduct.image);
+    }
+
+    formData.append("reviews", JSON.stringify(newProduct.reviews || []));
+    formData.append("images", JSON.stringify(newProduct.images || []));
+    formData.append("colors", JSON.stringify(newProduct.colors || []));
+
+    const res = await fetch(url, {
+      method,
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (method === "POST") {
+      setProducts([...products, data]);
+    } else {
+      setProducts(products.map((p) => (p._id === data._id ? data : p)));
+    }
+
+    resetForm();
+  }
+
+  // Delete Product
+  async function handleDelete(id) {
+    if (confirm("Are you sure?")) {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`,
+        { method: "DELETE" }
+      );
+      setProducts(products.filter((p) => p._id !== id));
+    }
+  }
+
+  // Edit Product
+  function handleEdit(p) {
+    setShowForm(true);
+    setIsEditing(true);
+    setCurrentId(p._id);
+    setNewProduct({
+      name: p.name,
+      price: p.price,
+      oldPrice: p.oldPrice,
+      stock: p.stock,
+      description: p.description,
+      additionalInfo: p.additionalInfo,
+      category: p.category?._id || "",
+      image: p.image,
+      images: p.images,
+      colors: p.colors,
+      reviews: p.reviews || [],
+    });
+    setPreview(p.image ? makeImageUrl(p.image) : null);
   }
 
   return (
@@ -99,13 +202,70 @@ export default function ProductsPage() {
               {isEditing ? "Edit Product" : "Add New Product"}
             </h3>
 
-            <form className="space-y-4">
-              <input type="text" placeholder="Product Name" className="w-full border p-2 rounded" />
-              <input type="number" placeholder="Price" className="w-full border p-2 rounded" />
-              <textarea placeholder="Description" className="w-full border p-2 rounded" />
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <input
+                type="text"
+                name="name"
+                value={newProduct.name}
+                onChange={handleChange}
+                placeholder="Product Name"
+                className="w-full border p-2 rounded"
+                required
+              />
+
+              <input
+                type="number"
+                name="price"
+                value={newProduct.price}
+                onChange={handleChange}
+                placeholder="Price"
+                className="w-full border p-2 rounded"
+                required
+              />
+
+              <input
+                type="number"
+                name="oldPrice"
+                value={newProduct.oldPrice}
+                onChange={handleChange}
+                placeholder="Old Price"
+                className="w-full border p-2 rounded"
+              />
+
+              <input
+                type="number"
+                name="stock"
+                value={newProduct.stock}
+                onChange={handleChange}
+                placeholder="Stock"
+                className="w-full border p-2 rounded"
+                required
+              />
+
+              <textarea
+                name="description"
+                value={newProduct.description}
+                onChange={handleChange}
+                placeholder="Description"
+                className="w-full border p-2 rounded"
+              />
+
+              <textarea
+                name="additionalInfo"
+                value={newProduct.additionalInfo}
+                onChange={handleChange}
+                placeholder="Additional Info"
+                className="w-full border p-2 rounded"
+              />
 
               {/* Category */}
-              <select className="w-full border p-2 rounded">
+              <select
+                name="category"
+                value={newProduct.category}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+                required
+              >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
                   <option key={cat._id} value={cat._id}>
@@ -132,11 +292,63 @@ export default function ProductsPage() {
                 </div>
               )}
 
+              {/* ✅ Reviews Section */}
+              <div className="border p-3 rounded">
+                <h4 className="font-semibold mb-2">Reviews</h4>
+                {newProduct.reviews.map((review, index) => (
+                  <div key={index} className="border p-2 rounded mb-2 space-y-2">
+                    <input
+                      type="text"
+                      value={review.user}
+                      onChange={(e) =>
+                        handleReviewChange(index, "user", e.target.value)
+                      }
+                      placeholder="User"
+                      className="w-full border p-2 rounded"
+                    />
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="5"
+                      value={review.rating}
+                      onChange={(e) =>
+                        handleReviewChange(index, "rating", e.target.value)
+                      }
+                      placeholder="Rating (0-5)"
+                      className="w-full border p-2 rounded"
+                    />
+                    <textarea
+                      value={review.comment}
+                      onChange={(e) =>
+                        handleReviewChange(index, "comment", e.target.value)
+                      }
+                      placeholder="Comment"
+                      className="w-full border p-2 rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeReview(index)}
+                      className="bg-red-500 text-white px-3 py-1 rounded"
+                    >
+                      Remove Review
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addReview}
+                  className="bg-blue-500 text-white px-3 py-1 rounded mt-2"
+                >
+                  Add Review
+                </button>
+              </div>
+
               <button
                 type="submit"
                 className="bg-green-600 text-white px-4 py-2 rounded w-full"
               >
-                Save Product
+                {isEditing ? "Update Product" : "Save Product"}
               </button>
             </form>
           </div>
@@ -151,6 +363,7 @@ export default function ProductsPage() {
               <th className="p-2 text-left">Name</th>
               <th className="p-2 text-left">Price</th>
               <th className="p-2 text-left">Stock</th>
+              <th className="p-2 text-left">Rating</th>
               <th className="p-2 text-left">Category</th>
               <th className="p-2 text-left">Image</th>
               <th className="p-2 text-left">Actions</th>
@@ -162,6 +375,7 @@ export default function ProductsPage() {
                 <td className="p-2">{p.name}</td>
                 <td className="p-2">৳{p.price}</td>
                 <td className="p-2">{p.stock}</td>
+                <td className="p-2">{p.rating ? p.rating.toFixed(1) : "—"}</td>
                 <td className="p-2">{p.category?.name || "—"}</td>
                 <td className="p-2">
                   {p.image ? (
@@ -178,10 +392,16 @@ export default function ProductsPage() {
                   )}
                 </td>
                 <td className="p-2 space-x-2">
-                  <button className="bg-yellow-500 text-white px-3 py-1 rounded">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded"
+                  >
                     Edit
                   </button>
-                  <button className="bg-red-600 text-white px-3 py-1 rounded">
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="bg-red-600 text-white px-3 py-1 rounded"
+                  >
                     Delete
                   </button>
                 </td>
@@ -201,6 +421,9 @@ export default function ProductsPage() {
             </div>
             <div className="text-sm text-gray-600">Stock: {p.stock}</div>
             <div className="text-sm text-gray-600">
+              Rating: {p.rating ? p.rating.toFixed(1) : "—"}
+            </div>
+            <div className="text-sm text-gray-600">
               Category: {p.category?.name || "—"}
             </div>
             {p.image && (
@@ -214,10 +437,16 @@ export default function ProductsPage() {
               </div>
             )}
             <div className="mt-2 flex gap-2 flex-wrap">
-              <button className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">
+              <button
+                onClick={() => handleEdit(p)}
+                className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+              >
                 Edit
               </button>
-              <button className="bg-red-600 text-white px-3 py-1 rounded text-sm">
+              <button
+                onClick={() => handleDelete(p._id)}
+                className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+              >
                 Delete
               </button>
             </div>

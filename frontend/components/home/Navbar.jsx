@@ -1,7 +1,8 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCart } from "../../context/CartContext";
 import { apiFetch } from "../../utils/api";
 import {
@@ -14,11 +15,23 @@ import {
   FaThLarge,
 } from "react-icons/fa";
 
+// ✅ Small debounce helper
+const useDebouncedValue = (value, delay = 350) => {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+};
+
 const Navbar = () => {
-  const { cart, wishlist } = useCart();
+  const router = useRouter();
+  const { cart = {}, wishlist = [] } = useCart() || {};
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(searchQuery, 350);
   const [searchResults, setSearchResults] = useState([]);
 
   // ✅ user state
@@ -26,8 +39,8 @@ const Navbar = () => {
   const [loadingUser, setLoadingUser] = useState(true);
 
   // ✅ Cart count = সব quantity যোগফল
-  const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
-  const wishlistCount = wishlist.length;
+  const cartCount = Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0);
+  const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
 
   const searchRef = useRef(null);
 
@@ -45,39 +58,55 @@ const Navbar = () => {
     })();
   }, []);
 
-  // ✅ fetch products from backend on search query
+  // ✅ fetch products from backend on debounced query
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const q = debouncedQuery.trim();
+    if (!q) {
       setSearchResults([]);
       return;
     }
 
-    const fetchProducts = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         const products = await apiFetch("/api/products");
-        const filtered = products.filter((p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSearchResults(filtered);
+        const filtered = products
+          .filter((p) =>
+            String(p?.name || "").toLowerCase().includes(q.toLowerCase())
+          )
+          .slice(0, 20);
+        if (!cancelled) setSearchResults(filtered);
       } catch (err) {
         console.error("❌ Search fetch failed", err);
+        if (!cancelled) setSearchResults([]);
       }
+    })();
+
+    return () => {
+      cancelled = true;
     };
+  }, [debouncedQuery]);
 
-    fetchProducts();
-  }, [searchQuery]);
-
-  // ✅ Click outside handler -> clear search
+  // ✅ Click outside handler -> close dropdown only (query keep)
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setSearchQuery("");
         setSearchResults([]);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const goToProduct = useCallback(
+    (id) => {
+      setSearchResults([]);
+      setSearchQuery("");
+      setMobileSearchOpen(false);
+      router.push(`/products/${id}`);
+    },
+    [router]
+  );
 
   return (
     <>
@@ -88,6 +117,7 @@ const Navbar = () => {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden p-2 rounded hover:bg-gray-100"
+            aria-label="Toggle menu"
           >
             <FaBars className="w-6 h-6" />
           </button>
@@ -121,21 +151,22 @@ const Navbar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              {searchQuery && (
+              {!!searchResults.length && (
                 <div className="absolute mt-1 w-64 bg-white shadow-lg rounded-lg max-h-60 overflow-y-auto z-50">
                   {searchResults.slice(0, 6).map((p) => (
-                    <Link
+                    <button
                       key={p._id || p.id}
-                      href={`/products/${p._id || p.id}`}
-                      onClick={() => setSearchQuery("")}
-                      className="block px-3 py-2 hover:bg-gray-100"
+                      onClick={() => goToProduct(p._id || p.id)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100"
                     >
                       {p.name}
-                    </Link>
+                    </button>
                   ))}
-                  {!searchResults.length && (
-                    <p className="px-3 py-2 text-gray-500">No results found</p>
-                  )}
+                </div>
+              )}
+              {debouncedQuery && !searchResults.length && (
+                <div className="absolute mt-1 w-64 bg-white shadow-lg rounded-lg z-50">
+                  <p className="px-3 py-2 text-gray-500">No results found</p>
                 </div>
               )}
             </div>
@@ -144,6 +175,7 @@ const Navbar = () => {
             <button
               className="md:hidden p-2 rounded hover:bg-gray-100"
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              aria-label="Open search"
             >
               <FaSearch className="w-5 h-5" />
             </button>
@@ -155,7 +187,7 @@ const Navbar = () => {
 
             {/* Cart */}
             <div className="hidden md:block">
-              <Link href="/cart" className="relative ">
+              <Link href="/cart" className="relative">
                 <FaShoppingCart className="w-6 h-6" />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-3 bg-red-500 text-xs text-white px-2 py-0.5 rounded-full">
@@ -192,24 +224,22 @@ const Navbar = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            {searchQuery && (
+            {!!searchResults.length && (
               <div className="absolute left-0 right-0 mt-1 bg-white shadow-lg rounded-lg max-h-60 overflow-y-auto z-50">
                 {searchResults.slice(0, 6).map((p) => (
-                  <Link
+                  <button
                     key={p._id || p.id}
-                    href={`/products/${p._id || p.id}`}
-                    onClick={() => {
-                      setSearchQuery("");
-                      setMobileSearchOpen(false);
-                    }}
-                    className="block px-4 py-2 hover:bg-gray-100"
+                    onClick={() => goToProduct(p._id || p.id)}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                   >
                     {p.name}
-                  </Link>
+                  </button>
                 ))}
-                {!searchResults.length && (
-                  <p className="px-4 py-2 text-gray-500">No results found</p>
-                )}
+              </div>
+            )}
+            {debouncedQuery && !searchResults.length && (
+              <div className="absolute left-0 right-0 mt-1 bg-white shadow-lg rounded-lg z-50">
+                <p className="px-4 py-2 text-gray-500">No results found</p>
               </div>
             )}
           </div>
@@ -278,7 +308,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
 
   if (loadingUser) {
     return (
-      <button className="p-2 rounded text-gray-400 flex items-center gap-1">
+      <button className="p-2 rounded text-gray-400 flex items-center gap-1" disabled>
         <FaUser className="w-5 h-5" /> Loading...
       </button>
     );
@@ -290,7 +320,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
         onClick={() => {
           const currentUrl = window.location.href;
           window.location.href = `${
-            process.env.NEXT_PUBLIC_API_URL
+            process.env.NEXT_PUBLIC_AUTH_API_URL
           }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
         }}
         className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
@@ -321,7 +351,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-52 bg-white shadow rounded z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-white shadow rounded z-50">
           {/* User Info */}
           <div className="flex items-center gap-3 px-3 py-3 border-b">
             {me.avatar ? (
@@ -335,7 +365,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
             ) : (
               <FaUser className="w-6 h-6" />
             )}
-            <span className="font-medium">{me.name}</span>
+            <span className="font-medium truncate">{me.name}</span>
           </div>
 
           {/* Menu Links */}
@@ -355,9 +385,12 @@ function AccountMenu({ me, setMe, loadingUser }) {
           </Link>
           <button
             onClick={async () => {
-              await apiFetch("/auth/logout", { method: "POST" });
-              setMe(null);
-              window.location.href = "/";
+              try {
+                await apiFetch("/auth/logout", { method: "POST", credentials: "include" });
+              } finally {
+                setMe(null);
+                window.location.href = "/";
+              }
             }}
             className="w-full text-left px-3 py-2 hover:bg-gray-100"
           >
@@ -375,7 +408,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
 
   if (loadingUser) {
     return (
-      <button className="flex flex-col items-center text-gray-400">
+      <button className="flex flex-col items-center text-gray-400" disabled>
         <FaUser className="w-5 h-5" />
         <span>Account</span>
       </button>
@@ -388,7 +421,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
         onClick={() => {
           const currentUrl = window.location.href;
           window.location.href = `${
-            process.env.NEXT_PUBLIC_API_URL
+            process.env.NEXT_PUBLIC_AUTH_API_URL
           }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
         }}
         className="flex flex-col items-center"
@@ -425,6 +458,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
             <button
               onClick={() => setOpen(false)}
               className="absolute top-3 right-3 p-2 rounded hover:bg-gray-100"
+              aria-label="Close account menu"
             >
               ✕
             </button>
@@ -442,7 +476,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
               ) : (
                 <FaUser className="w-8 h-8" />
               )}
-              <span className="font-medium text-lg">{me.name}</span>
+              <span className="font-medium text-lg truncate">{me.name}</span>
             </div>
 
             {/* Menu Links */}
@@ -462,9 +496,12 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
             </Link>
             <button
               onClick={async () => {
-                await apiFetch("/auth/logout", { method: "POST" });
-                setMe(null);
-                window.location.href = "/";
+                try {
+                  await apiFetch("/auth/logout", { method: "POST", credentials: "include" });
+                } finally {
+                  setMe(null);
+                  window.location.href = "/";
+                }
               }}
               className="w-full text-left px-3 py-2 hover:bg-gray-100"
             >

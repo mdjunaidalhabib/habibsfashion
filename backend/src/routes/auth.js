@@ -1,24 +1,45 @@
 import express from "express";
 import passport from "passport";
-
 const router = express.Router();
 
-// 🔹 Middleware: login চেক
+// 🔹 Middleware: login check
 function isLoggedIn(req, res, next) {
   if (req.isAuthenticated()) return next();
   return res.status(401).json({ error: "Not logged in" });
 }
 
+// ✅ Whitelist redirect domains
+const rawOrigins =
+  process.env.CLIENT_URLS ||
+  process.env.CLIENT_URL ||
+  "http://localhost:3000";
+const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
+
+function safeRedirectUrl(urlFromState) {
+  try {
+    const u = new URL(urlFromState);
+    if (allowedOrigins.includes(u.origin)) {
+      return urlFromState;
+    }
+    return allowedOrigins[0];
+  } catch {
+    return allowedOrigins[0];
+  }
+}
+
 // 🔹 Google Login
 router.get("/google", (req, res, next) => {
-  const redirect = req.query.redirect || `${process.env.CLIENT_URL}/checkout`;
-  console.log("👉 /auth/google called. Redirect param =", redirect);
+  const defaultRedirect = `${allowedOrigins[0]}/checkout`;
+  const redirect = req.query.redirect || defaultRedirect;
+  const finalRedirect = safeRedirectUrl(redirect);
+
+  console.log("👉 /auth/google called. Redirect param =", finalRedirect);
 
   passport.authenticate("google", {
     scope: ["profile", "email"],
     prompt: "consent",
     accessType: "offline",
-    state: encodeURIComponent(redirect), // ✅ redirect কে state এ পাঠাচ্ছি
+    state: encodeURIComponent(finalRedirect),
   })(req, res, next);
 });
 
@@ -26,13 +47,14 @@ router.get("/google", (req, res, next) => {
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
+    failureRedirect: `${allowedOrigins[0]}/login`,
   }),
   (req, res) => {
-    // ✅ state থেকে redirect URL বের করো
-    const redirectUrl = req.query.state
+    const defaultRedirect = `${allowedOrigins[0]}/checkout`;
+    const stateRedirect = req.query.state
       ? decodeURIComponent(req.query.state)
-      : `${process.env.CLIENT_URL}/checkout`;
+      : defaultRedirect;
+    const redirectUrl = safeRedirectUrl(stateRedirect);
 
     console.log("➡️ Redirecting user to:", redirectUrl);
     res.redirect(redirectUrl);
@@ -47,8 +69,10 @@ router.post("/logout", (req, res, next) => {
     req.session.destroy(() => {
       res.clearCookie("connect.sid", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // ✅ production এ অবশ্যই true
+        secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain: process.env.COOKIE_DOMAIN || undefined,
+        path: "/",
       });
       res.status(200).json({ message: "Logged out" });
     });
@@ -57,13 +81,19 @@ router.post("/logout", (req, res, next) => {
 
 // 🔹 Current user
 router.get("/me", (req, res) => {
+  console.log("👉 Session:", req.session);
+  console.log("👉 User from req.user:", req.user);
+
   if (!req.user) return res.status(401).json({ error: "Not logged in" });
-  res.json(req.user);
+
+  const { _id, userId, name, email, avatar, createdAt } = req.user;
+  res.json({ _id, userId, name, email, avatar, createdAt });
 });
 
 // 🔹 Checkout secure route
 router.get("/checkout", isLoggedIn, (req, res) => {
-  res.json({ user: req.user, message: "Proceed to checkout" });
+  const { _id, userId, name, email } = req.user;
+  res.json({ user: { _id, userId, name, email }, message: "Proceed to checkout" });
 });
 
 export default router;

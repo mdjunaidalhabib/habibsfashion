@@ -21,16 +21,17 @@ export async function apiFetch(path, options = {}) {
         errorText = "Unknown error";
       }
 
-      // ❌ এখানে console.error নেই
+      // ❌ console.error বাদ → শুধু error throw করবো
       throw new Error(
         `API error: ${res.status} ${res.statusText} → ${errorText}`
       );
     }
 
-    return await res.json(); // ✅ সবসময় JSON ফেরত দেবে
+    // ✅ সবসময় JSON ফেরত দেবে
+    return await res.json();
   } catch (err) {
-    // ❌ এখানে আর console.error করা হবে না
-    // শুধু error throw করবো → caller (Navbar, ProductPage ইত্যাদি) handle করবে
+    // ❌ console.error বাদ
+    // caller (Navbar, ProductPage ইত্যাদি) নিজে handle করবে
     throw err;
   }
 }

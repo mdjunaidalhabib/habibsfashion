@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const dir = "uploads";
     if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
+      fs.mkdirSync(dir, { recursive: true });
     }
     cb(null, dir);
   },
@@ -23,66 +23,57 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-/**
- * ✅ সব products আনবে
- * GET /api/products
- */
+// =========================
+// Helper: calculate rating
+// =========================
+function calculateRating(reviews = []) {
+  if (!reviews.length) return 0;
+  const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+  return parseFloat((total / reviews.length).toFixed(1));
+}
+
+// =========================
+// Routes
+// =========================
+
+// GET all products
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find().populate("category", "name");
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch products" });
+    res.status(500).json({ error: "Failed to fetch products", details: err.message });
   }
 });
 
-/**
- * ✅ নির্দিষ্ট Category অনুযায়ী products আনবে
- * GET /api/products/category/:categoryId
- */
+// GET products by category
 router.get("/category/:categoryId", async (req, res) => {
   try {
-    const products = await Product.find({ category: req.params.categoryId })
-      .populate("category", "name");
+    const products = await Product.find({ category: req.params.categoryId }).populate("category", "name");
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch products by category" });
+    res.status(500).json({ error: "Failed to fetch products by category", details: err.message });
   }
 });
 
-/**
- * ✅ নির্দিষ্ট Product আনবে (Single Product Page এর জন্য দরকারি)
- * GET /api/products/:id
- */
+// GET single product
 router.get("/:id", async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate("category", "name");
-
-    if (!product) {
-      return res.status(404).json({ error: "Product not found" });
-    }
-
+    const product = await Product.findById(req.params.id).populate("category", "name");
+    if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {
-    res.status(500).json({
-      error: "Failed to fetch product",
-      details: err.message,
-    });
+    res.status(500).json({ error: "Failed to fetch product", details: err.message });
   }
 });
 
-/**
- * ✅ নতুন product add
- * POST /api/products
- */
+// POST new product
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const {
       name,
       price,
       oldPrice,
-      rating,
       description,
       additionalInfo,
       stock,
@@ -100,6 +91,9 @@ router.post("/", upload.single("image"), async (req, res) => {
     let colors = [];
     if (req.body.colors) colors = JSON.parse(req.body.colors);
 
+    // ✅ Auto calculate rating from reviews
+    const rating = calculateRating(reviews);
+
     const product = new Product({
       name,
       price,
@@ -116,24 +110,15 @@ router.post("/", upload.single("image"), async (req, res) => {
     });
 
     await product.save();
-    const savedProduct = await Product.findById(product._id).populate(
-      "category",
-      "name"
-    );
+    const savedProduct = await Product.findById(product._id).populate("category", "name");
 
     res.status(201).json(savedProduct);
   } catch (err) {
-    res.status(400).json({
-      error: "Failed to create product",
-      details: err.message,
-    });
+    res.status(400).json({ error: "Failed to create product", details: err.message });
   }
 });
 
-/**
- * ✅ update product
- * PUT /api/products/:id
- */
+// PUT update product
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -142,6 +127,9 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     if (req.body.reviews) updateData.reviews = JSON.parse(req.body.reviews);
     if (req.body.images) updateData.images = JSON.parse(req.body.images);
     if (req.body.colors) updateData.colors = JSON.parse(req.body.colors);
+
+    // ✅ Auto calculate rating from updated reviews
+    updateData.rating = calculateRating(updateData.reviews || []);
 
     const product = await Product.findByIdAndUpdate(
       req.params.id,
@@ -153,25 +141,19 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 
     res.json(product);
   } catch (err) {
-    res.status(400).json({
-      error: "Failed to update product",
-      details: err.message,
-    });
+    res.status(400).json({ error: "Failed to update product", details: err.message });
   }
 });
 
-/**
- * ✅ delete product
- * DELETE /api/products/:id
- */
+// DELETE product
 router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    res.json({ message: "Product deleted" });
+    res.json({ message: "Product deleted successfully" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete product" });
+    res.status(500).json({ error: "Failed to delete product", details: err.message });
   }
 });
 
