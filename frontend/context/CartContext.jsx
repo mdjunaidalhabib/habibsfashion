@@ -15,7 +15,6 @@ export function CartProvider({ children }) {
       const parsed = JSON.parse(savedCart);
       const normalized = {};
       Object.keys(parsed).forEach((key) => {
-        // ✅ শুধু MongoDB _id (string) রাখব
         if (String(key).length > 10) {
           normalized[String(key)] = parsed[key];
         }
@@ -28,7 +27,7 @@ export function CartProvider({ children }) {
     const savedWishlist = localStorage.getItem("wishlist");
     if (savedWishlist) {
       const parsed = JSON.parse(savedWishlist);
-      const normalized = parsed.filter((id) => String(id).length > 10); // ✅ numeric বাদ
+      const normalized = parsed.filter((id) => String(id).length > 10);
       setWishlist(normalized.map((id) => String(id)));
       localStorage.setItem("wishlist", JSON.stringify(normalized));
     }
@@ -43,20 +42,30 @@ export function CartProvider({ children }) {
     localStorage.setItem("wishlist", JSON.stringify(wishlist));
   }, [wishlist]);
 
-  // ✅ সবসময় String(id) ব্যবহার
+  // ✅ Cart update logic (Unique product count)
   const updateCart = (id, change) => {
     const key = String(id);
     setCart((prev) => {
-      const qty = (prev[key] || 0) + change;
+      const exists = prev[key] || 0;
+
+      // 👉 প্রথমবার add করলে শুধু 1 হবে
+      if (!exists && change > 0) {
+        return { ...prev, [key]: 1 };
+      }
+
+      // 👉 quantity change হলে শুধু সেই product update হবে
+      const qty = exists + change;
       if (qty <= 0) {
         const copy = { ...prev };
         delete copy[key];
         return copy;
       }
+
       return { ...prev, [key]: qty };
     });
   };
 
+  // ✅ Remove product from cart
   const removeFromCart = (id) => {
     const key = String(id);
     setCart((prev) => {
@@ -66,12 +75,16 @@ export function CartProvider({ children }) {
     });
   };
 
+  // ✅ Toggle wishlist
   const toggleWishlist = (id) => {
     const key = String(id);
     setWishlist((prev) =>
       prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
     );
   };
+
+  // ✅ Unique product count (cart icon এর জন্য)
+  const cartCount = Object.keys(cart).length;
 
   return (
     <CartContext.Provider
@@ -83,6 +96,7 @@ export function CartProvider({ children }) {
         updateCart,
         removeFromCart,
         toggleWishlist,
+        cartCount, // 👉 header/cart icon এ এইটা ব্যবহার করবেন
       }}
     >
       {children}

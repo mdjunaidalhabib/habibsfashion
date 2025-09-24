@@ -25,14 +25,24 @@ const ProductCard = ({ product }) => {
   const isInWishlist = wishlist.includes(productId);
   const totalPrice = product?.price * quantity;
 
+  // ✅ Updated Cart Logic
   const updateCart = (id, change) => {
     setCart((prev) => {
-      const qty = (prev[id] || 0) + change;
+      const exists = prev[id] || 0;
+
+      // প্রথমবার Add করলে cart এ 1 product count হবে
+      if (!exists && change > 0) {
+        return { ...prev, [id]: 1 };
+      }
+
+      // Quantity change হলে শুধু সেই product update হবে
+      const qty = exists + change;
       if (qty <= 0) {
         const copy = { ...prev };
         delete copy[id];
         return copy;
       }
+
       return { ...prev, [id]: qty };
     });
   };
@@ -48,28 +58,32 @@ const ProductCard = ({ product }) => {
       href={`/products/${productId}`}
       className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col"
     >
-      {/* Discount badge */}
-      {product?.oldPrice && (
-        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-semibold">
-          -{discount}%
-        </div>
-      )}
-
-      {/* Wishlist */}
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          toggleWishlist(productId);
-        }}
-        className={`absolute top-1 right-1 p-2 rounded-full shadow-md transition ${
-          isInWishlist ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
-        }`}
-      >
-        <FaHeart className="w-4 h-4" />
-      </button>
-
-      {/* ✅ Next.js Image */}
+      {/* ✅ Image Container */}
       <div className="relative w-full h-40 sm:h-48 md:h-52 mb-3">
+        {/* ✅ Top Badges inside image container */}
+        <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-10">
+          {/* Discount badge */}
+          {product?.oldPrice && (
+            <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm transition transform hover:scale-105">
+              -{discount}%
+            </div>
+          )}
+
+          {/* Wishlist */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              toggleWishlist(productId);
+            }}
+            className={`p-2 rounded-full shadow-md transition transform hover:scale-110 ${
+              isInWishlist ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
+            }`}
+          >
+            <FaHeart className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* ✅ Product Image */}
         <Image
           src={makeImageUrl(product?.image)}
           alt={product?.name || "Product"}
