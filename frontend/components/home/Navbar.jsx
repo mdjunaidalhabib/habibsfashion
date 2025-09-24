@@ -148,8 +148,10 @@ const Navbar = () => {
               <FaSearch className="w-5 h-5" />
             </button>
 
-            {/* ✅ Account Menu */}
-            <AccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
+            {/* ✅ Account Menu: Desktop only */}
+            <div className="hidden md:block">
+              <AccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
+            </div>
 
             {/* Cart */}
             <div className="hidden md:block">
@@ -248,81 +250,18 @@ const Navbar = () => {
             )}
             <span>Cart</span>
           </Link>
+
+          {/* ✅ Account for Mobile */}
+          <MobileAccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
         </div>
       </div>
-
-      {/* ----------- MOBILE MENU DRAWER ----------- */}
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50"
-            onClick={() => setMenuOpen(false)}
-          ></div>
-          <div className="relative bg-white w-64 h-full shadow-lg z-50 p-6">
-            <button
-              onClick={() => setMenuOpen(false)}
-              className="absolute top-3 right-3 p-2 rounded hover:bg-gray-100"
-            >
-              ✕
-            </button>
-            <h2 className="text-lg font-semibold mb-4">Menu</h2>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/products"
-                  className="block hover:text-blue-600"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  All Products
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/categories"
-                  className="block hover:text-blue-600"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Shop by Category
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/cart"
-                  className="block hover:text-blue-600"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Cart
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/wishlist"
-                  className="block hover:text-blue-600"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Wishlist
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/account"
-                  className="block hover:text-blue-600"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Account
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      )}
     </>
   );
 };
 
 export default Navbar;
 
-// ---------- Account Menu ----------
+// ---------- Account Menu (Desktop dropdown) ----------
 function AccountMenu({ me, setMe, loadingUser }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -349,7 +288,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
     return (
       <button
         onClick={() => {
-          const currentUrl = window.location.href; // ✅ বর্তমান পেজ ক্যাপচার
+          const currentUrl = window.location.href;
           window.location.href = `${
             process.env.NEXT_PUBLIC_API_URL
           }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
@@ -382,7 +321,24 @@ function AccountMenu({ me, setMe, loadingUser }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 bg-white shadow rounded w-44 z-50">
+        <div className="absolute right-0 mt-2 w-52 bg-white shadow rounded z-50">
+          {/* User Info */}
+          <div className="flex items-center gap-3 px-3 py-3 border-b">
+            {me.avatar ? (
+              <Image
+                src={me.avatar}
+                alt={me.name}
+                width={36}
+                height={36}
+                className="rounded-full"
+              />
+            ) : (
+              <FaUser className="w-6 h-6" />
+            )}
+            <span className="font-medium">{me.name}</span>
+          </div>
+
+          {/* Menu Links */}
           <Link
             href="/profile"
             className="block px-3 py-2 hover:bg-gray-100"
@@ -410,5 +366,113 @@ function AccountMenu({ me, setMe, loadingUser }) {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------- Mobile Account Menu (Fullscreen Drawer) ----------
+function MobileAccountMenu({ me, setMe, loadingUser }) {
+  const [open, setOpen] = useState(false);
+
+  if (loadingUser) {
+    return (
+      <button className="flex flex-col items-center text-gray-400">
+        <FaUser className="w-5 h-5" />
+        <span>Account</span>
+      </button>
+    );
+  }
+
+  if (!me) {
+    return (
+      <button
+        onClick={() => {
+          const currentUrl = window.location.href;
+          window.location.href = `${
+            process.env.NEXT_PUBLIC_API_URL
+          }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
+        }}
+        className="flex flex-col items-center"
+      >
+        <FaUser className="w-5 h-5" />
+        <span>Account</span>
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex flex-col items-center"
+      >
+        {me.avatar ? (
+          <Image
+            src={me.avatar}
+            alt={me.name}
+            width={28}
+            height={28}
+            className="rounded-full"
+          />
+        ) : (
+          <FaUser className="w-5 h-5" />
+        )}
+        <span>Account</span>
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex">
+          <div className="bg-white w-full h-full p-6 relative">
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded hover:bg-gray-100"
+            >
+              ✕
+            </button>
+
+            {/* User Info */}
+            <div className="flex items-center gap-3 mb-6 border-b pb-4">
+              {me.avatar ? (
+                <Image
+                  src={me.avatar}
+                  alt={me.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                />
+              ) : (
+                <FaUser className="w-8 h-8" />
+              )}
+              <span className="font-medium text-lg">{me.name}</span>
+            </div>
+
+            {/* Menu Links */}
+            <Link
+              href="/profile"
+              className="block px-3 py-2 hover:bg-gray-100"
+              onClick={() => setOpen(false)}
+            >
+              My Profile
+            </Link>
+            <Link
+              href="/orders"
+              className="block px-3 py-2 hover:bg-gray-100"
+              onClick={() => setOpen(false)}
+            >
+              My Orders
+            </Link>
+            <button
+              onClick={async () => {
+                await apiFetch("/auth/logout", { method: "POST" });
+                setMe(null);
+                window.location.href = "/";
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-gray-100"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
