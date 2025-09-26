@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { makeImageUrl } from "../../../../lib/utils";
+import { makeImageUrl } from "../../../lib/utils";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);

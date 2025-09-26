@@ -46,20 +46,26 @@ app.use(
 const rawOrigins =
   process.env.CLIENT_URLS ||
   process.env.CLIENT_URL ||
-  "http://localhost:3000";
+  "http://localhost:3000,http://localhost:3001";
+
 const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      // allow no-origin (mobile apps, curl, etc.)
+      // allow no-origin (mobile apps, curl, postman etc.)
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+
       return cb(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     credentials: true,
   })
 );
+
 
 // ✅ JSON parsing
 app.use(express.json());

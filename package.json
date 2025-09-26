@@ -36,12 +36,13 @@
     "yargs": "^17.7.2",
     "yargs-parser": "^21.1.1"
   },
-  "scripts": {
-    "frontend": "cd frontend && npm run dev",
-    "backend": "cd backend && npm run dev",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
-    "build": "next build"
-  },
+"scripts": {
+  "start:frontend": "cd frontend && npm run dev",
+  "start:admin": "cd admin && npm run dev",
+  "start:backend": "cd backend && npm run dev",
+  "dev": "concurrently \"npm run start:frontend\" \"npm run start:admin\" \"npm run start:backend\"",
+  "build": "next build"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mdjunaidalhabib/ecommerce.git"
