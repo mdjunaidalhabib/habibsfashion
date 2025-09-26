@@ -118,38 +118,62 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-// PUT update product
+// PUT update product (✅ delete old image if new one uploaded)
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
-    const updateData = { ...req.body };
-    if (req.file) updateData.image = `/uploads/${req.file.filename}`;
-
-    if (req.body.reviews) updateData.reviews = JSON.parse(req.body.reviews);
-    if (req.body.images) updateData.images = JSON.parse(req.body.images);
-    if (req.body.colors) updateData.colors = JSON.parse(req.body.colors);
-
-    // ✅ Auto calculate rating from updated reviews
-    updateData.rating = calculateRating(updateData.reviews || []);
-
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    ).populate("category", "name");
-
+    const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    res.json(product);
+    const oldImage = product.image;
+
+    // Update fields
+    product.name = req.body.name;
+    product.price = req.body.price;
+    product.oldPrice = req.body.oldPrice;
+    product.stock = req.body.stock;
+    product.description = req.body.description;
+    product.additionalInfo = req.body.additionalInfo;
+    product.category = req.body.category;
+
+    if (req.body.reviews) product.reviews = JSON.parse(req.body.reviews);
+    if (req.body.images) product.images = JSON.parse(req.body.images);
+    if (req.body.colors) product.colors = JSON.parse(req.body.colors);
+
+    // ✅ Auto calculate rating
+    product.rating = calculateRating(product.reviews || []);
+
+    // ✅ Handle image replace
+    if (req.file) {
+      if (oldImage) {
+        const oldPath = path.join(process.cwd(), oldImage); // assuming oldImage stored like "/uploads/file.jpg"
+        if (fs.existsSync(oldPath)) {
+          await fs.promises.unlink(oldPath);
+        }
+      }
+      product.image = `/uploads/${req.file.filename}`;
+    }
+
+    const updated = await product.save();
+    const populated = await Product.findById(updated._id).populate("category", "name");
+
+    res.json(populated);
   } catch (err) {
     res.status(400).json({ error: "Failed to update product", details: err.message });
   }
 });
 
-// DELETE product
+// DELETE product (✅ delete image too)
 router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
+
+    if (product.image) {
+      const imgPath = path.join(process.cwd(), product.image);
+      if (fs.existsSync(imgPath)) {
+        await fs.promises.unlink(imgPath);
+      }
+    }
 
     res.json({ message: "Product deleted successfully" });
   } catch (err) {

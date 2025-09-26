@@ -211,6 +211,33 @@ const Navbar = () => {
           </div>
         </div>
 
+        {/* ----------- MOBILE MENU ----------- */}
+        {menuOpen && (
+          <div className="md:hidden bg-white shadow-lg border-t absolute top-full left-0 w-full z-50">
+            <Link
+              href="/"
+              className="block px-4 py-2 hover:bg-gray-100"
+              onClick={() => setMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/products"
+              className="block px-4 py-2 hover:bg-gray-100"
+              onClick={() => setMenuOpen(false)}
+            >
+              All Products
+            </Link>
+            <Link
+              href="/categories"
+              className="block px-4 py-2 hover:bg-gray-100"
+              onClick={() => setMenuOpen(false)}
+            >
+              Shop by Category
+            </Link>
+          </div>
+        )}
+
         {/* ----------- MOBILE SEARCH ----------- */}
         {mobileSearchOpen && (
           <div

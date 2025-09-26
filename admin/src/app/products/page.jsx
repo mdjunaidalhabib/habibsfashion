@@ -10,6 +10,9 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
@@ -28,18 +31,24 @@ export default function ProductsPage() {
   // Fetch Products + Categories
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
+      setError(null);
       try {
         const prodRes = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/products`
         );
+        if (!prodRes.ok) throw new Error("Failed to fetch products");
         setProducts(await prodRes.json());
 
         const catRes = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
         );
+        if (!catRes.ok) throw new Error("Failed to fetch categories");
         setCategories(await catRes.json());
       } catch (err) {
-        console.error("Fetch error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     }
     fetchData();
@@ -72,20 +81,18 @@ export default function ProductsPage() {
     setNewProduct({ ...newProduct, [name]: value });
   }
 
-  // Handle Reviews Change
+  // Reviews handler
   function handleReviewChange(index, field, value) {
     const updatedReviews = [...newProduct.reviews];
     updatedReviews[index][field] = value;
     setNewProduct({ ...newProduct, reviews: updatedReviews });
   }
-
   function addReview() {
     setNewProduct({
       ...newProduct,
       reviews: [...newProduct.reviews, { user: "", rating: "", comment: "" }],
     });
   }
-
   function removeReview(index) {
     const updatedReviews = [...newProduct.reviews];
     updatedReviews.splice(index, 1);
@@ -101,7 +108,7 @@ export default function ProductsPage() {
     }
   }
 
-  // Save Product (Add or Update)
+  // Save Product
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -112,21 +119,15 @@ export default function ProductsPage() {
 
     const formData = new FormData();
 
-    formData.append("name", newProduct.name);
-    formData.append("price", newProduct.price);
-    formData.append("oldPrice", newProduct.oldPrice);
-    formData.append("stock", newProduct.stock);
-    formData.append("description", newProduct.description);
-    formData.append("additionalInfo", newProduct.additionalInfo);
-    formData.append("category", newProduct.category);
-
-    if (newProduct.image && typeof newProduct.image !== "string") {
-      formData.append("image", newProduct.image);
-    }
-
-    formData.append("reviews", JSON.stringify(newProduct.reviews || []));
-    formData.append("images", JSON.stringify(newProduct.images || []));
-    formData.append("colors", JSON.stringify(newProduct.colors || []));
+    Object.keys(newProduct).forEach((key) => {
+      if (key === "image") {
+        if (newProduct.image) {
+          formData.append("image", newProduct.image);
+        }
+      } else {
+        formData.append(key, typeof newProduct[key] === "object" ? JSON.stringify(newProduct[key]) : newProduct[key]);
+      }
+    });
 
     const res = await fetch(url, {
       method,
@@ -134,6 +135,11 @@ export default function ProductsPage() {
     });
 
     const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Something went wrong");
+      return;
+    }
 
     if (method === "POST") {
       setProducts([...products, data]);
@@ -147,10 +153,9 @@ export default function ProductsPage() {
   // Delete Product
   async function handleDelete(id) {
     if (confirm("Are you sure?")) {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`,
-        { method: "DELETE" }
-      );
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`, {
+        method: "DELETE",
+      });
       setProducts(products.filter((p) => p._id !== id));
     }
   }
@@ -168,7 +173,7 @@ export default function ProductsPage() {
       description: p.description,
       additionalInfo: p.additionalInfo,
       category: p.category?._id || "",
-      image: p.image,
+      image: p.image, // string path
       images: p.images,
       colors: p.colors,
       reviews: p.reviews || [],
@@ -179,6 +184,9 @@ export default function ProductsPage() {
   return (
     <div className="p-2 sm:p-4">
       <h2 className="text-xl sm:text-2xl font-bold mb-4">Products</h2>
+
+      {loading && <p>Loading...</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
       <button
         onClick={() => setShowForm(true)}
@@ -203,151 +211,43 @@ export default function ProductsPage() {
             </h3>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                name="name"
-                value={newProduct.name}
-                onChange={handleChange}
-                placeholder="Product Name"
-                className="w-full border p-2 rounded"
-                required
-              />
+              <input type="text" name="name" value={newProduct.name} onChange={handleChange} placeholder="Product Name" className="w-full border p-2 rounded" required />
+              <input type="number" name="price" value={newProduct.price} onChange={handleChange} placeholder="Price" className="w-full border p-2 rounded" required />
+              <input type="number" name="oldPrice" value={newProduct.oldPrice} onChange={handleChange} placeholder="Old Price" className="w-full border p-2 rounded" />
+              <input type="number" name="stock" value={newProduct.stock} onChange={handleChange} placeholder="Stock" className="w-full border p-2 rounded" required />
 
-              <input
-                type="number"
-                name="price"
-                value={newProduct.price}
-                onChange={handleChange}
-                placeholder="Price"
-                className="w-full border p-2 rounded"
-                required
-              />
+              <textarea name="description" value={newProduct.description} onChange={handleChange} placeholder="Description" className="w-full border p-2 rounded" />
+              <textarea name="additionalInfo" value={newProduct.additionalInfo} onChange={handleChange} placeholder="Additional Info" className="w-full border p-2 rounded" />
 
-              <input
-                type="number"
-                name="oldPrice"
-                value={newProduct.oldPrice}
-                onChange={handleChange}
-                placeholder="Old Price"
-                className="w-full border p-2 rounded"
-              />
-
-              <input
-                type="number"
-                name="stock"
-                value={newProduct.stock}
-                onChange={handleChange}
-                placeholder="Stock"
-                className="w-full border p-2 rounded"
-                required
-              />
-
-              <textarea
-                name="description"
-                value={newProduct.description}
-                onChange={handleChange}
-                placeholder="Description"
-                className="w-full border p-2 rounded"
-              />
-
-              <textarea
-                name="additionalInfo"
-                value={newProduct.additionalInfo}
-                onChange={handleChange}
-                placeholder="Additional Info"
-                className="w-full border p-2 rounded"
-              />
-
-              {/* Category */}
-              <select
-                name="category"
-                value={newProduct.category}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              >
+              <select name="category" value={newProduct.category} onChange={handleChange} className="w-full border p-2 rounded" required>
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
+                  <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
               </select>
 
-              {/* Thumbnail */}
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full border p-2 rounded"
-                onChange={handleImageChange}
-              />
+              <input type="file" accept="image/*" className="w-full border p-2 rounded" onChange={handleImageChange} />
               {preview && (
                 <div className="relative w-24 h-24">
-                  <Image
-                    src={preview}
-                    alt="preview"
-                    fill
-                    className="object-cover rounded border"
-                  />
+                  <Image src={preview} alt="preview" fill className="object-cover rounded border" />
                 </div>
               )}
 
-              {/* ✅ Reviews Section */}
+              {/* Reviews */}
               <div className="border p-3 rounded">
                 <h4 className="font-semibold mb-2">Reviews</h4>
                 {newProduct.reviews.map((review, index) => (
                   <div key={index} className="border p-2 rounded mb-2 space-y-2">
-                    <input
-                      type="text"
-                      value={review.user}
-                      onChange={(e) =>
-                        handleReviewChange(index, "user", e.target.value)
-                      }
-                      placeholder="User"
-                      className="w-full border p-2 rounded"
-                    />
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="5"
-                      value={review.rating}
-                      onChange={(e) =>
-                        handleReviewChange(index, "rating", e.target.value)
-                      }
-                      placeholder="Rating (0-5)"
-                      className="w-full border p-2 rounded"
-                    />
-                    <textarea
-                      value={review.comment}
-                      onChange={(e) =>
-                        handleReviewChange(index, "comment", e.target.value)
-                      }
-                      placeholder="Comment"
-                      className="w-full border p-2 rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeReview(index)}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
-                    >
-                      Remove Review
-                    </button>
+                    <input type="text" value={review.user} onChange={(e) => handleReviewChange(index, "user", e.target.value)} placeholder="User" className="w-full border p-2 rounded" />
+                    <input type="number" min="1" max="5" value={review.rating} onChange={(e) => handleReviewChange(index, "rating", e.target.value)} placeholder="Rating (1-5)" className="w-full border p-2 rounded" />
+                    <textarea value={review.comment} onChange={(e) => handleReviewChange(index, "comment", e.target.value)} placeholder="Comment" className="w-full border p-2 rounded" />
+                    <button type="button" onClick={() => removeReview(index)} className="bg-red-500 text-white px-3 py-1 rounded">Remove Review</button>
                   </div>
                 ))}
-                <button
-                  type="button"
-                  onClick={addReview}
-                  className="bg-blue-500 text-white px-3 py-1 rounded mt-2"
-                >
-                  Add Review
-                </button>
+                <button type="button" onClick={addReview} className="bg-blue-500 text-white px-3 py-1 rounded mt-2">Add Review</button>
               </div>
 
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded w-full"
-              >
+              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-full">
                 {isEditing ? "Update Product" : "Save Product"}
               </button>
             </form>
@@ -355,7 +255,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Table for desktop */}
+      {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto bg-white rounded-lg border">
         <table className="w-full text-sm">
           <thead className="bg-gray-200">
@@ -380,30 +280,13 @@ export default function ProductsPage() {
                 <td className="p-2">
                   {p.image ? (
                     <div className="relative w-10 h-10">
-                      <Image
-                        src={makeImageUrl(p.image)}
-                        alt={p.name}
-                        fill
-                        className="object-cover rounded border"
-                      />
+                      <Image src={makeImageUrl(p.image)} alt={p.name} fill className="object-cover rounded border" />
                     </div>
-                  ) : (
-                    "—"
-                  )}
+                  ) : "—"}
                 </td>
                 <td className="p-2 space-x-2">
-                  <button
-                    onClick={() => handleEdit(p)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p._id)}
-                    className="bg-red-600 text-white px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => handleEdit(p)} className="bg-yellow-500 text-white px-3 py-1 rounded">Edit</button>
+                  <button onClick={() => handleDelete(p._id)} className="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
                 </td>
               </tr>
             ))}
@@ -411,7 +294,7 @@ export default function ProductsPage() {
         </table>
       </div>
 
-      {/* Card view for mobile */}
+      {/* Mobile Cards */}
       <div className="grid gap-3 md:hidden">
         {products.map((p) => (
           <div key={p._id} className="border rounded-lg p-3 bg-white">
@@ -420,35 +303,16 @@ export default function ProductsPage() {
               <span className="text-sm text-gray-600">৳{p.price}</span>
             </div>
             <div className="text-sm text-gray-600">Stock: {p.stock}</div>
-            <div className="text-sm text-gray-600">
-              Rating: {p.rating ? p.rating.toFixed(1) : "—"}
-            </div>
-            <div className="text-sm text-gray-600">
-              Category: {p.category?.name || "—"}
-            </div>
+            <div className="text-sm text-gray-600">Rating: {p.rating ? p.rating.toFixed(1) : "—"}</div>
+            <div className="text-sm text-gray-600">Category: {p.category?.name || "—"}</div>
             {p.image && (
               <div className="relative w-20 h-20 mt-2">
-                <Image
-                  src={makeImageUrl(p.image)}
-                  alt={p.name}
-                  fill
-                  className="object-cover rounded border"
-                />
+                <Image src={makeImageUrl(p.image)} alt={p.name} fill className="object-cover rounded border" />
               </div>
             )}
             <div className="mt-2 flex gap-2 flex-wrap">
-              <button
-                onClick={() => handleEdit(p)}
-                className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(p._id)}
-                className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-              >
-                Delete
-              </button>
+              <button onClick={() => handleEdit(p)} className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Edit</button>
+              <button onClick={() => handleDelete(p._id)} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>
             </div>
           </div>
         ))}

@@ -8,7 +8,9 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_GOOGLE_IMAGE_HOST || "lh3.googleusercontent.com", // ✅ Google Avatar host fallback
+        hostname:
+          process.env.NEXT_PUBLIC_GOOGLE_IMAGE_HOST ||
+          "lh3.googleusercontent.com", // ✅ Google Avatar host fallback
       },
       {
         protocol: parsed.protocol.replace(":", ""), // http or https
@@ -20,4 +22,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
