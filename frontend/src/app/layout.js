@@ -1,7 +1,7 @@
 "use client";
 import "./globals.css";
 import { CartProvider } from "../../context/CartContext";
-import Navbar from "../../components/home/Navbar";
+import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/home/footer";
 
 
