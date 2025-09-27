@@ -31,18 +31,9 @@ const sideMenu = {
   visible: { x: 0 },
   exit: { x: "-100%" },
 };
-const topBar = {
-  open: { rotate: 45, y: 10 },
-  closed: { rotate: 0, y: 0 },
-};
-const middleBar = {
-  open: { opacity: 0 },
-  closed: { opacity: 1 },
-};
-const bottomBar = {
-  open: { rotate: -45, y: -7 },
-  closed: { rotate: 0, y: 0 },
-};
+const topBar = { open: { rotate: 45, y: 10 }, closed: { rotate: 0, y: 0 } };
+const middleBar = { open: { opacity: 0 }, closed: { opacity: 1 } };
+const bottomBar = { open: { rotate: -45, y: -7 }, closed: { rotate: 0, y: 0 } };
 
 const Navbar = () => {
   const router = useRouter();
@@ -66,12 +57,24 @@ const Navbar = () => {
 
   const searchRef = useRef(null);
 
-  // ✅ Load current user
+  // ✅ Load current user (JWT)
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiFetch("/auth/me", { credentials: "include" });
-        setMe(data);
+        // প্রথমে localStorage থেকে নাও
+        const cachedUser =
+          typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        if (cachedUser) {
+          setMe(JSON.parse(cachedUser));
+          setLoadingUser(false);
+        }
+
+        // backend verify
+        const data = await apiFetch("/auth/me");
+        if (data?.user) {
+          setMe(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
       } catch {
         setMe(null);
       } finally {
@@ -141,6 +144,14 @@ const Navbar = () => {
     [router]
   );
 
+  // ✅ Logout
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setMe(null);
+    window.location.href = "/";
+  };
+
   return (
     <>
       {/* ----------- TOP NAVBAR ----------- */}
@@ -150,9 +161,6 @@ const Navbar = () => {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden relative w-8 h-8 flex flex-col justify-center items-center gap-[5px] z-50"
-            aria-label="Toggle menu"
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
           >
             <motion.span
               variants={topBar}
@@ -181,15 +189,9 @@ const Navbar = () => {
 
           {/* Middle Menu (Desktop only) */}
           <div className="hidden md:flex items-center gap-6 font-medium">
-            <Link href="/" className="hover:text-blue-600 transition">
-              Home
-            </Link>
-            <Link href="/products" className="hover:text-blue-600 transition">
-              All Products
-            </Link>
-            <Link href="/categories" className="hover:text-blue-600 transition">
-              Shop by Category
-            </Link>
+            <Link href="/">Home</Link>
+            <Link href="/products">All Products</Link>
+            <Link href="/categories">Shop by Category</Link>
           </div>
 
           {/* Right: Search + Account + Cart + Wishlist */}
@@ -216,25 +218,19 @@ const Navbar = () => {
                   ))}
                 </div>
               )}
-              {debouncedQuery && !searchResults.length && (
-                <div className="absolute mt-1 w-64 bg-white shadow-lg rounded-lg z-50">
-                  <p className="px-3 py-2 text-gray-500">No results found</p>
-                </div>
-              )}
             </div>
 
             {/* Mobile Search toggle */}
             <button
               className="md:hidden p-2 rounded hover:bg-gray-100"
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              aria-label="Open search"
             >
               <FaSearch className="w-5 h-5" />
             </button>
 
-            {/* ✅ Account Menu: Desktop only */}
+            {/* ✅ Account Menu: Desktop */}
             <div className="hidden md:block">
-              <AccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
+              <AccountMenu me={me} setMe={setMe} loadingUser={loadingUser} onLogout={handleLogout} />
             </div>
 
             {/* Cart */}
@@ -261,99 +257,30 @@ const Navbar = () => {
               </Link>
             </div>
           </div>
-
-
-
-          
         </div>
 
         {/* ----------- MOBILE MENU (with animation) ----------- */}
         <AnimatePresence>
           {menuOpen && (
-            <>
-              {/* Overlay */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="fixed inset-0 bg-black z-40"
-                onClick={() => setMenuOpen(false)}
-              />
-              {/* Sidebar */}
-              <motion.div
-                id="mobile-menu"
-                role="navigation"
-                variants={sideMenu}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="fixed top-[52px] left-0 bottom-0 w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 z-50"
-              >
-                <Link
-                  href="/"
-                  className="block px-4 py-2 hover:bg-gray-100"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <Link
-                  href="/products"
-                  className="block px-4 py-2 hover:bg-gray-100"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  All Products
-                </Link>
-                <Link
-                  href="/categories"
-                  className="block px-4 py-2 hover:bg-gray-100"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Shop by Category
-                </Link>
-              </motion.div>
-            </>
+            <motion.div
+              id="mobile-menu"
+              variants={sideMenu}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="fixed top-[52px] left-0 bottom-0 w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 z-50"
+            >
+              <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
+              <Link href="/products" onClick={() => setMenuOpen(false)}>All Products</Link>
+              <Link href="/categories" onClick={() => setMenuOpen(false)}>Shop by Category</Link>
+            </motion.div>
           )}
         </AnimatePresence>
-
-        {/* ----------- MOBILE SEARCH ----------- */}
-        {mobileSearchOpen && (
-          <div
-            className="md:hidden bg-white border-t px-4 py-2 shadow relative"
-            ref={searchRef}
-          >
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {!!searchResults.length && (
-              <div className="absolute left-0 right-0 mt-1 bg-white shadow-lg rounded-lg max-h-60 overflow-y-auto z-50">
-                {searchResults.slice(0, 6).map((p) => (
-                  <button
-                    key={p._id || p.id}
-                    onClick={() => goToProduct(p._id || p.id)}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            {debouncedQuery && !searchResults.length && (
-              <div className="absolute left-0 right-0 mt-1 bg-white shadow-lg rounded-lg z-50">
-                <p className="px-4 py-2 text-gray-500">No results found</p>
-              </div>
-            )}
-          </div>
-        )}
       </nav>
 
       {/* ----------- MOBILE BOTTOM NAV ----------- */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t md:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden z-50">
         <div className="flex justify-around items-center py-2 text-sm">
           <Link href="/" className="flex flex-col items-center">
             <FaHome className="w-5 h-5" />
@@ -363,25 +290,15 @@ const Navbar = () => {
             <FaThLarge className="w-5 h-5" />
             <span>Category</span>
           </Link>
-          <Link href="/wishlist" className="relative flex flex-col items-center">
+          <Link href="/wishlist" className="flex flex-col items-center">
             <FaHeart className="w-5 h-5" />
-            {wishlistCount > 0 && (
-              <span className="absolute -top-1 right-1 bg-red-500 text-xs text-white px-1.5 rounded-full">
-                {wishlistCount}
-              </span>
-            )}
             <span>Wishlist</span>
           </Link>
-          <Link href="/cart" className="relative flex flex-col items-center">
+          <Link href="/cart" className="flex flex-col items-center">
             <FaShoppingCart className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-2 bg-red-500 text-xs text-white px-1.5 rounded-full">
-                {cartCount}
-              </span>
-            )}
             <span>Cart</span>
           </Link>
-          <MobileAccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
+          <MobileAccountMenu me={me} setMe={setMe} loadingUser={loadingUser} onLogout={handleLogout} />
         </div>
       </div>
     </>
@@ -391,7 +308,7 @@ const Navbar = () => {
 export default Navbar;
 
 // ---------- Account Menu (Desktop dropdown) ----------
-function AccountMenu({ me, setMe, loadingUser }) {
+function AccountMenu({ me, setMe, loadingUser, onLogout }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -406,11 +323,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
   }, []);
 
   if (loadingUser) {
-    return (
-      <button className="p-2 rounded text-gray-400 flex items-center gap-1" disabled>
-        <FaUser className="w-5 h-5" /> Loading...
-      </button>
-    );
+    return <button className="p-2 text-gray-400">Loading...</button>;
   }
 
   if (!me) {
@@ -420,77 +333,24 @@ function AccountMenu({ me, setMe, loadingUser }) {
           const currentUrl = window.location.href;
           window.location.href = `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
         }}
-        className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
+        className="p-2 flex items-center gap-1"
       >
-        <FaUser className="w-5 h-5" /> Login
+        <FaUser /> Login
       </button>
     );
   }
 
   return (
     <div ref={menuRef} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
-      >
-        {me.avatar ? (
-          <Image
-            src={me.avatar}
-            alt={me.name}
-            width={28}
-            height={28}
-            className="rounded-full"
-          />
-        ) : (
-          <FaUser className="w-5 h-5" />
-        )}
+      <button onClick={() => setOpen(!open)} className="p-2 flex items-center gap-1">
+        {me.avatar ? <Image src={me.avatar} alt={me.name} width={28} height={28} className="rounded-full" /> : <FaUser />}
         {me.name?.split(" ")[0]}
       </button>
-
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-white shadow rounded z-50">
-          <div className="flex items-center gap-3 px-3 py-3 border-b">
-            {me.avatar ? (
-              <Image
-                src={me.avatar}
-                alt={me.name}
-                width={36}
-                height={36}
-                className="rounded-full"
-              />
-            ) : (
-              <FaUser className="w-6 h-6" />
-            )}
-            <span className="font-medium truncate">{me.name}</span>
-          </div>
-
-          <Link
-            href="/profile"
-            className="block px-3 py-2 hover:bg-gray-100"
-            onClick={() => setOpen(false)}
-          >
-            My Profile
-          </Link>
-          <Link
-            href="/orders"
-            className="block px-3 py-2 hover:bg-gray-100"
-            onClick={() => setOpen(false)}
-          >
-            My Orders
-          </Link>
-          <button
-            onClick={async () => {
-              try {
-                await apiFetch("/auth/logout", { method: "POST", credentials: "include" });
-              } finally {
-                setMe(null);
-                window.location.href = "/";
-              }
-            }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-100"
-          >
-            Logout
-          </button>
+          <Link href="/profile" className="block px-3 py-2">My Profile</Link>
+          <Link href="/orders" className="block px-3 py-2">My Orders</Link>
+          <button onClick={onLogout} className="w-full text-left px-3 py-2">Logout</button>
         </div>
       )}
     </div>
@@ -498,16 +358,11 @@ function AccountMenu({ me, setMe, loadingUser }) {
 }
 
 // ---------- Mobile Account Menu (Fullscreen Drawer) ----------
-function MobileAccountMenu({ me, setMe, loadingUser }) {
+function MobileAccountMenu({ me, setMe, loadingUser, onLogout }) {
   const [open, setOpen] = useState(false);
 
   if (loadingUser) {
-    return (
-      <button className="flex flex-col items-center text-gray-400" disabled>
-        <FaUser className="w-5 h-5" />
-        <span>Account</span>
-      </button>
-    );
+    return <button className="flex flex-col items-center text-gray-400"><FaUser /><span>Account</span></button>;
   }
 
   if (!me) {
@@ -528,77 +383,17 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
   return (
     <>
       <button onClick={() => setOpen(true)} className="flex flex-col items-center">
-        {me.avatar ? (
-          <Image
-            src={me.avatar}
-            alt={me.name}
-            width={28}
-            height={28}
-            className="rounded-full"
-          />
-        ) : (
-          <FaUser className="w-5 h-5" />
-        )}
+        {me.avatar ? <Image src={me.avatar} alt={me.name} width={28} height={28} className="rounded-full" /> : <FaUser className="w-5 h-5" />}
         <span>Account</span>
       </button>
-
       {open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex">
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ duration: 0.3 }}
-            className="bg-white w-full h-full p-6 relative"
-          >
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-3 right-3 p-2 rounded hover:bg-gray-100"
-              aria-label="Close account menu"
-            >
-              ✕
-            </button>
-            <div className="flex items-center gap-3 mb-6 border-b pb-4">
-              {me.avatar ? (
-                <Image
-                  src={me.avatar}
-                  alt={me.name}
-                  width={48}
-                  height={48}
-                  className="rounded-full"
-                />
-              ) : (
-                <FaUser className="w-8 h-8" />
-              )}
-              <span className="font-medium text-lg truncate">{me.name}</span>
-            </div>
-            <Link
-              href="/profile"
-              className="block px-3 py-2 hover:bg-gray-100"
-              onClick={() => setOpen(false)}
-            >
-              My Profile
-            </Link>
-            <Link
-              href="/orders"
-              className="block px-3 py-2 hover:bg-gray-100"
-              onClick={() => setOpen(false)}
-            >
-              My Orders
-            </Link>
-            <button
-              onClick={async () => {
-                try {
-                  await apiFetch("/auth/logout", { method: "POST", credentials: "include" });
-                } finally {
-                  setMe(null);
-                  window.location.href = "/";
-                }
-              }}
-              className="w-full text-left px-3 py-2 hover:bg-gray-100"
-            >
-              Logout
-            </button>
+          <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ duration: 0.3 }} className="bg-white w-full h-full p-6 relative">
+            <button onClick={() => setOpen(false)} className="absolute top-3 right-3">✕</button>
+            <div className="mb-6 border-b pb-4">{me.name}</div>
+            <Link href="/profile" className="block px-3 py-2">My Profile</Link>
+            <Link href="/orders" className="block px-3 py-2">My Orders</Link>
+            <button onClick={onLogout} className="w-full text-left px-3 py-2 mt-4">Logout</button>
           </motion.div>
         </div>
       )}

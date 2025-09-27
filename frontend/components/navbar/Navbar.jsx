@@ -4,17 +4,17 @@ import Link from "next/link";
 import { useCart } from "../../context/CartContext";
 import { apiFetch } from "../../utils/api";
 import { FaHome, FaThLarge, FaSearch } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // ✅ fixed import
 
 import SearchBox from "./SearchBox";
-import AccountMenu from "./AccountMenu";
 import MobileAccountMenu from "./MobileAccountMenu";
+import AccountMenu from "./AccountMenu"; // ✅ added
 import CartIcon from "./CartIcon";
 import WishlistIcon from "./WishlistIcon";
 import { X } from "lucide-react";
 
 const sideMenu = {
-  hidden: { x: "-100%" }, // ✅ এখন বামে থেকে আসবে
+  hidden: { x: "-100%" },
   visible: { x: 0 },
   exit: { x: "-100%" },
 };
@@ -40,8 +40,8 @@ export default function Navbar() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiFetch("/auth/me", { credentials: "include" });
-        setMe(data);
+        const data = await apiFetch("/auth/me"); // ✅ no credentials needed
+        setMe(data.user);
       } catch {
         setMe(null);
       } finally {
@@ -86,10 +86,10 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ----------- TOP NAVBAR ----------- */}
+      {/* TOP NAVBAR */}
       <nav className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center py-3 px-4">
-          {/* ✅ Mobile Left: Search icon */}
+          {/* Mobile Left: Search icon */}
           <button
             className="md:hidden p-2 rounded hover:bg-gray-100"
             onClick={() => setMobileSearchOpen(true)}
@@ -98,12 +98,12 @@ export default function Navbar() {
             <FaSearch className="w-5 h-5" />
           </button>
 
-          {/* Middle: Logo */}
+          {/* Logo */}
           <Link href="/" className="text-xl font-bold text-blue-600">
             𝐇𝐚𝐛𝐢𝐛'𝐬 𝐅𝐚𝐬𝐡𝐢𝐨𝐧
           </Link>
 
-          {/* ✅ Mobile Right: Hamburger */}
+          {/* Mobile Right: Hamburger */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden relative w-8 h-8 flex flex-col justify-center items-center gap-[5px] z-50"
@@ -156,7 +156,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ----------- MOBILE MENU (slide from left) ----------- */}
+        {/* MOBILE MENU (slide from left) */}
         <AnimatePresence>
           {menuOpen && (
             <>
@@ -205,11 +205,10 @@ export default function Navbar() {
         </AnimatePresence>
       </nav>
 
-      {/* ----------- MOBILE SEARCH OVERLAY ----------- */}
+      {/* MOBILE SEARCH OVERLAY */}
       <AnimatePresence>
         {mobileSearchOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               className="fixed inset-0 bg-black/50 z-40"
               initial={{ opacity: 0 }}
@@ -218,7 +217,6 @@ export default function Navbar() {
               transition={{ duration: 0.2 }}
               onClick={() => setMobileSearchOpen(false)}
             />
-            {/* Search Panel */}
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -267,7 +265,7 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* ----------- MOBILE BOTTOM NAV ----------- */}
+      {/* MOBILE BOTTOM NAV */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t md:hidden z-50">
         <div className="flex justify-around items-center py-2 text-sm">
           <Link href="/" className="flex flex-col items-center">
@@ -280,7 +278,11 @@ export default function Navbar() {
           </Link>
           <WishlistIcon wishlistCount={wishlistCount} mobile />
           <CartIcon cartCount={cartCount} mobile />
-          <MobileAccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
+          <MobileAccountMenu
+            me={me}
+            setMe={setMe}
+            loadingUser={loadingUser}
+          />
         </div>
       </div>
     </>

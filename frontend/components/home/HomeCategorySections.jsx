@@ -197,7 +197,7 @@ export default function HomeCategorySections() {
         setCategories(cRes);
         setLoading(false);
       } catch (err) {
-        console.error("❌ Failed to fetch products or categories", err);
+console.log("Categories in HomeCategorySections:", categories);
         setLoading(false);
       }
     };

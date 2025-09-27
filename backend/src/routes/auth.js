@@ -1,92 +1,61 @@
 import express from "express";
 import passport from "passport";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+
 const router = express.Router();
 
-// 🔹 Middleware
-function isLoggedIn(req, res, next) {
-  if (req.isAuthenticated()) return next();
-  return res.status(401).json({ error: "Not logged in" });
+// ✅ JWT Middleware
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.status(401).json({ error: "Missing token" });
+
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+    if (err) return res.status(403).json({ error: "Invalid token" });
+    req.user = payload;
+    next();
+  });
 }
 
-// 🔹 Allowed origins
-const rawOrigins =
-  process.env.CLIENT_URLS ||
-  process.env.CLIENT_URL ||
-  "http://localhost:3000";
-const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
-
-function safeRedirectUrl(urlFromState) {
-  try {
-    const u = new URL(urlFromState);
-    if (allowedOrigins.includes(u.origin)) {
-      return urlFromState;
-    }
-    return allowedOrigins[0];
-  } catch {
-    return allowedOrigins[0];
-  }
-}
-
-// 🔹 Google Login
-router.get("/google", (req, res, next) => {
-  const defaultRedirect = `${allowedOrigins[0]}/profile`;
-  const redirect = req.query.redirect || defaultRedirect;
-  const finalRedirect = safeRedirectUrl(redirect);
-
+// 🔹 Google Login (always show Gmail select)
+router.get(
+  "/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
-    prompt: "consent",
-    accessType: "offline",
-    state: encodeURIComponent(finalRedirect),
-  })(req, res, next);
-});
+    prompt: "select_account", // ✅ সবসময় account chooser আসবে
+  })
+);
 
-// 🔹 Google Callback
+// 🔹 Google Callback → redirect with token
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${allowedOrigins[0]}/login`,
+    session: false,
+    failureRedirect: "/login",
   }),
   (req, res) => {
-    const defaultRedirect = `${allowedOrigins[0]}/profile`;
-    const stateRedirect = req.query.state
-      ? decodeURIComponent(req.query.state)
-      : defaultRedirect;
-    const redirectUrl = safeRedirectUrl(stateRedirect);
+    const { token, user } = req.user;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
 
-    res.redirect(redirectUrl);
+    // ✅ token + user কে frontend এ পাঠানো হচ্ছে
+    res.redirect(
+      `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(
+        JSON.stringify(user)
+      )}`
+    );
   }
 );
 
-// 🔹 Logout (cookie name fixed)
-router.post("/logout", (req, res, next) => {
-  req.logout((err) => {
-    if (err) return next(err);
-
-    req.session.destroy(() => {
-      res.clearCookie("sid", { // 👈 must match session name
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        domain: process.env.COOKIE_DOMAIN || undefined,
-        path: "/",
-      });
-      res.status(200).json({ message: "Logged out" });
-    });
-  });
-});
-
-// 🔹 Current user
-router.get("/me", (req, res) => {
-  if (!req.user) return res.status(401).json({ error: "Not logged in" });
-  const { _id, name, email, avatar, createdAt } = req.user;
-  res.json({ _id, name, email, avatar, createdAt });
-});
-
-// 🔹 Checkout
-router.get("/checkout", isLoggedIn, (req, res) => {
-  const { _id, name, email } = req.user;
-  res.json({ user: { _id, name, email }, message: "Proceed to checkout" });
+// 🔹 Current user → DB থেকে ইউজার ফেরত
+router.get("/me", authenticateJWT, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 export default router;

@@ -1,8 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import session from "express-session";
-import MongoStore from "connect-mongo";
 import passport from "passport";
 import helmet from "helmet";
 
@@ -20,17 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 
-// ✅ Env check
-if (!process.env.MONGO_URI) {
-  console.error("❌ Missing MONGO_URI");
-  process.exit(1);
-}
-if (!process.env.SESSION_SECRET) {
-  console.error("❌ Missing SESSION_SECRET");
-  process.exit(1);
-}
-
-// ✅ Proxy trust (Heroku/Vercel/Nginx)
+// ✅ Proxy trust
 app.set("trust proxy", 1);
 
 // ✅ Helmet
@@ -61,38 +49,12 @@ app.use(
   })
 );
 
-// ✅ JSON
+// ✅ JSON parser
 app.use(express.json());
-
-// ✅ Session
-const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
-app.use(
-  session({
-    name: "sid", // 👈 Cookie name fixed
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      collectionName: "sessions",
-      ttl: 60 * 60 * 24 * 7,
-      autoRemove: "native",
-    }),
-    proxy: true,
-    cookie: {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax",
-      path: "/",
-      maxAge: 1000 * 60 * 60 * 24,
-    },
-  })
-);
 
 // ✅ Passport
 configurePassport();
 app.use(passport.initialize());
-app.use(passport.session());
 
 // ✅ Routes
 app.use("/auth", authRoutes);
@@ -105,7 +67,7 @@ app.use("/api/users", usersRoute);
 // ✅ Static files
 app.use("/uploads", express.static("uploads"));
 
-// ✅ Health
+// ✅ Health check
 app.get(["/health", "/"], (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -118,9 +80,10 @@ app.get(["/health", "/"], (req, res) => {
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught error:", err);
-  res
-    .status(500)
-    .json({ error: "Internal server error", details: isProd ? undefined : String(err) });
+  res.status(500).json({
+    error: "Internal server error",
+    details: isProd ? undefined : String(err),
+  });
 });
 
 // ✅ Start

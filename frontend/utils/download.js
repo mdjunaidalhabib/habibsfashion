@@ -1,17 +1,12 @@
-export async function downloadReceipt(orderId) {
+export async function downloadReceipt(orderId, order = null) {
   try {
-    console.log("🖱️ Download button clicked for:", orderId);
-
     const res = await fetch(
-      `http://localhost:4000/api/orders/${orderId}/receipt`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}/receipt`,
       {
         method: "GET",
         credentials: "include",
       }
     );
-
-    console.log("📥 Requesting receipt for order:", orderId);
-    console.log("🔎 Response status:", res.status);
 
     if (!res.ok) {
       console.error("❌ Failed to fetch receipt");
@@ -19,18 +14,19 @@ export async function downloadReceipt(orderId) {
     }
 
     const blob = await res.blob();
-    console.log("📦 Got blob:", blob);
-
     const url = window.URL.createObjectURL(blob);
+
+    // ✅ custom filename (brand + orderId)
+    const fileName = `HabibsFashion-${order?.orderId || orderId}.pdf`;
+
     const a = document.createElement("a");
     a.href = url;
-    a.download = `receipt-${orderId}.pdf`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    window.URL.revokeObjectURL(url);
 
-    console.log("✅ Download triggered");
+    window.URL.revokeObjectURL(url);
   } catch (err) {
     console.error("🔥 Download error:", err);
   }

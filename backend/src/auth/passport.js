@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 export function configurePassport() {
@@ -11,7 +12,6 @@ export function configurePassport() {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL,
-        scope: ["profile", "email"],
         passReqToCallback: true,
       },
       async (req, accessToken, refreshToken, profile, done) => {
@@ -42,8 +42,14 @@ export function configurePassport() {
             });
           }
 
-          console.log("✅ Google login success:", user._id.toString());
-          return done(null, user);
+          // ✅ JWT generate
+          const token = jwt.sign(
+            { id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+          );
+
+          return done(null, { token, user });
         } catch (err) {
           console.error("❌ Passport Google Strategy error:", err);
           return done(err, null);
@@ -51,18 +57,4 @@ export function configurePassport() {
       }
     )
   );
-
-  passport.serializeUser((user, done) => {
-    done(null, user._id.toString());
-  });
-
-  passport.deserializeUser(async (id, done) => {
-    try {
-      const user = await User.findById(id);
-      if (!user) return done(null, null);
-      done(null, user);
-    } catch (err) {
-      done(err, null);
-    }
-  });
 }
