@@ -8,12 +8,12 @@ import { apiFetch } from "../../utils/api";
 import {
   FaShoppingCart,
   FaHeart,
-  FaBars,
   FaSearch,
   FaUser,
   FaHome,
   FaThLarge,
 } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ✅ Small debounce helper
 const useDebouncedValue = (value, delay = 350) => {
@@ -23,6 +23,25 @@ const useDebouncedValue = (value, delay = 350) => {
     return () => clearTimeout(t);
   }, [value, delay]);
   return v;
+};
+
+// ✅ Animation Variants
+const sideMenu = {
+  hidden: { x: "-100%" },
+  visible: { x: 0 },
+  exit: { x: "-100%" },
+};
+const topBar = {
+  open: { rotate: 45, y: 10 },
+  closed: { rotate: 0, y: 0 },
+};
+const middleBar = {
+  open: { opacity: 0 },
+  closed: { opacity: 1 },
+};
+const bottomBar = {
+  open: { rotate: -45, y: -7 },
+  closed: { rotate: 0, y: 0 },
 };
 
 const Navbar = () => {
@@ -38,8 +57,11 @@ const Navbar = () => {
   const [me, setMe] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // ✅ Cart count = সব quantity যোগফল
-  const cartCount = Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0);
+  // ✅ Cart count
+  const cartCount = Object.values(cart).reduce(
+    (sum, qty) => sum + (qty || 0),
+    0
+  );
   const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
 
   const searchRef = useRef(null);
@@ -58,14 +80,13 @@ const Navbar = () => {
     })();
   }, []);
 
-  // ✅ fetch products from backend on debounced query
+  // ✅ fetch products
   useEffect(() => {
     const q = debouncedQuery.trim();
     if (!q) {
       setSearchResults([]);
       return;
     }
-
     let cancelled = false;
     (async () => {
       try {
@@ -76,18 +97,16 @@ const Navbar = () => {
           )
           .slice(0, 20);
         if (!cancelled) setSearchResults(filtered);
-      } catch (err) {
-        console.error("❌ Search fetch failed", err);
+      } catch {
         if (!cancelled) setSearchResults([]);
       }
     })();
-
     return () => {
       cancelled = true;
     };
   }, [debouncedQuery]);
 
-  // ✅ Click outside handler -> close dropdown only (query keep)
+  // ✅ Click outside handler
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -97,6 +116,20 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // ✅ ESC চাপলে মেনু বন্ধ
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
+  // ✅ মেনু খোলা থাকলে scroll lock
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "auto";
+  }, [menuOpen]);
 
   const goToProduct = useCallback(
     (id) => {
@@ -112,35 +145,9 @@ const Navbar = () => {
     <>
       {/* ----------- TOP NAVBAR ----------- */}
       <nav className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
-        <div className="container mx-auto flex justify-between items-center py-3 px-4">
-          {/* Left: Menu (mobile only) */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 rounded hover:bg-gray-100"
-            aria-label="Toggle menu"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
+        <div className="container mx-auto flex justify-between items-center py-2 px-6">
 
-          {/* Middle: Logo */}
-          <Link href="/" className="text-xl font-bold text-blue-600">
-            𝐇𝐚𝐛𝐢𝐛'𝐬 𝐅𝐚𝐬𝐡𝐢𝐨𝐧
-          </Link>
-
-          {/* Middle Menu (Desktop only) */}
-          <div className="hidden md:flex items-center gap-6 font-medium">
-            <Link href="/" className="hover:text-blue-600 transition">
-              Home
-            </Link>
-            <Link href="/products" className="hover:text-blue-600 transition">
-              All Products
-            </Link>
-            <Link href="/categories" className="hover:text-blue-600 transition">
-              Shop by Category
-            </Link>
-          </div>
-
-          {/* Right: Search + Account + Cart + Wishlist */}
+           {/*Left: Search + Account + Cart + Wishlist */}
           <div className="flex items-center gap-4 relative">
             {/* Desktop Search */}
             <div className="hidden md:block relative" ref={searchRef}>
@@ -209,34 +216,108 @@ const Navbar = () => {
               </Link>
             </div>
           </div>
-        </div>
 
-        {/* ----------- MOBILE MENU ----------- */}
-        {menuOpen && (
-          <div className="md:hidden bg-white shadow-lg border-t absolute top-full left-0 w-full z-50">
-            <Link
-              href="/"
-              className="block px-4 py-2 hover:bg-gray-100"
-              onClick={() => setMenuOpen(false)}
-            >
+
+          {/* Middle: Logo */}
+          <Link href="/" className="text-xl font-bold text-blue-600">
+            𝐇𝐚𝐛𝐢𝐛'𝐬 𝐅𝐚𝐬𝐡𝐢𝐨𝐧
+          </Link>
+
+          {/* Middle Menu (Desktop only) */}
+          <div className="hidden md:flex items-center gap-6 font-medium">
+            <Link href="/" className="hover:text-blue-600 transition">
               Home
             </Link>
-            <Link
-              href="/products"
-              className="block px-4 py-2 hover:bg-gray-100"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link href="/products" className="hover:text-blue-600 transition">
               All Products
             </Link>
-            <Link
-              href="/categories"
-              className="block px-4 py-2 hover:bg-gray-100"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link href="/categories" className="hover:text-blue-600 transition">
               Shop by Category
             </Link>
           </div>
-        )}
+
+          {/* Right: Hamburger (animated) */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden relative w-8 h-8 flex flex-col justify-center items-center gap-[5px] z-50"
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+          >
+            <motion.span
+              variants={topBar}
+              animate={menuOpen ? "open" : "closed"}
+              transition={{ duration: 0.3 }}
+              className="block h-1 w-6 bg-gray-800 rounded origin-center"
+            />
+            <motion.span
+              variants={middleBar}
+              animate={menuOpen ? "open" : "closed"}
+              transition={{ duration: 0.3 }}
+              className="block h-1 w-6 bg-gray-800 rounded origin-center"
+            />
+            <motion.span
+              variants={bottomBar}
+              animate={menuOpen ? "open" : "closed"}
+              transition={{ duration: 0.3 }}
+              className="block h-1 w-6 bg-gray-800 rounded origin-center"
+            />
+          </button>
+
+
+
+
+        </div>
+
+        {/* ----------- MOBILE MENU (with animation) ----------- */}
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              {/* Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-black z-40"
+                onClick={() => setMenuOpen(false)}
+              />
+              {/* Sidebar */}
+              <motion.div
+                id="mobile-menu"
+                role="navigation"
+                variants={sideMenu}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="fixed top-[52px] left-0 bottom-0 w-64 bg-white shadow-lg p-6 flex flex-col space-y-4 z-50"
+              >
+                <Link
+                  href="/"
+                  className="block px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/products"
+                  className="block px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  All Products
+                </Link>
+                <Link
+                  href="/categories"
+                  className="block px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Shop by Category
+                </Link>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* ----------- MOBILE SEARCH ----------- */}
         {mobileSearchOpen && (
@@ -284,11 +365,7 @@ const Navbar = () => {
             <FaThLarge className="w-5 h-5" />
             <span>Category</span>
           </Link>
-
-          <Link
-            href="/wishlist"
-            className="relative flex flex-col items-center"
-          >
+          <Link href="/wishlist" className="relative flex flex-col items-center">
             <FaHeart className="w-5 h-5" />
             {wishlistCount > 0 && (
               <span className="absolute -top-1 right-1 bg-red-500 text-xs text-white px-1.5 rounded-full">
@@ -297,7 +374,6 @@ const Navbar = () => {
             )}
             <span>Wishlist</span>
           </Link>
-
           <Link href="/cart" className="relative flex flex-col items-center">
             <FaShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
@@ -307,8 +383,6 @@ const Navbar = () => {
             )}
             <span>Cart</span>
           </Link>
-
-          {/* ✅ Account for Mobile */}
           <MobileAccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
         </div>
       </div>
@@ -346,9 +420,7 @@ function AccountMenu({ me, setMe, loadingUser }) {
       <button
         onClick={() => {
           const currentUrl = window.location.href;
-          window.location.href = `${
-            process.env.NEXT_PUBLIC_AUTH_API_URL
-          }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
+          window.location.href = `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
         }}
         className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
       >
@@ -379,7 +451,6 @@ function AccountMenu({ me, setMe, loadingUser }) {
 
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-white shadow rounded z-50">
-          {/* User Info */}
           <div className="flex items-center gap-3 px-3 py-3 border-b">
             {me.avatar ? (
               <Image
@@ -395,7 +466,6 @@ function AccountMenu({ me, setMe, loadingUser }) {
             <span className="font-medium truncate">{me.name}</span>
           </div>
 
-          {/* Menu Links */}
           <Link
             href="/profile"
             className="block px-3 py-2 hover:bg-gray-100"
@@ -447,9 +517,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
       <button
         onClick={() => {
           const currentUrl = window.location.href;
-          window.location.href = `${
-            process.env.NEXT_PUBLIC_AUTH_API_URL
-          }/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
+          window.location.href = `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
         }}
         className="flex flex-col items-center"
       >
@@ -461,10 +529,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex flex-col items-center"
-      >
+      <button onClick={() => setOpen(true)} className="flex flex-col items-center">
         {me.avatar ? (
           <Image
             src={me.avatar}
@@ -481,7 +546,13 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
 
       {open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex">
-          <div className="bg-white w-full h-full p-6 relative">
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.3 }}
+            className="bg-white w-full h-full p-6 relative"
+          >
             <button
               onClick={() => setOpen(false)}
               className="absolute top-3 right-3 p-2 rounded hover:bg-gray-100"
@@ -489,8 +560,6 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
             >
               ✕
             </button>
-
-            {/* User Info */}
             <div className="flex items-center gap-3 mb-6 border-b pb-4">
               {me.avatar ? (
                 <Image
@@ -505,8 +574,6 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
               )}
               <span className="font-medium text-lg truncate">{me.name}</span>
             </div>
-
-            {/* Menu Links */}
             <Link
               href="/profile"
               className="block px-3 py-2 hover:bg-gray-100"
@@ -534,7 +601,7 @@ function MobileAccountMenu({ me, setMe, loadingUser }) {
             >
               Logout
             </button>
-          </div>
+          </motion.div>
         </div>
       )}
     </>
