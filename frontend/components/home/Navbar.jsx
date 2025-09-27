@@ -145,9 +145,54 @@ const Navbar = () => {
     <>
       {/* ----------- TOP NAVBAR ----------- */}
       <nav className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
-        <div className="container mx-auto flex justify-between items-center py-2 px-6">
+        <div className="container mx-auto flex justify-between items-center py-3 px-4">
+          {/* Left: Hamburger (animated) */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden relative w-8 h-8 flex flex-col justify-center items-center gap-[5px] z-50"
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+          >
+            <motion.span
+              variants={topBar}
+              animate={menuOpen ? "open" : "closed"}
+              transition={{ duration: 0.3 }}
+              className="block h-1 w-6 bg-gray-800 rounded origin-center"
+            />
+            <motion.span
+              variants={middleBar}
+              animate={menuOpen ? "open" : "closed"}
+              transition={{ duration: 0.3 }}
+              className="block h-1 w-6 bg-gray-800 rounded origin-center"
+            />
+            <motion.span
+              variants={bottomBar}
+              animate={menuOpen ? "open" : "closed"}
+              transition={{ duration: 0.3 }}
+              className="block h-1 w-6 bg-gray-800 rounded origin-center"
+            />
+          </button>
 
-           {/*Left: Search + Account + Cart + Wishlist */}
+          {/* Middle: Logo */}
+          <Link href="/" className="text-xl font-bold text-blue-600">
+            𝐇𝐚𝐛𝐢𝐛'𝐬 𝐅𝐚𝐬𝐡𝐢𝐨𝐧
+          </Link>
+
+          {/* Middle Menu (Desktop only) */}
+          <div className="hidden md:flex items-center gap-6 font-medium">
+            <Link href="/" className="hover:text-blue-600 transition">
+              Home
+            </Link>
+            <Link href="/products" className="hover:text-blue-600 transition">
+              All Products
+            </Link>
+            <Link href="/categories" className="hover:text-blue-600 transition">
+              Shop by Category
+            </Link>
+          </div>
+
+          {/* Right: Search + Account + Cart + Wishlist */}
           <div className="flex items-center gap-4 relative">
             {/* Desktop Search */}
             <div className="hidden md:block relative" ref={searchRef}>
@@ -218,55 +263,8 @@ const Navbar = () => {
           </div>
 
 
-          {/* Middle: Logo */}
-          <Link href="/" className="text-xl font-bold text-blue-600">
-            𝐇𝐚𝐛𝐢𝐛'𝐬 𝐅𝐚𝐬𝐡𝐢𝐨𝐧
-          </Link>
 
-          {/* Middle Menu (Desktop only) */}
-          <div className="hidden md:flex items-center gap-6 font-medium">
-            <Link href="/" className="hover:text-blue-600 transition">
-              Home
-            </Link>
-            <Link href="/products" className="hover:text-blue-600 transition">
-              All Products
-            </Link>
-            <Link href="/categories" className="hover:text-blue-600 transition">
-              Shop by Category
-            </Link>
-          </div>
-
-          {/* Right: Hamburger (animated) */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden relative w-8 h-8 flex flex-col justify-center items-center gap-[5px] z-50"
-            aria-label="Toggle menu"
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-          >
-            <motion.span
-              variants={topBar}
-              animate={menuOpen ? "open" : "closed"}
-              transition={{ duration: 0.3 }}
-              className="block h-1 w-6 bg-gray-800 rounded origin-center"
-            />
-            <motion.span
-              variants={middleBar}
-              animate={menuOpen ? "open" : "closed"}
-              transition={{ duration: 0.3 }}
-              className="block h-1 w-6 bg-gray-800 rounded origin-center"
-            />
-            <motion.span
-              variants={bottomBar}
-              animate={menuOpen ? "open" : "closed"}
-              transition={{ duration: 0.3 }}
-              className="block h-1 w-6 bg-gray-800 rounded origin-center"
-            />
-          </button>
-
-
-
-
+          
         </div>
 
         {/* ----------- MOBILE MENU (with animation) ----------- */}
