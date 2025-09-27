@@ -20,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 
-// ✅ basic env validation
+// ✅ Env check
 if (!process.env.MONGO_URI) {
   console.error("❌ Missing MONGO_URI");
   process.exit(1);
@@ -30,10 +30,10 @@ if (!process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
-// ✅ Proxy trust (Vercel/Render/Nginx)
+// ✅ Proxy trust (Heroku/Vercel/Nginx)
 app.set("trust proxy", 1);
 
-// ✅ Security middleware
+// ✅ Helmet
 app.use(
   helmet({
     contentSecurityPolicy: isProd ? undefined : false,
@@ -42,7 +42,7 @@ app.use(
   })
 );
 
-// ✅ CORS setup
+// ✅ CORS
 const rawOrigins =
   process.env.CLIENT_URLS ||
   process.env.CLIENT_URL ||
@@ -53,35 +53,29 @@ const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
 app.use(
   cors({
     origin: (origin, cb) => {
-      // allow no-origin (mobile apps, curl, postman etc.)
-      if (!origin) return cb(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return cb(null, true);
-      }
-
+      if (!origin) return cb(null, true); // allow Postman / curl
+      if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     credentials: true,
   })
 );
 
-
-// ✅ JSON parsing
+// ✅ JSON
 app.use(express.json());
 
-// ✅ Session setup
+// ✅ Session
 const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 app.use(
   session({
-    name: "sid",
+    name: "sid", // 👈 Cookie name fixed
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       collectionName: "sessions",
-      ttl: 60 * 60 * 24 * 7, // 7 days
+      ttl: 60 * 60 * 24 * 7,
       autoRemove: "native",
     }),
     proxy: true,
@@ -89,14 +83,13 @@ app.use(
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      domain: cookieDomain, // optional; set if you use apex domain cookies
       path: "/",
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      maxAge: 1000 * 60 * 60 * 24,
     },
   })
 );
 
-// ✅ Passport setup
+// ✅ Passport
 configurePassport();
 app.use(passport.initialize());
 app.use(passport.session());
@@ -109,10 +102,10 @@ app.use("/api/categories", categoriesRoute);
 app.use("/api/products", productsRoute);
 app.use("/api/users", usersRoute);
 
-// ✅ Static file serving (uploads)
+// ✅ Static files
 app.use("/uploads", express.static("uploads"));
 
-// ✅ Health check
+// ✅ Health
 app.get(["/health", "/"], (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -121,7 +114,7 @@ app.get(["/health", "/"], (req, res) => {
   });
 });
 
-// ✅ Global error boundary
+// ✅ Error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught error:", err);
@@ -130,7 +123,7 @@ app.use((err, req, res, next) => {
     .json({ error: "Internal server error", details: isProd ? undefined : String(err) });
 });
 
-// ✅ Start server
+// ✅ Start
 const startServer = async () => {
   try {
     await dbConnect(process.env.MONGO_URI);

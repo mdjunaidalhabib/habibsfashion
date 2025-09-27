@@ -1,37 +1,19 @@
-// frontend/utils/api.js
-export async function apiFetch(path, options = {}) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const url = `${baseUrl}${path}`;
+export async function apiFetch(url, options = {}) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_API_URL}${url}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
 
-  try {
-    const res = await fetch(url, {
-      credentials: "include", // ✅ কুকি সবসময় পাঠাবে
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-      ...options,
-    });
-
-    if (!res.ok) {
-      let errorText = "";
-      try {
-        errorText = await res.text();
-      } catch {
-        errorText = "Unknown error";
-      }
-
-      // ❌ console.error বাদ → শুধু error throw করবো
-      throw new Error(
-        `API error: ${res.status} ${res.statusText} → ${errorText}`
-      );
-    }
-
-    // ✅ সবসময় JSON ফেরত দেবে
-    return await res.json();
-  } catch (err) {
-    // ❌ console.error বাদ
-    // caller (Navbar, ProductPage ইত্যাদি) নিজে handle করবে
-    throw err;
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
   }
+
+  // some endpoints may return 204 (no content)
+  if (res.status === 204) return null;
+
+  return res.json();
 }

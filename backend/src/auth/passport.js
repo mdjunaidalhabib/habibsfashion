@@ -21,10 +21,8 @@ export function configurePassport() {
           const email = profile.emails?.[0]?.value?.toLowerCase();
           const avatar = profile.photos?.[0]?.value || "";
 
-          // 1) First try by googleId
           let user = await User.findOne({ googleId });
 
-          // 2) If not found, try by email
           if (!user && email) {
             user = await User.findOne({ email });
             if (user) {
@@ -35,14 +33,11 @@ export function configurePassport() {
             }
           }
 
-          // 3) If still not found, create new
           if (!user) {
-            const fallbackEmail =
-              email || `noemail-${googleId}@example.local`;
             user = await User.create({
               googleId,
               name,
-              email: fallbackEmail,
+              email: email || `noemail-${googleId}@example.local`,
               avatar,
             });
           }
@@ -57,25 +52,16 @@ export function configurePassport() {
     )
   );
 
-  // ✅ Always store MongoDB ObjectId string
   passport.serializeUser((user, done) => {
-    console.log("🔑 serializeUser ->", user._id.toString());
     done(null, user._id.toString());
   });
 
-  // ✅ Load fresh user from DB
   passport.deserializeUser(async (id, done) => {
-    console.log("🔑 deserializeUser id from session:", id);
     try {
       const user = await User.findById(id);
-      if (!user) {
-        console.warn("⚠️ No user found for id:", id);
-        return done(null, null);
-      }
-      console.log("👤 Loaded user:", user.email);
+      if (!user) return done(null, null);
       done(null, user);
     } catch (err) {
-      console.error("❌ deserialize error", err);
       done(err, null);
     }
   });
