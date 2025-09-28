@@ -2,22 +2,22 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { FaStar, FaPlus, FaMinus, FaHeart } from "react-icons/fa";
+import { FaStar, FaHeart } from "react-icons/fa";
 import ProductCard from "./ProductCard";
-import { useCart } from "../../context/CartContext";
-import { makeImageUrl } from "../../lib/utils"; // ✅ image utility
+import { makeImageUrl } from "../../lib/utils";
+import { useCartUtils } from "../../hooks/useCartUtils";
+import QuantityController from "./QuantityController";
+import CheckoutButton from "./CheckoutButton";
 
 export default function ProductDetailsClient({ product, category, related = [] }) {
-  const router = useRouter();
-  const { cart, setCart, wishlist, setWishlist } = useCart();
+  const { cart, wishlist, toggleWishlist, updateCart } = useCartUtils();
 
-  // ---- Color Variant ----
   const [activeColor, setActiveColor] = useState(
     product.colors?.length ? product.colors[0].name : null
   );
+  const [activeIdx, setActiveIdx] = useState(0);
 
-  // ---- Images depending on color ----
+  // ---- Images ----
   const images = useMemo(() => {
     if (product.colors && activeColor) {
       const colorObj = product.colors.find((c) => c.name === activeColor);
@@ -29,8 +29,6 @@ export default function ProductDetailsClient({ product, category, related = [] }
     return [product.image];
   }, [product, activeColor]);
 
-  const [activeIdx, setActiveIdx] = useState(0);
-
   // ✅ Cart & Wishlist
   const quantity = cart[product._id] || 0;
   const totalPrice = product.price * quantity;
@@ -38,48 +36,6 @@ export default function ProductDetailsClient({ product, category, related = [] }
     ? (((product.oldPrice - product.price) / product.oldPrice) * 100).toFixed(1)
     : null;
   const isInWishlist = wishlist.includes(product._id);
-
-  const updateCart = (id, change) => {
-    setCart((prev) => {
-      const currentQty = prev[id] || 0;
-      const newQty = currentQty + change;
-
-      if (newQty <= 0) {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      }
-      if (newQty > product.stock) return prev; // ✅ stock check
-      return { ...prev, [id]: newQty };
-    });
-  };
-
-  const toggleWishlist = (id) => {
-    if (isInWishlist) setWishlist(wishlist.filter((x) => x !== id));
-    else setWishlist([...wishlist, id]);
-  };
-
-  // ✅ Checkout Handler
-  const handleSingleCheckout = async () => {
-    try {
-      const checkoutUrl = `/checkout?productId=${product._id}&qty=${quantity || 1}`;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        credentials: "include",
-      });
-
-      if (res.status === 401) {
-        const redirectUrl = encodeURIComponent(
-          `${window.location.origin}${checkoutUrl}`
-        );
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google?redirect=${redirectUrl}`;
-        return;
-      }
-
-      router.push(checkoutUrl);
-    } catch (err) {
-      console.error("🔥 Checkout error:", err);
-    }
-  };
 
   // ✅ Tabs
   const [tab, setTab] = useState("desc");
@@ -118,21 +74,19 @@ export default function ProductDetailsClient({ product, category, related = [] }
         <span className="text-gray-700">{product.name}</span>
       </nav>
 
-      {/* Top: Gallery + Summary */}
+      {/* Gallery + Summary */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ✅ Gallery */}
+        {/* Gallery */}
         <div className="bg-white rounded-2xl shadow p-4">
           <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100">
             <Image
-              src={makeImageUrl(product?.image)}
+              src={makeImageUrl(images[activeIdx])}
               alt={product?.name || "Product"}
               fill
               className="object-cover rounded-lg"
               priority
             />
           </div>
-          
-
           {images.length > 1 && (
             <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
               {images.map((src, i) => (
@@ -157,7 +111,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
           )}
         </div>
 
-        {/* ✅ Summary */}
+        {/* Summary */}
         <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
           <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
             {product.name}
@@ -257,7 +211,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
             <div className="flex gap-2">
               <button
                 disabled={product.stock <= 0}
-                onClick={() => updateCart(product._id, +1)}
+                onClick={() => updateCart(product._id, +1, product.stock)}
                 className={`flex-1 px-4 py-3 rounded-lg font-medium ${
                   product.stock > 0
                     ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -266,39 +220,18 @@ export default function ProductDetailsClient({ product, category, related = [] }
               >
                 Add to Cart
               </button>
-              <button
-                onClick={handleSingleCheckout}
-                className="w-40 bg-emerald-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-emerald-700"
-              >
-                Checkout
-              </button>
+                <CheckoutButton productId={product._id} qty={quantity} />
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Quantity</span>
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                  <button
-                    onClick={() => updateCart(product._id, -1)}
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-                  >
-                    <FaMinus className="w-4 h-4" />
-                  </button>
-                  <span className="font-bold min-w-[24px] text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => updateCart(product._id, +1)}
-                    disabled={quantity >= product.stock}
-                    className={`p-2 rounded ${
-                      quantity >= product.stock
-                        ? "bg-gray-400 text-white cursor-not-allowed"
-                        : "bg-green-500 text-white hover:bg-green-600"
-                    }`}
-                  >
-                    <FaPlus className="w-4 h-4" />
-                  </button>
-                </div>
+                <QuantityController
+                  qty={quantity}
+                  stock={product.stock}
+                  onChange={(change) => updateCart(product._id, change, product.stock)}
+                  allowZero={true}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm">
@@ -307,12 +240,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
                     ৳{totalPrice}
                   </span>
                 </p>
-                <button
-                  onClick={handleSingleCheckout}
-                  className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700"
-                >
-                  Checkout
-                </button>
+                <CheckoutButton productId={product._id} qty={quantity} />
               </div>
             </div>
           )}

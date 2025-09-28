@@ -1,27 +1,28 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "../../../../context/UserContext"; // ✅ ঠিক path
 
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useSearchParams();
+  const searchParams = useSearchParams();
+  const { setMe } = useUser(); // ✅ এখানে setUser না, setMe
 
   useEffect(() => {
-    const token = params.get("token");
-    const user = params.get("user");
+    const token = searchParams.get("token");
+    const userStr = searchParams.get("user");
 
-    if (token) {
+    if (token && userStr) {
       localStorage.setItem("token", token);
-      if (user) {
-        try {
-          localStorage.setItem("user", user);
-        } catch {}
-      }
-      router.replace("/");
-    } else {
-      router.replace("/login");
-    }
-  }, [params, router]);
 
-  return <p className="text-center mt-10">Completing login...</p>;
+      const user = JSON.parse(decodeURIComponent(userStr));
+      setMe(user); // ✅ context এ update হবে
+
+      router.push("/");
+    } else {
+      router.push("/login");
+    }
+  }, []);
+
+  return <p className="text-center">⏳ Logging in...</p>;
 }

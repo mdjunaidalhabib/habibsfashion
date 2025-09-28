@@ -3,9 +3,9 @@ import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "../../../context/CartContext";
-import { useRouter } from "next/navigation";
 import { FaPlus, FaMinus, FaTrash, FaHeart } from "react-icons/fa";
 import { apiFetch } from "../../../utils/api";
+import CheckoutButton from "../../../components/home/CheckoutButton";
 
 // Skeleton Loader
 const CartSkeleton = () => (
@@ -20,7 +20,6 @@ const CartSkeleton = () => (
 );
 
 export default function CartPage() {
-  const router = useRouter();
   const {
     cart,
     setCart,
@@ -31,13 +30,13 @@ export default function CartPage() {
   } = useCart();
 
   const [allProducts, setAllProducts] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ Loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiFetch("/api/products")
       .then((data) => {
         setAllProducts(data);
-        setLoading(false); // ✅ ডেটা এলে লোডিং false
+        setLoading(false);
       })
       .catch((err) => {
         console.error("❌ Failed to fetch products", err);
@@ -45,6 +44,7 @@ export default function CartPage() {
       });
   }, []);
 
+  // cart এর product details বানানো
   const items = useMemo(() => {
     if (!allProducts.length) return [];
     return Object.keys(cart)
@@ -57,27 +57,6 @@ export default function CartPage() {
   }, [cart, allProducts]);
 
   const grandTotal = items.reduce((sum, p) => sum + p.price * p.qty, 0);
-
-  const handleCheckout = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/checkout`,
-        { credentials: "include" }
-      );
-
-      if (res.status === 401) {
-        const redirectUrl = encodeURIComponent(
-          `${window.location.origin}/checkout`
-        );
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google?redirect=${redirectUrl}`;
-        return;
-      }
-
-      router.push("/checkout");
-    } catch (err) {
-      console.error("🔥 Cart checkout error:", err);
-    }
-  };
 
   const handleClearCart = () => {
     setCart({});
@@ -99,7 +78,6 @@ export default function CartPage() {
       </div>
 
       {loading ? (
-        // ✅ লোডিং হলে skeleton দেখাবে
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <CartSkeleton key={i} />
@@ -122,6 +100,7 @@ export default function CartPage() {
                 key={p._id}
                 className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row items-center gap-4"
               >
+                {/* Product Image */}
                 <Link
                   href={`/products/${p._id}`}
                   className="w-24 h-24 relative flex-shrink-0 block"
@@ -134,6 +113,7 @@ export default function CartPage() {
                   />
                 </Link>
 
+                {/* Product Info */}
                 <div className="flex-1">
                   <Link
                     href={`/products/${p._id}`}
@@ -156,7 +136,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Qty control */}
+                {/* Quantity Control */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
@@ -179,6 +159,7 @@ export default function CartPage() {
                   </button>
                 </div>
 
+                {/* Remove from Cart */}
                 <button
                   onClick={() => removeFromCart(p._id)}
                   className="bg-red-600 text-white px-3 py-2 rounded flex items-center gap-1 hover:bg-red-700"
@@ -186,6 +167,7 @@ export default function CartPage() {
                   <FaTrash /> Remove
                 </button>
 
+                {/* Wishlist Toggle */}
                 <button
                   onClick={() => toggleWishlist(p._id)}
                   className={`p-3 rounded-full shadow ${
@@ -197,6 +179,7 @@ export default function CartPage() {
                   <FaHeart />
                 </button>
 
+                {/* Line Item Total */}
                 <div className="font-semibold text-blue-600 ml-auto">
                   Total: ৳{p.price * p.qty}
                 </div>
@@ -204,17 +187,14 @@ export default function CartPage() {
             );
           })}
 
+          {/* Grand Total */}
           <div className="text-right font-bold text-lg mt-6">
             Grand Total: <span className="text-blue-600">৳{grandTotal}</span>
           </div>
 
+          {/* ✅ Unified Checkout Button → full cart checkout */}
           <div className="text-right mt-4">
-            <button
-              onClick={handleCheckout}
-              className="bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-emerald-700"
-            >
-              Proceed to Checkout
-            </button>
+            <CheckoutButton total={grandTotal} />
           </div>
         </div>
       )}

@@ -5,7 +5,7 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-// ✅ JWT Middleware
+// 🔹 JWT Middleware
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers["authorization"];
   if (!authHeader) return res.status(401).json({ error: "Missing token" });
@@ -18,16 +18,16 @@ function authenticateJWT(req, res, next) {
   });
 }
 
-// 🔹 Google Login (always show Gmail select)
+// 🔹 Google Login (force Gmail select)
 router.get(
   "/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
-    prompt: "select_account", // ✅ সবসময় account chooser আসবে
+    prompt: "select_account",
   })
 );
 
-// 🔹 Google Callback → redirect with token
+// 🔹 Google Callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -36,9 +36,8 @@ router.get(
   }),
   (req, res) => {
     const { token, user } = req.user;
-    const clientUrl = process.env.CLIENT_URLS || "http://localhost:3000";
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
 
-    // ✅ token + user কে frontend এ পাঠানো হচ্ছে
     res.redirect(
       `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(
         JSON.stringify(user)
@@ -47,10 +46,10 @@ router.get(
   }
 );
 
-// 🔹 Current user → DB থেকে ইউজার ফেরত
+// 🔹 Current User (protected)
 router.get("/me", authenticateJWT, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   } catch (err) {

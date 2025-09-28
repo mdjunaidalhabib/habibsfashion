@@ -2,25 +2,18 @@
 import { apiFetch } from "../../utils/api";
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useCart } from "../../context/CartContext";
-import { FaTrashAlt, FaPlus, FaMinus } from "react-icons/fa";
-
-// 🔹 Skeleton for dropdown
-const SelectSkeleton = () => (
-  <div className="h-10 w-full bg-gray-200 rounded animate-pulse mt-1"></div>
-);
+import { useCartUtils } from "../../hooks/useCartUtils";
+import QuantityController from "./QuantityController";
+import CheckoutButton from "./CheckoutButton";
 
 export default function CheckoutPage() {
-  const { cart, setCart, updateCart, removeFromCart } = useCart();
+  const { cart, setCart, updateCart, removeFromCart, calcSubtotal } = useCartUtils();
   const searchParams = useSearchParams();
 
   const productId = searchParams.get("productId");
   const initialQty = Number(searchParams.get("qty")) || 1;
-
-  // ✅ Single checkout এর জন্য local qty
   const [checkoutQty, setCheckoutQty] = useState(initialQty);
 
-  // ✅ Products লোড
   const [allProducts, setAllProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
@@ -31,11 +24,8 @@ export default function CheckoutPage() {
       .finally(() => setProductsLoading(false));
   }, []);
 
-  // ✅ Cart items বানানো
   const cartItems = useMemo(() => {
     if (!allProducts.length) return [];
-
-    // ---- Single Checkout ----
     if (productId) {
       const p = allProducts.find((x) => String(x._id) === String(productId));
       if (!p) return [];
@@ -46,11 +36,10 @@ export default function CheckoutPage() {
           price: p.price,
           qty: checkoutQty,
           image: p.image,
+          stock: p.stock,
         },
       ];
     }
-
-    // ---- Full Cart ----
     return Object.keys(cart)
       .map((id) => {
         const p = allProducts.find((x) => String(x._id) === String(id));
@@ -61,64 +50,27 @@ export default function CheckoutPage() {
           price: p.price,
           qty: cart[id],
           image: p.image,
+          stock: p.stock,
         };
       })
       .filter(Boolean);
   }, [cart, productId, checkoutQty, allProducts]);
 
-  const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = calcSubtotal(cartItems);
+  const deliveryCharge = 100;
+  const total = subtotal + deliveryCharge;
 
-  // --- Billing form states ---
+  // --- Billing states ---
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [division, setDivision] = useState("");
-  const [district, setDistrict] = useState("");
-  const [thana, setThana] = useState("");
   const [note, setNote] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // --- Delivery Charge & Dropdown ---
-  const [deliveryCharge, setDeliveryCharge] = useState(0);
-  const [divisions, setDivisions] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [thanas, setThanas] = useState([]);
-  const [locationsLoading, setLocationsLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch("/api/locations/divisions")
-      .then(setDivisions)
-      .finally(() => setLocationsLoading(false));
-  }, []);
-  useEffect(() => {
-    if (division) {
-      apiFetch(`/api/locations/districts/${division}`).then(setDistricts);
-    } else {
-      setDistricts([]);
-      setDistrict("");
-    }
-  }, [division]);
-  useEffect(() => {
-    if (division && district) {
-      apiFetch(`/api/locations/thanas/${division}/${district}`).then(setThanas);
-    } else {
-      setThanas([]);
-      setThana("");
-    }
-  }, [division, district]);
-
-  useEffect(() => {
-    if (division === "ঢাকা") setDeliveryCharge(80);
-    else if (division) setDeliveryCharge(130);
-    else setDeliveryCharge(0);
-  }, [division]);
-
-  const total = subtotal + deliveryCharge;
-
   async function placeOrder() {
-    if (!name || !phone || !address || !division || !district || !thana) {
+    if (!name || !phone || !address) {
       setError("সব ঘর পূরণ করতে হবে!");
       return;
     }
@@ -135,7 +87,7 @@ export default function CheckoutPage() {
       subtotal,
       deliveryCharge,
       total,
-      billing: { name, phone, address, division, district, thana, note },
+      billing: { name, phone, address, note },
       promoCode,
     };
 
@@ -146,12 +98,6 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderData),
         credentials: "include",
       });
-
-      if (res.status === 401) {
-        const redirectUrl = encodeURIComponent(window.location.href);
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google?redirect=${redirectUrl}`;
-        return;
-      }
 
       if (res.ok) {
         const data = await res.json();
@@ -208,79 +154,6 @@ export default function CheckoutPage() {
                 rows="2"
               />
             </label>
-
-            {/* Division */}
-            <label className="block mb-3">
-              <span className="text-sm font-medium">বিভাগ *</span>
-              {locationsLoading ? (
-                <SelectSkeleton />
-              ) : (
-                <select
-                  value={division}
-                  onChange={(e) => {
-                    setDivision(e.target.value);
-                    setDistrict("");
-                    setThana("");
-                  }}
-                  className="mt-1 w-full p-2 border rounded-md"
-                >
-                  <option value="">বিভাগ সিলেক্ট করুন</option>
-                  {divisions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </label>
-
-            {/* District */}
-            <label className="block mb-3">
-              <span className="text-sm font-medium">জেলা *</span>
-              {locationsLoading ? (
-                <SelectSkeleton />
-              ) : (
-                <select
-                  value={district}
-                  onChange={(e) => {
-                    setDistrict(e.target.value);
-                    setThana("");
-                  }}
-                  disabled={!division}
-                  className="mt-1 w-full p-2 border rounded-md"
-                >
-                  <option value="">জেলা সিলেক্ট করুন</option>
-                  {districts.map((dist) => (
-                    <option key={dist} value={dist}>
-                      {dist}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </label>
-
-            {/* Thana */}
-            <label className="block mb-3">
-              <span className="text-sm font-medium">থানা *</span>
-              {locationsLoading ? (
-                <SelectSkeleton />
-              ) : (
-                <select
-                  value={thana}
-                  onChange={(e) => setThana(e.target.value)}
-                  disabled={!district}
-                  className="mt-1 w-full p-2 border rounded-md"
-                >
-                  <option value="">থানা সিলেক্ট করুন</option>
-                  {thanas.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </label>
-
             <label className="block">
               <span className="text-sm font-medium">নোট (ঐচ্ছিক)</span>
               <textarea
@@ -307,33 +180,15 @@ export default function CheckoutPage() {
                   />
                   <div>
                     <p className="font-medium">{it.name}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={() =>
-                          productId
-                            ? setCheckoutQty(Math.max(1, checkoutQty - 1))
-                            : it.qty > 1 && updateCart(it.productId, -1)
-                        }
-                        className={`px-2 py-1 rounded text-white ${
-                          it.qty > 1 || productId
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-gray-400 cursor-not-allowed"
-                        }`}
-                      >
-                        <FaMinus />
-                      </button>
-                      <span>{it.qty}</span>
-                      <button
-                        onClick={() =>
-                          productId
-                            ? setCheckoutQty(checkoutQty + 1)
-                            : updateCart(it.productId, +1)
-                        }
-                        className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        <FaPlus />
-                      </button>
-                    </div>
+                    <QuantityController
+                      qty={it.qty}
+                      stock={it.stock}
+                      onChange={(change) =>
+                        productId
+                          ? setCheckoutQty(Math.max(1, checkoutQty + change))
+                          : updateCart(it.productId, change, it.stock)
+                      }
+                    />
                   </div>
                 </div>
                 <div className="text-right">
@@ -343,7 +198,7 @@ export default function CheckoutPage() {
                       onClick={() => removeFromCart(it.productId)}
                       className="text-red-500 text-sm flex items-center gap-1 mt-1"
                     >
-                      <FaTrashAlt /> Remove
+                      Remove
                     </button>
                   )}
                 </div>
@@ -364,17 +219,13 @@ export default function CheckoutPage() {
               <span>৳{total}</span>
             </div>
 
-            <button
+            <CheckoutButton
+              productId={productId}
+              qty={productId ? checkoutQty : null}
+              total={total}
+              fullWidth
               onClick={placeOrder}
-              disabled={loading}
-              className={`w-full mt-4 py-3 font-bold rounded-lg ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700 text-white"
-              }`}
-            >
-              {loading ? "Processing..." : `অর্ডার কনফার্ম করুন ৳${total}`}
-            </button>
+            />
           </div>
         </div>
       )}

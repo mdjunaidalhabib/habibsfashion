@@ -7,39 +7,44 @@ export const UserProvider = ({ children }) => {
   const [me, setMe] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
+  // ✅ Helper: fetch user by token
+  const fetchMe = async (token) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setMe(data);
+      } else {
+        localStorage.removeItem("token");
+        setMe(null);
+      }
+    } catch (err) {
+      console.error("❌ Failed to load user:", err);
+      setMe(null);
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       setLoadingUser(false);
       return;
     }
-
-    (async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setMe(data);
-        } else {
-          localStorage.removeItem("token");
-        }
-      } catch (err) {
-        console.error("❌ Failed to load user:", err);
-      } finally {
-        setLoadingUser(false);
-      }
-    })();
+    fetchMe(token);
   }, []);
 
   return (
-    <UserContext.Provider value={{ me, setMe, loadingUser }}>
+    <UserContext.Provider value={{ me, setMe, loadingUser, fetchMe }}>
       {children}
     </UserContext.Provider>
   );

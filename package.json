@@ -18,6 +18,7 @@
     "get-caller-file": "^2.0.5",
     "has-flag": "^4.0.0",
     "is-fullwidth-code-point": "^3.0.0",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "next": "^15.5.2",
     "react": "^19.1.1",
@@ -36,13 +37,13 @@
     "yargs": "^17.7.2",
     "yargs-parser": "^21.1.1"
   },
-"scripts": {
-  "start:frontend": "cd frontend && npm run dev",
-  "start:admin": "cd admin && npm run dev",
-  "start:backend": "cd backend && npm run dev",
-  "dev": "concurrently \"npm run start:frontend\" \"npm run start:admin\" \"npm run start:backend\"",
-  "build": "next build"
-},
+  "scripts": {
+    "start:frontend": "cd frontend && npm run dev",
+    "start:admin": "cd admin && npm run dev",
+    "start:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run start:frontend\" \"npm run start:admin\" \"npm run start:backend\"",
+    "build": "next build"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mdjunaidalhabib/ecommerce.git"
