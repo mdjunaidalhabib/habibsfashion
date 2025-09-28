@@ -36,7 +36,7 @@ router.get(
   }),
   (req, res) => {
     const { token, user } = req.user;
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    const clientUrl = process.env.CLIENT_URLS || "http://localhost:3000";
 
     // ✅ token + user কে frontend এ পাঠানো হচ্ছে
     res.redirect(
