@@ -10,7 +10,6 @@ import {
   FaMinus,
 } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
-import { makeImageUrl } from "../../lib/utils"; // ✅ utility import
 
 const ProductCard = ({ product }) => {
   const { cart, setCart, wishlist, setWishlist } = useCart();
@@ -24,6 +23,12 @@ const ProductCard = ({ product }) => {
 
   const isInWishlist = wishlist.includes(productId);
   const totalPrice = product?.price * quantity;
+
+  // ✅ Main image (Cloudinary URL direct)
+  const mainImage =
+    product?.images && product.images.length > 0
+      ? product.images[0]
+      : product?.image;
 
   // ✅ Updated Cart Logic
   const updateCart = (id, change) => {
@@ -84,13 +89,15 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* ✅ Product Image */}
-        <Image
-          src={makeImageUrl(product?.image)}
-          alt={product?.name || "Product"}
-          fill
-          className="rounded-lg object-cover"
-          priority
-        />
+        {mainImage && (
+          <Image
+            src={mainImage} // ✅ Direct Cloudinary URL
+            alt={product?.name || "Product"}
+            fill
+            className="rounded-lg object-cover"
+            priority
+          />
+        )}
       </div>
 
       <div className="px-4 pb-3">

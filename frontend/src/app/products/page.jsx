@@ -2,10 +2,9 @@ import ProductCard from "../../../components/home/ProductCard";
 import Link from "next/link";
 import { apiFetch } from "../../../utils/api";
 
-
 async function getProducts() {
   return await apiFetch("/api/products", {
-    cache: "no-store",
+    cache: "no-store", // ✅ সর্বদা fresh data
   });
 }
 
@@ -29,7 +28,7 @@ export default async function AllProductsPage() {
       </div>
 
       {/* Products Grid */}
-      {products.length ? (
+      {products && products.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((p) => (
             <ProductCard key={p._id} product={p} />

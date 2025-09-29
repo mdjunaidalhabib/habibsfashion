@@ -1,11 +1,8 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ProductCard from "../../../../components/home/ProductCard";
 import { apiFetch } from "../../../../utils/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function CategoryPage() {
   const { id } = useParams(); // 🔥 URL থেকে categoryId আসবে
@@ -63,7 +60,7 @@ export default function CategoryPage() {
       <div className="mb-6 flex items-center gap-4">
         {category.image && (
           <img
-            src={`${API_URL}${category.image}`}
+            src={category.image}   // ✅ Cloudinary full URL
             alt={category.name}
             className="w-16 h-16 rounded-lg object-cover border"
           />

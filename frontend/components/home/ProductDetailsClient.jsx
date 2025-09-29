@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { FaStar, FaHeart } from "react-icons/fa";
 import ProductCard from "./ProductCard";
-import { makeImageUrl } from "../../lib/utils";
 import { useCartUtils } from "../../hooks/useCartUtils";
 import QuantityController from "./QuantityController";
 import CheckoutButton from "./CheckoutButton";
@@ -21,7 +20,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
   const images = useMemo(() => {
     if (product.colors && activeColor) {
       const colorObj = product.colors.find((c) => c.name === activeColor);
-      return colorObj?.images || [product.image];
+      return colorObj?.images?.length ? colorObj.images : [product.image];
     }
     if (Array.isArray(product.images) && product.images.length) {
       return product.images;
@@ -56,16 +55,11 @@ export default function ProductDetailsClient({ product, category, related = [] }
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-4">
-        <Link href="/" className="hover:underline">
-          Home
-        </Link>
+        <Link href="/" className="hover:underline">Home</Link>
         <span className="mx-2">/</span>
         {category && (
           <>
-            <Link
-              href={`/categories/${category._id}`}
-              className="hover:underline"
-            >
+            <Link href={`/categories/${category._id}`} className="hover:underline">
               {category.name}
             </Link>
             <span className="mx-2">/</span>
@@ -79,13 +73,15 @@ export default function ProductDetailsClient({ product, category, related = [] }
         {/* Gallery */}
         <div className="bg-white rounded-2xl shadow p-4">
           <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100">
-            <Image
-              src={makeImageUrl(images[activeIdx])}
-              alt={product?.name || "Product"}
-              fill
-              className="object-cover rounded-lg"
-              priority
-            />
+            {images[activeIdx] && (
+              <Image
+                src={images[activeIdx]}   // ✅ direct Cloudinary URL
+                alt={product?.name || "Product"}
+                fill
+                className="object-cover rounded-lg"
+                priority
+              />
+            )}
           </div>
           {images.length > 1 && (
             <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
@@ -100,7 +96,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
                   }`}
                 >
                   <Image
-                    src={makeImageUrl(src)}
+                    src={src}   // ✅ direct Cloudinary URL
                     alt={`${product.name} ${i + 1}`}
                     fill
                     className="object-cover"
@@ -113,14 +109,10 @@ export default function ProductDetailsClient({ product, category, related = [] }
 
         {/* Summary */}
         <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
-          <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
-            {product.name}
-          </h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold mb-2">{product.name}</h1>
 
           {category?.name && (
-            <p className="text-sm text-gray-600 mb-1">
-              Category: {category.name}
-            </p>
+            <p className="text-sm text-gray-600 mb-1">Category: {category.name}</p>
           )}
 
           <p
@@ -172,34 +164,24 @@ export default function ProductDetailsClient({ product, category, related = [] }
                 />
               ))}
             </div>
-            <span className="text-sm text-gray-500">
-              {product.rating || 0}/5
-            </span>
+            <span className="text-sm text-gray-500">{product.rating || 0}/5</span>
           </div>
 
           {/* Price + Wishlist */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <p className="text-blue-600 font-bold text-2xl">
-                ৳{product.price}
-              </p>
+              <p className="text-blue-600 font-bold text-2xl">৳{product.price}</p>
               {product.oldPrice && (
-                <p className="text-gray-400 line-through text-lg">
-                  ৳{product.oldPrice}
-                </p>
+                <p className="text-gray-400 line-through text-lg">৳{product.oldPrice}</p>
               )}
               {discountPct && (
-                <span className="text-red-500 font-semibold">
-                  -{discountPct}%
-                </span>
+                <span className="text-red-500 font-semibold">-{discountPct}%</span>
               )}
             </div>
             <button
               onClick={() => toggleWishlist(product._id)}
               className={`p-3 rounded-full shadow ${
-                isInWishlist
-                  ? "bg-red-500 text-white"
-                  : "bg-gray-200 text-gray-600"
+                isInWishlist ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
               }`}
             >
               <FaHeart />
@@ -220,7 +202,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
               >
                 Add to Cart
               </button>
-                <CheckoutButton productId={product._id} qty={quantity} />
+              <CheckoutButton productId={product._id} qty={quantity} />
             </div>
           ) : (
             <div className="space-y-3">
@@ -236,9 +218,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
               <div className="flex items-center justify-between">
                 <p className="text-sm">
                   Total:{" "}
-                  <span className="text-blue-600 font-semibold">
-                    ৳{totalPrice}
-                  </span>
+                  <span className="text-blue-600 font-semibold">৳{totalPrice}</span>
                 </p>
                 <CheckoutButton productId={product._id} qty={quantity} />
               </div>
@@ -256,12 +236,8 @@ export default function ProductDetailsClient({ product, category, related = [] }
         </div>
 
         <div className="mt-4 bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-700 leading-relaxed">
-          {tab === "desc" && (
-            <p>{product.description || "No description available."}</p>
-          )}
-          {tab === "info" && (
-            <p>{product.additionalInfo || "No additional information provided."}</p>
-          )}
+          {tab === "desc" && <p>{product.description || "No description available."}</p>}
+          {tab === "info" && <p>{product.additionalInfo || "No additional information provided."}</p>}
           {tab === "reviews" && (
             <div className="text-sm">
               {product.reviews?.length ? (
@@ -269,9 +245,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
                   <div key={i} className="border-b py-2">
                     <p className="font-semibold">
                       {r.user}{" "}
-                      <span className="text-yellow-500">
-                        {"★".repeat(r.rating)}
-                      </span>{" "}
+                      <span className="text-yellow-500">{"★".repeat(r.rating)}</span>{" "}
                       <span className="text-gray-500">{r.rating}/5</span>
                     </p>
                     <p>{r.comment}</p>
@@ -289,9 +263,7 @@ export default function ProductDetailsClient({ product, category, related = [] }
       {related?.length > 0 && (
         <section className="mt-10">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg sm:text-xl font-semibold">
-              Related products
-            </h3>
+            <h3 className="text-lg sm:text-xl font-semibold">Related products</h3>
             {category && (
               <Link
                 href={`/categories/${category._id}`}

@@ -1,10 +1,8 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
 import ProductCard from "../../../components/home/ProductCard";
-import { makeImageUrl } from "../../../lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -47,7 +45,7 @@ export default function CategoryPage() {
               {cat.image && (
                 <div className="relative w-10 h-10">
                   <Image
-                    src={makeImageUrl(cat.image)}
+                    src={cat.image}   // ✅ Cloudinary URL directly ব্যবহার হবে
                     alt={cat.name}
                     fill
                     className="rounded-md object-cover border"

@@ -1,322 +1,220 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { makeImageUrl } from "../../../lib/utils";
+
+function Toast({ message, type, onClose }) {
+  return (
+    <div className={`fixed top-4 right-4 px-4 py-2 rounded shadow text-white ${type === "success" ? "bg-green-600" : "bg-red-600"}`}>
+      <div className="flex items-center justify-between">
+        <span>{message}</span>
+        <button className="ml-4" onClick={onClose}>✖</button>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentId, setCurrentId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const [newProduct, setNewProduct] = useState({
+  const [form, setForm] = useState({
     name: "",
     price: "",
     oldPrice: "",
-    stock: "",
+    stock: 0,
     description: "",
     additionalInfo: "",
     category: "",
-    image: "",
-    images: [],
-    colors: [],
-    reviews: [],
+    colors: [],   // {name, images}
   });
-  const [preview, setPreview] = useState(null);
+  const [images, setImages] = useState([]); // multiple product images
+  const [preview, setPreview] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  // Fetch Products + Categories
+  // Load products + categories
+  const loadProducts = async () => {
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/products");
+    setProducts(await res.json());
+  };
+  const loadCategories = async () => {
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/categories");
+    setCategories(await res.json());
+  };
+
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      try {
-        const prodRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/products`
-        );
-        if (!prodRes.ok) throw new Error("Failed to fetch products");
-        setProducts(await prodRes.json());
-
-        const catRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
-        );
-        if (!catRes.ok) throw new Error("Failed to fetch categories");
-        setCategories(await catRes.json());
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
+    loadProducts();
+    loadCategories();
   }, []);
 
-  // Reset form
-  function resetForm() {
-    setNewProduct({
-      name: "",
-      price: "",
-      oldPrice: "",
-      stock: "",
-      description: "",
-      additionalInfo: "",
-      category: "",
-      image: "",
-      images: [],
-      colors: [],
-      reviews: [],
-    });
-    setPreview(null);
-    setIsEditing(false);
-    setCurrentId(null);
-    setShowForm(false);
-  }
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Handle Input
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setNewProduct({ ...newProduct, [name]: value });
-  }
+  // handle multiple images
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImages(files);
+    setPreview(files.map(f => URL.createObjectURL(f)));
+  };
 
-  // Reviews handler
-  function handleReviewChange(index, field, value) {
-    const updatedReviews = [...newProduct.reviews];
-    updatedReviews[index][field] = value;
-    setNewProduct({ ...newProduct, reviews: updatedReviews });
-  }
-  function addReview() {
-    setNewProduct({
-      ...newProduct,
-      reviews: [...newProduct.reviews, { user: "", rating: "", comment: "" }],
-    });
-  }
-  function removeReview(index) {
-    const updatedReviews = [...newProduct.reviews];
-    updatedReviews.splice(index, 1);
-    setNewProduct({ ...newProduct, reviews: updatedReviews });
-  }
+  // Add color variation
+  const addColor = () => {
+    setForm({ ...form, colors: [...form.colors, { name: "", images: [] }] });
+  };
 
-  // Thumbnail preview
-  function handleImageChange(e) {
-    const file = e.target.files[0];
-    if (file) {
-      setNewProduct({ ...newProduct, image: file });
-      setPreview(URL.createObjectURL(file));
-    }
-  }
+  // Update color name
+  const handleColorNameChange = (idx, value) => {
+    const newColors = [...form.colors];
+    newColors[idx].name = value;
+    setForm({ ...form, colors: newColors });
+  };
 
-  // Save Product
-  async function handleSubmit(e) {
+  // Handle color images
+  const handleColorImages = (idx, files) => {
+    const newColors = [...form.colors];
+    newColors[idx].images = Array.from(files);
+    setForm({ ...form, colors: newColors });
+  };
+
+  // Submit
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const method = isEditing ? "PUT" : "POST";
-    const url = isEditing
-      ? `${process.env.NEXT_PUBLIC_API_URL}/api/products/${currentId}`
-      : `${process.env.NEXT_PUBLIC_API_URL}/api/products`;
-
-    const formData = new FormData();
-
-    Object.keys(newProduct).forEach((key) => {
-      if (key === "image") {
-        if (newProduct.image) {
-          formData.append("image", newProduct.image);
-        }
-      } else {
-        formData.append(key, typeof newProduct[key] === "object" ? JSON.stringify(newProduct[key]) : newProduct[key]);
-      }
-    });
-
-    const res = await fetch(url, {
-      method,
-      body: formData,
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || "Something went wrong");
-      return;
+    const data = new FormData();
+    for (let key in form) {
+      if (key !== "colors") data.append(key, form[key]);
     }
+    images.forEach(img => data.append("images", img));
 
-    if (method === "POST") {
-      setProducts([...products, data]);
-    } else {
-      setProducts(products.map((p) => (p._id === data._id ? data : p)));
-    }
-
-    resetForm();
-  }
-
-  // Delete Product
-  async function handleDelete(id) {
-    if (confirm("Are you sure?")) {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`, {
-        method: "DELETE",
+    // colors
+    form.colors.forEach((color, idx) => {
+      data.append(`colors[${idx}][name]`, color.name);
+      color.images.forEach(img => {
+        data.append(`colors[${idx}][images]`, img);
       });
-      setProducts(products.filter((p) => p._id !== id));
-    }
-  }
+    });
 
-  // Edit Product
-  function handleEdit(p) {
-    setShowForm(true);
-    setIsEditing(true);
-    setCurrentId(p._id);
-    setNewProduct({
+    let url = process.env.NEXT_PUBLIC_API_URL + "/api/products";
+    let method = "POST";
+    if (editId) { url += "/" + editId; method = "PUT"; }
+
+    const res = await fetch(url, { method, body: data });
+    if (res.ok) {
+      setToast({ message: editId ? "✅ Product updated!" : "✅ Product added!", type: "success" });
+      resetForm();
+      loadProducts();
+    } else {
+      setToast({ message: "❌ Error saving product", type: "error" });
+    }
+  };
+
+  const resetForm = () => {
+    setForm({ name: "", price: "", oldPrice: "", stock: 0, description: "", additionalInfo: "", category: "", colors: [] });
+    setImages([]);
+    setPreview([]);
+    setEditId(null);
+    setShowModal(false);
+  };
+
+  const handleEdit = (p) => {
+    setEditId(p._id);
+    setForm({
       name: p.name,
       price: p.price,
-      oldPrice: p.oldPrice,
+      oldPrice: p.oldPrice || "",
       stock: p.stock,
-      description: p.description,
-      additionalInfo: p.additionalInfo,
+      description: p.description || "",
+      additionalInfo: p.additionalInfo || "",
       category: p.category?._id || "",
-      image: p.image, // string path
-      images: p.images,
-      colors: p.colors,
-      reviews: p.reviews || [],
+      colors: p.colors || [],
     });
-    setPreview(p.image ? makeImageUrl(p.image) : null);
-  }
+    setPreview(p.images || []);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this product?")) return;
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/products/" + id, { method: "DELETE" });
+    if (res.ok) {
+      setToast({ message: "🗑️ Product deleted!", type: "success" });
+      loadProducts();
+    }
+  };
 
   return (
-    <div className="p-2 sm:p-4">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4">Products</h2>
+    <div className="p-6">
+      <div className="flex justify-between mb-4">
+        <h1 className="text-xl font-bold">Products</h1>
+        <button onClick={() => setShowModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded">+ Add</button>
+      </div>
 
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      {/* Product List */}
+      <div className="grid md:grid-cols-3 gap-4">
+        {products.map(p => (
+          <div key={p._id} className="border rounded shadow p-3 flex flex-col">
+            {p.images && p.images.length > 0 && <img src={p.images[0]} alt={p.name} className="h-24 w-full object-cover rounded mb-2" />}
+            <h2 className="font-semibold">{p.name}</h2>
+            <p className="text-gray-600">৳ {p.price} <span className="line-through text-sm">৳ {p.oldPrice}</span></p>
+            <p className="text-sm text-gray-500">Stock: {p.stock}</p>
+            <p className="text-sm text-gray-400">{p.category?.name}</p>
+            <div className="mt-2 flex gap-2">
+              <button onClick={() => handleEdit(p)} className="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+              <button onClick={() => handleDelete(p._id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <button
-        onClick={() => setShowForm(true)}
-        className="bg-indigo-600 text-white px-4 py-2 rounded mb-6 w-full sm:w-auto"
-      >
-        Add Product
-      </button>
+      {/* Modal Form */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded p-6 w-96 shadow-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold mb-4">{editId ? "Edit Product" : "Add Product"}</h2>
+            <form onSubmit={handleSubmit}>
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="border p-2 mb-2 w-full" />
+              <input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Price" className="border p-2 mb-2 w-full" />
+              <input name="oldPrice" type="number" value={form.oldPrice} onChange={handleChange} placeholder="Old Price" className="border p-2 mb-2 w-full" />
+              <input name="stock" type="number" value={form.stock} onChange={handleChange} placeholder="Stock" className="border p-2 mb-2 w-full" />
+              <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" className="border p-2 mb-2 w-full" />
+              <textarea name="additionalInfo" value={form.additionalInfo} onChange={handleChange} placeholder="Additional Info" className="border p-2 mb-2 w-full" />
 
-      {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto relative">
-            <button
-              onClick={resetForm}
-              className="absolute top-2 right-2 text-gray-600 hover:text-black"
-            >
-              ✖
-            </button>
-
-            <h3 className="text-lg font-semibold mb-4">
-              {isEditing ? "Edit Product" : "Add New Product"}
-            </h3>
-
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <input type="text" name="name" value={newProduct.name} onChange={handleChange} placeholder="Product Name" className="w-full border p-2 rounded" required />
-              <input type="number" name="price" value={newProduct.price} onChange={handleChange} placeholder="Price" className="w-full border p-2 rounded" required />
-              <input type="number" name="oldPrice" value={newProduct.oldPrice} onChange={handleChange} placeholder="Old Price" className="w-full border p-2 rounded" />
-              <input type="number" name="stock" value={newProduct.stock} onChange={handleChange} placeholder="Stock" className="w-full border p-2 rounded" required />
-
-              <textarea name="description" value={newProduct.description} onChange={handleChange} placeholder="Description" className="w-full border p-2 rounded" />
-              <textarea name="additionalInfo" value={newProduct.additionalInfo} onChange={handleChange} placeholder="Additional Info" className="w-full border p-2 rounded" />
-
-              <select name="category" value={newProduct.category} onChange={handleChange} className="w-full border p-2 rounded" required>
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>{cat.name}</option>
+              {/* Category Dropdown */}
+              <select name="category" value={form.category} onChange={handleChange} className="border p-2 mb-2 w-full">
+                <option value="">-- Select Category --</option>
+                {categories.map(c => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
                 ))}
               </select>
 
-              <input type="file" accept="image/*" className="w-full border p-2 rounded" onChange={handleImageChange} />
-              {preview && (
-                <div className="relative w-24 h-24">
-                  <Image src={preview} alt="preview" fill className="object-cover rounded border" />
-                </div>
-              )}
-
-              {/* Reviews */}
-              <div className="border p-3 rounded">
-                <h4 className="font-semibold mb-2">Reviews</h4>
-                {newProduct.reviews.map((review, index) => (
-                  <div key={index} className="border p-2 rounded mb-2 space-y-2">
-                    <input type="text" value={review.user} onChange={(e) => handleReviewChange(index, "user", e.target.value)} placeholder="User" className="w-full border p-2 rounded" />
-                    <input type="number" min="1" max="5" value={review.rating} onChange={(e) => handleReviewChange(index, "rating", e.target.value)} placeholder="Rating (1-5)" className="w-full border p-2 rounded" />
-                    <textarea value={review.comment} onChange={(e) => handleReviewChange(index, "comment", e.target.value)} placeholder="Comment" className="w-full border p-2 rounded" />
-                    <button type="button" onClick={() => removeReview(index)} className="bg-red-500 text-white px-3 py-1 rounded">Remove Review</button>
-                  </div>
+              {/* Multiple Images */}
+              <label className="font-semibold">Product Images</label>
+              <input type="file" multiple onChange={handleImageChange} className="mb-2 w-full" />
+              <div className="flex gap-2 flex-wrap mb-2">
+                {preview.map((src, i) => (
+                  <img key={i} src={src} className="h-16 border rounded" />
                 ))}
-                <button type="button" onClick={addReview} className="bg-blue-500 text-white px-3 py-1 rounded mt-2">Add Review</button>
               </div>
 
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-full">
-                {isEditing ? "Update Product" : "Save Product"}
-              </button>
+              {/* Colors */}
+              <div>
+                <label className="font-semibold">Colors</label>
+                {form.colors.map((color, idx) => (
+                  <div key={idx} className="border p-2 mb-2 rounded">
+                    <input type="text" value={color.name} onChange={(e) => handleColorNameChange(idx, e.target.value)} placeholder="Color Name" className="border p-2 mb-2 w-full" />
+                    <input type="file" multiple onChange={(e) => handleColorImages(idx, e.target.files)} className="mb-2" />
+                  </div>
+                ))}
+                <button type="button" onClick={addColor} className="bg-blue-500 text-white px-2 py-1 rounded">+ Add Color</button>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={resetForm} className="px-4 py-2 border rounded">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">{editId ? "Update" : "Save"}</button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto bg-white rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-left">Price</th>
-              <th className="p-2 text-left">Stock</th>
-              <th className="p-2 text-left">Rating</th>
-              <th className="p-2 text-left">Category</th>
-              <th className="p-2 text-left">Image</th>
-              <th className="p-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr key={p._id} className="border-b">
-                <td className="p-2">{p.name}</td>
-                <td className="p-2">৳{p.price}</td>
-                <td className="p-2">{p.stock}</td>
-                <td className="p-2">{p.rating ? p.rating.toFixed(1) : "—"}</td>
-                <td className="p-2">{p.category?.name || "—"}</td>
-                <td className="p-2">
-                  {p.image ? (
-                    <div className="relative w-10 h-10">
-                      <Image src={makeImageUrl(p.image)} alt={p.name} fill className="object-cover rounded border" />
-                    </div>
-                  ) : "—"}
-                </td>
-                <td className="p-2 space-x-2">
-                  <button onClick={() => handleEdit(p)} className="bg-yellow-500 text-white px-3 py-1 rounded">Edit</button>
-                  <button onClick={() => handleDelete(p._id)} className="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="grid gap-3 md:hidden">
-        {products.map((p) => (
-          <div key={p._id} className="border rounded-lg p-3 bg-white">
-            <div className="flex justify-between items-center">
-              <h4 className="font-semibold">{p.name}</h4>
-              <span className="text-sm text-gray-600">৳{p.price}</span>
-            </div>
-            <div className="text-sm text-gray-600">Stock: {p.stock}</div>
-            <div className="text-sm text-gray-600">Rating: {p.rating ? p.rating.toFixed(1) : "—"}</div>
-            <div className="text-sm text-gray-600">Category: {p.category?.name || "—"}</div>
-            {p.image && (
-              <div className="relative w-20 h-20 mt-2">
-                <Image src={makeImageUrl(p.image)} alt={p.name} fill className="object-cover rounded border" />
-              </div>
-            )}
-            <div className="mt-2 flex gap-2 flex-wrap">
-              <button onClick={() => handleEdit(p)} className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Edit</button>
-              <button onClick={() => handleDelete(p._id)} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Toast */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

@@ -9,9 +9,9 @@ import { configurePassport } from "./src/auth/passport.js";
 import authRoutes from "./src/routes/auth.js";
 import locationRoutes from "./src/routes/locationRoutes.js";
 import ordersRoute from "./src/routes/orders.js";
-import categoriesRoute from "./src/routes/categories.js";
-import productsRoute from "./src/routes/products.js";
 import usersRoute from "./src/routes/users.js";
+import productRoutes from "./src/routes/productRoutes.js";
+import categoryRoutes from "./src/routes/categoryRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -60,8 +60,8 @@ app.use(passport.initialize());
 app.use("/auth", authRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/orders", ordersRoute);
-app.use("/api/categories", categoriesRoute);
-app.use("/api/products", productsRoute);
+app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/users", usersRoute);
 
 // ✅ Static files

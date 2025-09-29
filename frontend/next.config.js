@@ -18,6 +18,11 @@ const nextConfig = {
         port: parsed.port || undefined, // যদি port থাকে (4000) নেবে
         pathname: "/uploads/**", // ✅ শুধু uploads ফোল্ডার allow
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com", // ✅ Cloudinary host allow
+        pathname: "/**", // সব path allow
+      },
     ],
   },
 };
