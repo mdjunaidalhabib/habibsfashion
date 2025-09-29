@@ -16,9 +16,9 @@ export const UserProvider = ({ children }) => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          credentials: "include",
         }
       );
+
       if (res.ok) {
         const data = await res.json();
         setMe(data);
@@ -28,19 +28,21 @@ export const UserProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("❌ Failed to load user:", err);
+      localStorage.removeItem("token");
       setMe(null);
     } finally {
       setLoadingUser(false);
     }
   };
 
+  // ✅ App শুরু হলে localStorage থেকে token চেক করো
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
+    if (token) {
+      fetchMe(token);
+    } else {
       setLoadingUser(false);
-      return;
     }
-    fetchMe(token);
   }, []);
 
   return (

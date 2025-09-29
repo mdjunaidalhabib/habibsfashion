@@ -1,26 +1,28 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useUser } from "../../../../context/UserContext"; // ✅ ঠিক path
+import { useUser } from "../../../../context/UserContext";
 
 export default function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setMe } = useUser(); // ✅ এখানে setUser না, setMe
+  const { fetchMe } = useUser();
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const userStr = searchParams.get("user");
+    const redirect = searchParams.get("redirect") || "/";
 
-    if (token && userStr) {
+    if (token) {
+      // ✅ token save করো
       localStorage.setItem("token", token);
 
-      const user = JSON.parse(decodeURIComponent(userStr));
-      setMe(user); // ✅ context এ update হবে
+      // ✅ context reload (backend থেকে fresh user আনবে)
+      fetchMe(token);
 
-      router.push("/");
+      // ✅ clean redirect (auth/callback URL বাদ দিয়ে আসল পেজে পাঠাবে)
+      router.replace(redirect);
     } else {
-      router.push("/login");
+      router.replace("/login");
     }
   }, []);
 

@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useUser } from "../../context/UserContext";
+import { useState, useCallback } from "react";
 
 export default function CheckoutButton({
   productId,
@@ -12,23 +13,29 @@ export default function CheckoutButton({
 }) {
   const router = useRouter();
   const { me } = useUser(); // ✅ logged-in user check
+  const [loading, setLoading] = useState(false);
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
+    if (loading) return; // 🔹 Double-click রোধ
+    setLoading(true);
+
     if (!me) {
       // ❌ User login নাই → backend Google OAuth এ পাঠাও
-      const redirectUrl = encodeURIComponent(
-        productId
-          ? `${window.location.origin}/checkout?productId=${productId}&qty=${qty || 1}`
-          : `${window.location.origin}/checkout`
-      );
+      const checkoutUrl = productId
+        ? `${window.location.origin}/checkout?productId=${productId}&qty=${qty || 1}`
+        : `${window.location.origin}/checkout`;
 
-      window.location.href = `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${redirectUrl}`;
+      // ✅ এখন সবসময় /auth/callback এ আসবে
+      window.location.href = `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${encodeURIComponent(
+        checkoutUrl
+      )}`;
       return;
     }
 
     if (onClick) {
       // ✅ placeOrder function থাকলে সেটা চালাও (checkout page এ)
       onClick();
+      setLoading(false); // onClick শেষ হলে reset করো
     } else {
       // ✅ Direct checkout এ যাও
       const checkoutUrl = productId
@@ -36,14 +43,21 @@ export default function CheckoutButton({
         : `/checkout`;
       router.push(checkoutUrl);
     }
-  };
+  }, [loading, me, onClick, productId, qty, router]);
 
   return (
     <button
       onClick={handleClick}
-      className={`${fullWidth ? "w-full" : ""} mt-4 py-3 font-bold rounded-lg bg-green-600 hover:bg-green-700 text-white`}
+      disabled={loading}
+      className={`${fullWidth ? "w-full" : ""} mt-4 py-3 font-bold rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed`}
     >
-      {label ? label : total ? `অর্ডার কনফার্ম করুন ৳${total}` : "Checkout"}
+      {loading
+        ? "⏳ Processing..."
+        : label
+        ? label
+        : total
+        ? `অর্ডার কনফার্ম করুন ৳${total}`
+        : "Checkout"}
     </button>
   );
 }

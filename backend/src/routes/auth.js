@@ -18,16 +18,17 @@ function authenticateJWT(req, res, next) {
   });
 }
 
-// 🔹 Google Login (force Gmail select)
-router.get(
-  "/google",
+// 🔹 Google Login (redirect → state এ carry করা হচ্ছে)
+router.get("/google", (req, res, next) => {
+  const redirect = req.query.redirect;
   passport.authenticate("google", {
     scope: ["profile", "email"],
     prompt: "select_account",
-  })
-);
+    state: redirect ? encodeURIComponent(redirect) : undefined,
+  })(req, res, next);
+});
 
-// 🔹 Google Callback
+// 🔹 Google Callback (✅ শুধুমাত্র একবার)
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -36,11 +37,19 @@ router.get(
   }),
   (req, res) => {
     const { token, user } = req.user;
-    const clientUrl = process.env.CLIENT_URLS || "http://localhost:3000";
 
+    // state param থেকে redirect (optional)
+    const redirect = req.query.state
+      ? decodeURIComponent(req.query.state)
+      : "/";
+
+    const clientUrl =
+      process.env.CLIENT_URLS?.split(",")[0] || "http://localhost:3000";
+
+    // সবসময় /auth/callback এ পাঠানো হবে
     res.redirect(
-      `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(
-        JSON.stringify(user)
+      `${clientUrl}/auth/callback?token=${token}&redirect=${encodeURIComponent(
+        redirect
       )}`
     );
   }
