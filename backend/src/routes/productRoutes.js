@@ -6,6 +6,7 @@ import {
   deleteProduct,
   getProducts,
   getProductById,
+  getProductsByCategory, // ✅ Import the new controller
 } from "../../controllers/productController.js";
 
 const router = express.Router();
@@ -20,10 +21,24 @@ const productUpload = upload.fields([
   ...colorFields,
 ]);
 
+// ------------------- Routes -------------------
+
+// Create product
 router.post("/", productUpload, createProduct);
+
+// Update product
 router.put("/:id", productUpload, updateProduct);
+
+// Delete product
 router.delete("/:id", deleteProduct);
+
+// Get all products
 router.get("/", getProducts);
+
+// Get products by category ✅
+router.get("/category/:categoryId", getProductsByCategory);
+
+// Get single product
 router.get("/:id", getProductById);
 
 export default router;

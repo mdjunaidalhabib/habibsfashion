@@ -2,15 +2,17 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaClipboardList, FaSignOutAlt } from "react-icons/fa"; // Logout icon
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmModal from "../ConfirmModal";
 import { useUser } from "../../context/UserContext";
+import { usePathname } from "next/navigation";
 
 export default function AccountMenuMobile() {
   const { me, setMe, loadingUser } = useUser();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const pathname = usePathname();
 
   if (loadingUser) {
     return (
@@ -54,6 +56,27 @@ export default function AccountMenuMobile() {
     setMe(null);
     window.location.href = "/";
   };
+
+  // Active class helper
+  const isActive = (route) =>
+    pathname === route ? "bg-gray-100 font-medium" : "";
+
+  // Menu item with left icon
+  const MenuItem = ({ href, label, icon: Icon }) => (
+    <Link
+      href={href}
+      className={`flex items-center justify-between px-3 py-2 rounded hover:bg-gray-100 ${isActive(
+        href
+      )}`}
+      onClick={() => setOpen(false)}
+    >
+      <div className="flex items-center gap-2">
+        <Icon className="w-5 h-5 text-gray-600" />
+        <span>{label}</span>
+      </div>
+      {pathname === href && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+    </Link>
+  );
 
   return (
     <>
@@ -102,31 +125,19 @@ export default function AccountMenuMobile() {
                 ) : (
                   <FaUser className="w-8 h-8" />
                 )}
-                <span className="font-medium text-lg truncate">
-                  {me.name}
-                </span>
+                <span className="font-medium text-lg truncate">{me.name}</span>
               </div>
 
-              <Link
-                href="/profile"
-                className="block px-3 py-2 hover:bg-gray-100"
-                onClick={() => setOpen(false)}
-              >
-                My Profile
-              </Link>
-              <Link
-                href="/orders"
-                className="block px-3 py-2 hover:bg-gray-100"
-                onClick={() => setOpen(false)}
-              >
-                My Orders
-              </Link>
+              <MenuItem href="/profile" label="My Profile" icon={FaUser} />
+              <MenuItem href="/orders" label="My Orders" icon={FaClipboardList} />
 
+              {/* Logout with icon */}
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-3 py-2 hover:bg-gray-100 mt-4"
+                className="flex items-center px-3 py-2 w-full rounded hover:bg-gray-100"
               >
-                Logout
+                <FaSignOutAlt className="w-5 h-5 text-gray-600 mr-2" />
+                <span>Logout</span>
               </button>
             </motion.div>
           </div>

@@ -1,3 +1,4 @@
+// app/products/[id]/page.jsx
 import ProductDetailsClient from "../../../../components/home/ProductDetailsClient";
 import { apiFetch } from "../../../../utils/api";
 
@@ -31,7 +32,6 @@ export default async function ProductDetailsPage({ params }) {
     );
   }
 
-  // ✅ এখানে categoryId বের করছি
   const categoryId =
     typeof product.category === "object" ? product.category._id : product.category;
 

@@ -49,7 +49,7 @@ export default function CheckoutButton({
     <button
       onClick={handleClick}
       disabled={loading}
-      className={`${fullWidth ? "w-full" : ""} mt-4 py-3 font-bold rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+      className={`${fullWidth ? "w-full" : ""} px-4 sm:px-24 py-3 font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed`}
     >
       {loading
         ? "⏳ Processing..."

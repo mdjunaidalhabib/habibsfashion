@@ -174,7 +174,7 @@ export const deleteProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   try {
     const products = await Product.find().populate("category");
-    res.json(products); // 👈 সরাসরি array পাঠানো হচ্ছে
+    res.json(products);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
@@ -186,6 +186,17 @@ export const getProductById = async (req, res) => {
     const product = await Product.findById(req.params.id).populate("category");
     if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// =================== GET PRODUCTS BY CATEGORY ===================
+export const getProductsByCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const products = await Product.find({ category: categoryId }).populate("category");
+    res.json(products);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

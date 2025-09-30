@@ -11,8 +11,11 @@ export async function apiFetch(url, options = {}) {
     },
   });
 
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  if (res.status === 204) return null;
+  if (!res.ok) {
+    const text = await res.text(); // full response দেখার জন্য
+    throw new Error(`API error: ${res.status} → ${text}`);
+  }
 
+  if (res.status === 204) return null;
   return res.json();
 }
