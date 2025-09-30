@@ -1,236 +1,192 @@
 import Product from "../src/models/Product.js";
 import cloudinary from "../utils/cloudinary.js";
 
-// ✅ Helper: upload multiple files to Cloudinary
-const uploadFiles = async (files, folder) => {
-  let urls = [];
-  for (const file of files) {
-    const result = await cloudinary.uploader.upload(file.path, { folder });
-    urls.push(result.secure_url);
-  }
-  return urls;
-};
-
-// ✅ Create Product
+// =================== CREATE PRODUCT ===================
 export const createProduct = async (req, res) => {
   try {
-    let imageUrls = [];
-    let colors = [];
+    const { name, price, oldPrice, stock, rating, description, additionalInfo, category } = req.body;
+    if (!name || !price || !category) {
+      return res.status(400).json({ error: "Name, Price & Category required" });
+    }
 
-    // Main product images
-    if (req.files && req.files.length > 0) {
-      // শুধু "images" ফিল্ডের ফাইলগুলো filter করে নিলাম
-      const productImages = req.files.filter((f) => f.fieldname === "images");
-      if (productImages.length > 0) {
-        imageUrls = await uploadFiles(productImages, "products");
+    let primaryImage = "";
+    let galleryImages = [];
+    let colors = [];
+    let reviews = [];
+
+    // ---- Primary Image ----
+    if (req.files?.image?.[0]) {
+      const uploaded = await cloudinary.uploader.upload(req.files.image[0].path, {
+        folder: "products",
+      });
+      primaryImage = uploaded.secure_url;
+    }
+
+    // ---- Gallery Images ----
+    if (req.files?.images) {
+      for (let file of req.files.images) {
+        const uploaded = await cloudinary.uploader.upload(file.path, {
+          folder: "products/gallery",
+        });
+        galleryImages.push(uploaded.secure_url);
       }
     }
 
-    // Colors
+    // ---- Colors ----
     if (req.body.colors) {
-      const parsedColors = [];
-      const colorsData = Array.isArray(req.body.colors)
-        ? req.body.colors
-        : [req.body.colors];
+      const parsedColors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors);
 
-      colorsData.forEach((c, idx) => {
-        const name = req.body[`colors[${idx}][name]`];
-        const colorFiles = req.files.filter(
-          (f) => f.fieldname === `colors[${idx}][images]`
-        );
-        parsedColors.push({ name, images: [] });
-        if (colorFiles.length > 0) {
-          parsedColors[parsedColors.length - 1].images = [];
-          colorFiles.forEach(async (file) => {
-            const result = await cloudinary.uploader.upload(file.path, {
-              folder: "products/colors",
+      for (let idx = 0; idx < parsedColors.length; idx++) {
+        let color = parsedColors[idx];
+        let colorImages = [];
+
+        if (req.files[`colors[${idx}][images]`]) {
+          for (let file of req.files[`colors[${idx}][images]`]) {
+            const uploaded = await cloudinary.uploader.upload(file.path, {
+              folder: `products/colors/${color.name}`,
             });
-            parsedColors[parsedColors.length - 1].images.push(result.secure_url);
-          });
+            colorImages.push(uploaded.secure_url);
+          }
         }
-      });
-      colors = parsedColors;
+
+        colors.push({ name: color.name, images: colorImages });
+      }
     }
 
-    // Reviews
-    let reviews = [];
+    // ---- Reviews ----
     if (req.body.reviews) {
-      const reviewsData = Array.isArray(req.body.reviews)
-        ? req.body.reviews
-        : [req.body.reviews];
-
-      reviewsData.forEach((r, idx) => {
-        reviews.push({
-          user: req.body[`reviews[${idx}][user]`],
-          rating: req.body[`reviews[${idx}][rating]`],
-          comment: req.body[`reviews[${idx}][comment]`],
-        });
-      });
+      reviews = Array.isArray(req.body.reviews) ? req.body.reviews : JSON.parse(req.body.reviews);
     }
 
     const product = new Product({
-      name: req.body.name,
-      price: req.body.price,
-      oldPrice: req.body.oldPrice,
-      stock: req.body.stock,
-      rating: req.body.rating,
-      description: req.body.description,
-      additionalInfo: req.body.additionalInfo,
-      category: req.body.category,
-      images: imageUrls,
+      name,
+      price,
+      oldPrice,
+      stock,
+      rating,
+      description,
+      additionalInfo,
+      category,
+      image: primaryImage,
+      images: galleryImages,
       colors,
       reviews,
     });
 
     await product.save();
-    res.json(product);
+    res.status(201).json(product);
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
+    console.error("❌ Error creating product:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// ✅ Update Product
+// =================== UPDATE PRODUCT ===================
 export const updateProduct = async (req, res) => {
   try {
+    const { name, price, oldPrice, stock, rating, description, additionalInfo, category } = req.body;
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ error: "Not found" });
+    if (!product) return res.status(404).json({ error: "Product not found" });
 
-    // Replace product images if new uploaded
-    if (req.files && req.files.length > 0) {
-      const productImages = req.files.filter((f) => f.fieldname === "images");
-      if (productImages.length > 0) {
-        // পুরানো images delete
-        if (product.images && product.images.length > 0) {
-          for (const img of product.images) {
-            const publicId = img.split("/").pop().split(".")[0];
-            await cloudinary.uploader.destroy("products/" + publicId);
-          }
-        }
-        product.images = await uploadFiles(productImages, "products");
-      }
-    }
-
-    // Update colors
-    if (req.body.colors) {
-      const updatedColors = [];
-      const colorsData = Array.isArray(req.body.colors)
-        ? req.body.colors
-        : [req.body.colors];
-
-      colorsData.forEach((c, idx) => {
-        const name = req.body[`colors[${idx}][name]`];
-        const colorFiles = req.files.filter(
-          (f) => f.fieldname === `colors[${idx}][images]`
-        );
-
-        let colorObj = { name, images: [] };
-
-        if (colorFiles.length > 0) {
-          colorFiles.forEach(async (file) => {
-            const result = await cloudinary.uploader.upload(file.path, {
-              folder: "products/colors",
-            });
-            colorObj.images.push(result.secure_url);
-          });
-        }
-
-        updatedColors.push(colorObj);
+    // ---- Primary Image ----
+    if (req.files?.image?.[0]) {
+      const uploaded = await cloudinary.uploader.upload(req.files.image[0].path, {
+        folder: "products",
       });
-      product.colors = updatedColors;
+      product.image = uploaded.secure_url;
     }
 
-    // Update reviews
-    if (req.body.reviews) {
-      const reviews = [];
-      const reviewsData = Array.isArray(req.body.reviews)
-        ? req.body.reviews
-        : [req.body.reviews];
-
-      reviewsData.forEach((r, idx) => {
-        reviews.push({
-          user: req.body[`reviews[${idx}][user]`],
-          rating: req.body[`reviews[${idx}][rating]`],
-          comment: req.body[`reviews[${idx}][comment]`],
+    // ---- Gallery Images ----
+    if (req.files?.images) {
+      let newGallery = [];
+      for (let file of req.files.images) {
+        const uploaded = await cloudinary.uploader.upload(file.path, {
+          folder: "products/gallery",
         });
-      });
-      product.reviews = reviews;
+        newGallery.push(uploaded.secure_url);
+      }
+      product.images = newGallery.length > 0 ? newGallery : product.images;
     }
 
-    // Other fields
-    product.name = req.body.name || product.name;
-    product.price = req.body.price || product.price;
-    product.oldPrice = req.body.oldPrice || product.oldPrice;
-    product.stock = req.body.stock || product.stock;
-    product.rating = req.body.rating || product.rating;
-    product.description = req.body.description || product.description;
-    product.additionalInfo =
-      req.body.additionalInfo || product.additionalInfo;
-    product.category = req.body.category || product.category;
+    // ---- Colors ----
+    if (req.body.colors) {
+      const parsedColors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors);
+
+      let newColors = [];
+      for (let idx = 0; idx < parsedColors.length; idx++) {
+        let color = parsedColors[idx];
+        let colorImages = [];
+
+        if (req.files[`colors[${idx}][images]`]) {
+          for (let file of req.files[`colors[${idx}][images]`]) {
+            const uploaded = await cloudinary.uploader.upload(file.path, {
+              folder: `products/colors/${color.name}`,
+            });
+            colorImages.push(uploaded.secure_url);
+          }
+        } else {
+          const existing = product.colors.find((c) => c.name === color.name);
+          if (existing) colorImages = existing.images;
+        }
+
+        newColors.push({ name: color.name, images: colorImages });
+      }
+      product.colors = newColors;
+    }
+
+    // ---- Reviews ----
+    if (req.body.reviews) {
+      product.reviews = Array.isArray(req.body.reviews) ? req.body.reviews : JSON.parse(req.body.reviews);
+    }
+
+    // ---- Other fields ----
+    product.name = name || product.name;
+    product.price = price || product.price;
+    product.oldPrice = oldPrice || product.oldPrice;
+    product.stock = stock || product.stock;
+    product.rating = rating || product.rating;
+    product.description = description || product.description;
+    product.additionalInfo = additionalInfo || product.additionalInfo;
+    product.category = category || product.category;
 
     await product.save();
     res.json(product);
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
+    console.error("❌ Error updating product:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// ✅ Delete Product
+// =================== DELETE PRODUCT ===================
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ error: "Not found" });
-
-    // পুরানো images delete
-    if (product.images && product.images.length > 0) {
-      for (const img of product.images) {
-        const publicId = img.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy("products/" + publicId);
-      }
-    }
+    if (!product) return res.status(404).json({ error: "Product not found" });
 
     await product.deleteOne();
-    res.json({ message: "Deleted" });
+    res.json({ message: "🗑️ Product deleted" });
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// ✅ Get all products
+// =================== GET ALL PRODUCTS ===================
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate("category", "name image");
-    res.json(products);
+    const products = await Product.find().populate("category");
+    res.json(products); // 👈 সরাসরি array পাঠানো হচ্ছে
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch products" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// ✅ Get single product
+// =================== GET SINGLE PRODUCT ===================
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "category",
-      "name image"
-    );
-    if (!product) return res.status(404).json({ error: "Not found" });
+    const product = await Product.findById(req.params.id).populate("category");
+    if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch product" });
-  }
-};
-
-// ✅ Get products by category
-export const getProductsByCategory = async (req, res) => {
-  try {
-    const products = await Product.find({ category: req.params.id }).populate(
-      "category",
-      "name image"
-    );
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch products by category" });
+    res.status(500).json({ error: "Server error" });
   }
 };
