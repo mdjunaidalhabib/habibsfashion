@@ -30,7 +30,7 @@ app.use(
   })
 );
 
-// ✅ CORS
+// ✅ Allowed origins from env (multiple URLs supported)
 const rawOrigins =
   process.env.CLIENT_URLS ||
   process.env.CLIENT_URL ||
@@ -38,12 +38,13 @@ const rawOrigins =
 
 const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
 
+// ✅ CORS middleware
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // allow Postman / curl
+      if (!origin) return cb(null, true); // allow Postman / curl / server-to-server
       if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error(`CORS blocked for origin: ${origin}`), false);
+      return cb(new Error(`❌ CORS blocked for origin: ${origin}`), false);
     },
     credentials: true,
   })
@@ -77,7 +78,6 @@ app.get(["/health", "/"], (req, res) => {
 });
 
 // ✅ Error handler
-// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught error:", err);
   res.status(500).json({
