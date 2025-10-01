@@ -66,10 +66,10 @@ const ProductCard = ({ product }) => {
       {/* ✅ Image Container */}
       <div className="relative w-full h-40 sm:h-48 md:h-52 mb-3">
         {/* ✅ Top Badges inside image container */}
-        <div className="absolute top-2 left-2 right-2 flex justify-between items-center z-10">
+        <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
           {/* Discount badge */}
           {product?.oldPrice && (
-            <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm transition transform hover:scale-105">
+            <div className="bg-red-500 text-white px-1 py-0 rounded-full text-xs font-semibold shadow-sm transition transform hover:scale-105">
               -{discount}%
             </div>
           )}
@@ -80,7 +80,7 @@ const ProductCard = ({ product }) => {
               e.preventDefault();
               toggleWishlist(productId);
             }}
-            className={`p-2 rounded-full shadow-md transition transform hover:scale-110 ${
+            className={`p-1 mt-0 rounded-full shadow-md transition transform hover:scale-110 ${
               isInWishlist ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
             }`}
           >
@@ -142,15 +142,20 @@ const ProductCard = ({ product }) => {
         {/* Cart actions */}
         {!quantity ? (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              updateCart(productId, +1);
-            }}
-            className="my-3 sm:mt-4 sm:mb-2 bg-blue-900 w-full text-white px-3 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-800 text-sm sm:text-base"
-            disabled={product?.stock <= 0}
-          >
-            <FaShoppingCart /> Add
-          </button>
+  onClick={(e) => {
+    e.preventDefault();
+    updateCart(productId, +1);
+  }}
+  disabled={product?.stock <= 0}
+  className={`my-3 sm:mt-4 sm:mb-2 w-full px-3 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base
+    ${
+      product?.stock <= 0
+        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+        : "bg-blue-900 text-white hover:bg-blue-800"
+    }`}
+>
+  <FaShoppingCart /> Add
+</button>
         ) : (
           <div>
             <div className="flex items-center justify-between">
@@ -183,6 +188,8 @@ const ProductCard = ({ product }) => {
               Total: <span className="text-blue-600">৳{totalPrice}</span>
             </p>
           </div>
+
+          
         )}
       </div>
     </Link>
