@@ -12,16 +12,49 @@ import {
   FaMapMarkerAlt,
 } from "react-icons/fa";
 
-export default function Footer() {
-  const [categories, setCategories] = useState([]);
+const iconMap = {
+  FaFacebookF: FaFacebookF,
+  FaYoutube: FaYoutube,
+  FaInstagram: FaInstagram,
+  FaTiktok: FaTiktok
+  // যদি নতুন icon নাম use করো, map-এ add করে দিও
+};
 
-  // ✅ Fetch categories from backend
+export default function Footer() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetch("http://localhost:4000/api/categories")
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/footer`;
+    fetch(apiUrl)
       .then((res) => res.json())
-      .then(setCategories)
-      .catch((err) => console.error("❌ Failed to load categories", err));
+      .then((json) => setData(json))
+      .catch((err) => {
+        console.error("❌ Failed to load footer", err);
+      })
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return (
+      <footer className="bg-gray-900 text-gray-200 pt-10 pb-6 px-6 md:px-12">
+        <div className="max-w-7xl mx-auto">Loading footer...</div>
+      </footer>
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const {
+    brand = {},
+    socials = [],
+    quickLinks = [],
+    categories = [],
+    contact = {},
+    copyrightText
+  } = data;
 
   return (
     <footer className="bg-gray-900 text-gray-200 pt-10 pb-6 px-6 md:px-12">
@@ -30,30 +63,22 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <img
-              src="/logo.png" // তোমার logo path
-              alt="Habib's Fashion"
-              className="w-12 h-12 rounded-lg"
+              src={brand.logo || "/logo.png"}
+              alt={brand.title || "Brand"}
+              className="w-12 h-12 rounded-lg object-cover"
             />
-            <h2 className="text-2xl font-bold text-white">Habib's Fashion</h2>
+            <h2 className="text-2xl font-bold text-white">{brand.title || "Habib's Fashion"}</h2>
           </div>
-          <p className="text-sm mb-4">
-            Your ultimate destination for the latest fashion items and stylish
-            accessories in Bangladesh. Discover curated products to fit your
-            lifestyle and stay ahead in trends.
-          </p>
+          <p className="text-sm mb-4">{brand.about}</p>
           <div className="flex gap-4 text-xl">
-            <Link href="https://facebook.com" target="_blank">
-              <FaFacebookF className="hover:text-blue-500" />
-            </Link>
-            <Link href="https://youtube.com" target="_blank">
-              <FaYoutube className="hover:text-red-500" />
-            </Link>
-            <Link href="https://instagram.com" target="_blank">
-              <FaInstagram className="hover:text-pink-500" />
-            </Link>
-            <Link href="https://tiktok.com" target="_blank">
-              <FaTiktok className="hover:text-gray-300" />
-            </Link>
+            {socials.map((s, idx) => {
+              const Icon = iconMap[s.icon] || FaGlobe;
+              return (
+                <Link key={idx} href={s.url || '#'} target="_blank">
+                  <Icon className="hover:text-yellow-300" />
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -61,26 +86,13 @@ export default function Footer() {
         <div>
           <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
           <ul className="space-y-2 text-sm">
-            <li>
-              <Link href="/" className="hover:text-yellow-300">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link href="/products" className="hover:text-yellow-300">
-                All Products
-              </Link>
-            </li>
-            <li>
-              <Link href="/offers" className="hover:text-yellow-300">
-                Offers
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:text-yellow-300">
-                Contact Us
-              </Link>
-            </li>
+            {quickLinks.map((l, i) => (
+              <li key={i}>
+                <Link href={l.href || '/'} className="hover:text-yellow-300">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -89,11 +101,8 @@ export default function Footer() {
           <h2 className="text-xl font-semibold mb-4">Categories</h2>
           <ul className="space-y-2 text-sm">
             {categories.map((cat) => (
-              <li key={cat._id || cat.id}>
-                <Link
-                  href={`/categories/${cat.id}`}
-                  className="hover:text-yellow-300"
-                >
+              <li key={cat._id || cat.slug || cat.name}>
+                <Link href={`/categories/${cat.slug || cat.name}`} className="hover:text-yellow-300">
                   {cat.name}
                 </Link>
               </li>
@@ -106,16 +115,16 @@ export default function Footer() {
           <h2 className="text-xl font-semibold mb-4">Contact Us</h2>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <FaMapMarkerAlt /> Jamalpur, Bangladesh
+              <FaMapMarkerAlt /> {contact.address}
             </li>
             <li className="flex items-center gap-2">
-              <FaPhoneAlt /> +8801788563988
+              <FaPhoneAlt /> {contact.phone}
             </li>
             <li className="flex items-center gap-2">
-              <FaEnvelope /> habibsfashion@gmail.com
+              <FaEnvelope /> {contact.email}
             </li>
             <li className="flex items-center gap-2">
-              <FaGlobe /> www.habibsfashion.com
+              <FaGlobe /> {contact.website}
             </li>
           </ul>
         </div>
@@ -123,9 +132,8 @@ export default function Footer() {
 
       <hr className="border-t border-gray-700 mt-6" />
 
-      {/* Copyright */}
       <div className="text-center text-sm text-gray-400 mt-4">
-        © 2025 Habib's Fashion. All Rights Reserved.
+        {copyrightText || `© ${new Date().getFullYear()} ${brand.title || "Habib's Fashion"}. All Rights Reserved.`}
       </div>
     </footer>
   );

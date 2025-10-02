@@ -12,6 +12,8 @@ import ordersRoute from "./src/routes/orders.js";
 import usersRoute from "./src/routes/users.js";
 import productRoutes from "./src/routes/productRoutes.js";
 import categoryRoutes from "./src/routes/categoryRoutes.js";
+import footerRoutes from "./src/routes/footerRoutes.js";
+
 
 dotenv.config();
 const app = express();
@@ -64,6 +66,7 @@ app.use("/api/orders", ordersRoute);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", usersRoute);
+app.use('/api/footer', footerRoutes);
 
 // ✅ Static files
 app.use("/uploads", express.static("uploads"));
