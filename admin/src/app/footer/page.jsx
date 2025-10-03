@@ -152,32 +152,99 @@ export default function FooterAdminPanel() {
       <Toaster position="top-right" toastOptions={toastOptions} />
       <h2 className="text-2xl font-bold mb-4">🛠 Footer Admin Panel</h2>
 
-      {/* ---------- BRAND INFO ---------- */}
-      <div className="space-y-2 border p-3 rounded">
-        <h3 className="font-semibold flex justify-between items-center">
-          Brand Info
-          <button
-            onClick={() => {
-              const newField = `custom${Object.keys(footer.brand || {}).length + 1}`;
+{/* ---------- BRAND INFO ---------- */}
+<div className="space-y-2 border p-3 rounded">
+  <h3 className="font-semibold">Brand Info</h3>
+
+  {/* Brand Name */}
+  <div className="flex justify-between items-center gap-4 border-b py-1">
+    {renderFieldEditor("brand", "name", footer.brand?.name || "")}
+  </div>
+
+  {/* Brand Website */}
+  <div className="flex justify-between items-center gap-4 border-b py-1">
+    {renderFieldEditor("brand", "website", footer.brand?.website || "")}
+  </div>
+
+  {/* Brand Logo Upload */}
+<div className="flex flex-col gap-2 border-b py-1">
+  <label className="text-sm font-medium">Logo</label>
+
+  {footer.brand?.logo ? (
+    <div className="flex items-center gap-3">
+      <img
+        src={footer.brand.logo}
+        alt="Brand Logo"
+        className="h-12 w-auto border rounded"
+      />
+      <button
+        onClick={() => {
+          const updated = { ...footer, brand: { ...footer.brand, logo: "" } };
+          setFooter(updated);
+          handleSave(updated);
+          toast.error("❌ Logo removed");
+        }}
+        className="bg-red-600 text-white px-2 py-1 rounded"
+      >
+        🗑 Remove
+      </button>
+    </div>
+  ) : (
+    <>
+      {/* Hidden file input */}
+      <input
+        type="file"
+        id="logoUpload"
+        name="logo"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const formData = new FormData();
+          formData.append("logo", file);
+
+          try {
+            const res = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/upload/logo`,
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            const data = await res.json();
+
+            if (data.url) {
               const updated = {
                 ...footer,
-                brand: { ...footer.brand, [newField]: "" },
+                brand: { ...footer.brand, logo: data.url },
               };
               setFooter(updated);
               handleSave(updated);
-              toast.success(`➕ Added new brand field: ${newField}`);
-            }}
-            className="bg-green-600 text-white px-2 py-1 rounded"
-          >
-            ➕ Add Field
-          </button>
-        </h3>
-        {Object.keys(footer.brand).map((field) => (
-          <div key={field} className="flex justify-between items-center gap-4 border-b py-1">
-            {renderFieldEditor("brand", field, footer.brand[field])}
-          </div>
-        ))}
-      </div>
+              toast.success("✅ Logo uploaded successfully");
+            }
+          } catch (err) {
+            console.error(err);
+            toast.error("❌ Upload failed");
+          }
+        }}
+      />
+
+      {/* Button to trigger file select */}
+      <button
+        onClick={() => document.getElementById("logoUpload").click()}
+        className="bg-blue-600 text-white px-3 py-1 rounded"
+      >
+        ☁ Upload Logo
+      </button>
+    </>
+  )}
+</div>
+</div>
+
+
 
       {/* ---------- CONTACT INFO ---------- */}
       <div className="space-y-2 border p-3 rounded">
