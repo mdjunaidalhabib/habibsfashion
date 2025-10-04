@@ -1,7 +1,8 @@
-// File: backend/routes/orders.js
+// backend/routes/orders.js
 import express from "express";
 import Order from "../models/Order.js";
-import PDFDocument from "pdfkit";   // ✅ npm install pdfkit করতে হবে
+import PDFDocument from "pdfkit";
+import { getReceiptContent } from "../pdfTemplates/receiptContent.js";
 
 const router = express.Router();
 
@@ -18,9 +19,7 @@ router.get("/", async (req, res) => {
     const orders = await Order.find(filter).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Failed to fetch orders", details: err.message });
+    res.status(500).json({ error: "Failed to fetch orders", details: err.message });
   }
 });
 
@@ -39,55 +38,25 @@ router.get("/:id", async (req, res) => {
 
 /**
  * GET /api/orders/:id/receipt
- * → generate PDF receipt for download
+ * Generate PDF receipt
  */
 router.get("/:id/receipt", async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    // ✅ Brand name + Order ID সহ filename
     const fileName = `HabibsFashion-${order.orderId || order._id}.pdf`;
-
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${fileName}"`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
 
     const doc = new PDFDocument();
     doc.pipe(res);
 
-    // ✅ PDF content
-    doc.fontSize(18).text("🧾 Habib's Fashion - Receipt", { align: "center" });
-    doc.moveDown();
-    doc.fontSize(12).text(`Order ID: ${order.orderId || order._id}`);
-    doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
-    doc.text(`Status: ${order.status}`);
-    doc.moveDown();
-    doc.text(`Customer: ${order.billing?.name} (${order.billing?.phone})`);
-    doc.text(
-      `Address: ${order.billing?.address}, ${order.billing?.thana}, ${order.billing?.district}, ${order.billing?.division}`
-    );
-    doc.moveDown();
-
-    doc.text("📦 Items:", { underline: true });
-    order.items.forEach((item, idx) => {
-      doc.text(
-        `${idx + 1}. ${item.name} x ${item.qty} — ৳${item.price * item.qty}`,
-        { indent: 20 }
-      );
-    });
-
-    doc.moveDown();
-    doc.text(`Subtotal: ৳${order.subtotal}`);
-    doc.text(`Delivery: ৳${order.deliveryCharge}`);
-    if (order.discount) doc.text(`Discount: -৳${order.discount}`);
-    doc.fontSize(14).text(`Total: ৳${order.total}`, { underline: true });
-
-    doc.moveDown();
-    doc.text("✅ Thank you for shopping with Habib's Fashion!", {
-      align: "center",
+    // Use modular PDF content
+    const content = getReceiptContent(order);
+    content.forEach(line => {
+      if (line.moveDown) doc.moveDown(line.moveDown);
+      else doc.text(line.text, line.options || {});
     });
 
     doc.end();
@@ -106,9 +75,7 @@ router.post("/", async (req, res) => {
     const saved = await Order.findById(order._id);
     res.status(201).json(saved);
   } catch (err) {
-    res
-      .status(400)
-      .json({ error: "Failed to create order", details: err.message });
+    res.status(400).json({ error: "Failed to create order", details: err.message });
   }
 });
 
@@ -124,9 +91,7 @@ router.put("/:id", async (req, res) => {
     if (!updated) return res.status(404).json({ error: "Order not found" });
     res.json(updated);
   } catch (err) {
-    res
-      .status(400)
-      .json({ error: "Failed to update order", details: err.message });
+    res.status(400).json({ error: "Failed to update order", details: err.message });
   }
 });
 
@@ -139,9 +104,7 @@ router.delete("/:id", async (req, res) => {
     if (!deleted) return res.status(404).json({ error: "Order not found" });
     res.json({ message: "Order deleted" });
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Failed to delete order", details: err.message });
+    res.status(500).json({ error: "Failed to delete order", details: err.message });
   }
 });
 
