@@ -18,6 +18,7 @@ export const navItems = [
   { icon: <CreditCard size={18} />, label: "Payments", href: "/payments" },
   { icon: <Bell size={18} />, label: "Notifications", href: "/notifications" },
   { icon: <Settings size={18} />, label: "Settings", href: "/settings" },
-    { icon: <footer size={18} />, label: "footer", href: "/footer" },
+  { icon: <footer size={18} />, label: "footer", href: "/footer" },
+  { icon: <footer size={18} />, label: "navbar", href: "/navbar" },
 
 ];

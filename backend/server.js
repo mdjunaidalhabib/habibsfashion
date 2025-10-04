@@ -13,7 +13,7 @@ import usersRoute from "./src/routes/users.js";
 import productRoutes from "./src/routes/productRoutes.js";
 import categoryRoutes from "./src/routes/categoryRoutes.js";
 import footerRoutes from "./src/routes/footerRoutes.js";
-import uploadRoutes from "./src/routes/upload.js";
+import navbarRoutes from "./src/routes/navbarRoutes.js";
 
 
 
@@ -70,7 +70,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", usersRoute);
 app.use('/api/footer', footerRoutes);
-app.use("/api/upload", uploadRoutes);
+app.use('/api/navbar', navbarRoutes);
 
 
 // ✅ Static files

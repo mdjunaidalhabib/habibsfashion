@@ -1,47 +1,57 @@
-// src/routes/footerRoutes.js
 import express from "express";
-import Footer from "../models/Footer.js"; // ✅ .js extension
+import Footer from "../models/Footer.js";
+import upload from "../../utils/upload.js"; // multer middleware
+import cloudinary from "../../utils/cloudinary.js";
+import fs from "fs";
 
 const router = express.Router();
 
-// GET footer (public)
+// GET footer
 router.get("/", async (req, res) => {
   try {
     const footer = await Footer.findOne();
-    res.json(footer || {});  // data না থাকলে খালি object ফেরত
+    res.json(footer || {});
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// POST create (public for now)
-router.post("/", async (req, res) => {
+// POST footer + optional logo
+router.post("/", upload.single("logo"), async (req, res) => {
   try {
-    const created = await Footer.create(req.body);
-    res.status(201).json(created);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+    const data = req.body;
 
-// PUT update (public for now)
-router.put("/", async (req, res) => {
-  try {
+    // JSON parse brand/contact if sent as string
+    if (data.brand && typeof data.brand === "string") data.brand = JSON.parse(data.brand);
+    if (data.contact && typeof data.contact === "string") data.contact = JSON.parse(data.contact);
+
+    // Upload logo if exists
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, { folder: "brand_logos" });
+      fs.unlinkSync(req.file.path);
+      data.brand = data.brand || {};
+      data.brand.logo = result.secure_url;
+    }
+
+    // Update or create footer
     let footer = await Footer.findOne();
     if (!footer) {
-      footer = await Footer.create(req.body);
+      footer = await Footer.create(data);
     } else {
-      Object.assign(footer, req.body);
+      Object.assign(footer, data);
       footer.updatedAt = new Date();
       await footer.save();
     }
-    res.json(footer);
+
+    res.json({ message: "Footer updated successfully", footer });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// DELETE (public for now)
+// DELETE footer
 router.delete("/", async (req, res) => {
   try {
     await Footer.deleteMany({});
@@ -51,5 +61,4 @@ router.delete("/", async (req, res) => {
   }
 });
 
-// ✅ Default export for ESM
 export default router;

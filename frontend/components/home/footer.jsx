@@ -12,13 +12,30 @@ import {
   FaMapMarkerAlt,
 } from "react-icons/fa";
 
+// ✅ Icon mapping
 const iconMap = {
   FaFacebookF: FaFacebookF,
   FaYoutube: FaYoutube,
   FaInstagram: FaInstagram,
-  FaTiktok: FaTiktok
-  // যদি নতুন icon নাম use করো, map-এ add করে দিও
+  FaTiktok: FaTiktok,
 };
+
+// ✅ Static Social Links
+const socialLinksData = [
+  { icon: "FaFacebookF", url: "https://facebook.com" },
+  { icon: "FaYoutube", url: "https://youtube.com" },
+  { icon: "FaInstagram", url: "https://instagram.com" },
+  { icon: "FaTiktok", url: "https://tiktok.com" },
+];
+
+// ✅ Static Quick Links
+const quickLinksData = [
+  { label: "Home", href: "/" },
+  { label: "About Us", href: "/about" },
+  { label: "Shop", href: "/shop" },
+  { label: "Contact", href: "/contact" },
+  { label: "FAQ", href: "/faq" },
+];
 
 export default function Footer() {
   const [data, setData] = useState(null);
@@ -49,11 +66,9 @@ export default function Footer() {
 
   const {
     brand = {},
-    socials = [],
-    quickLinks = [],
     categories = [],
     contact = {},
-    copyrightText
+    copyrightText,
   } = data;
 
   return (
@@ -67,14 +82,16 @@ export default function Footer() {
               alt={brand.title || "Brand"}
               className="w-12 h-12 rounded-lg object-cover"
             />
-            <h2 className="text-2xl font-bold text-white">{brand.title || "Habib's Fashion"}</h2>
+            <h2 className="text-2xl font-bold text-white">
+              {brand.title || "Habib's Fashion"}
+            </h2>
           </div>
           <p className="text-sm mb-4">{brand.about}</p>
           <div className="flex gap-4 text-xl">
-            {socials.map((s, idx) => {
+            {socialLinksData.map((s, idx) => {
               const Icon = iconMap[s.icon] || FaGlobe;
               return (
-                <Link key={idx} href={s.url || '#'} target="_blank">
+                <Link key={idx} href={s.url || "#"} target="_blank">
                   <Icon className="hover:text-yellow-300" />
                 </Link>
               );
@@ -82,13 +99,13 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* 2. Quick Links */}
+        {/* 2. Quick Links (Static from array) */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
           <ul className="space-y-2 text-sm">
-            {quickLinks.map((l, i) => (
+            {quickLinksData.map((l, i) => (
               <li key={i}>
-                <Link href={l.href || '/'} className="hover:text-yellow-300">
+                <Link href={l.href} className="hover:text-yellow-300">
                   {l.label}
                 </Link>
               </li>
@@ -96,13 +113,16 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* 3. Categories */}
+        {/* 3. Categories (Database থেকে) */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Categories</h2>
           <ul className="space-y-2 text-sm">
             {categories.map((cat) => (
               <li key={cat._id || cat.slug || cat.name}>
-                <Link href={`/categories/${cat.slug || cat.name}`} className="hover:text-yellow-300">
+                <Link
+                  href={`/categories/${cat.slug || cat.name}`}
+                  className="hover:text-yellow-300"
+                >
                   {cat.name}
                 </Link>
               </li>
@@ -133,7 +153,10 @@ export default function Footer() {
       <hr className="border-t border-gray-700 mt-6" />
 
       <div className="text-center text-sm text-gray-400 mt-4">
-        {copyrightText || `© ${new Date().getFullYear()} ${brand.title || "Habib's Fashion"}. All Rights Reserved.`}
+        {copyrightText ||
+          `© ${new Date().getFullYear()} ${
+            brand.title || "Habib's Fashion"
+          }. All Rights Reserved.`}
       </div>
     </footer>
   );

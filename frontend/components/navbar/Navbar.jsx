@@ -24,6 +24,7 @@ const middleBar = { open: { opacity: 0 }, closed: { opacity: 1 } };
 const bottomBar = { open: { rotate: -45, y: -7 }, closed: { rotate: 0, y: 0 } };
 
 export default function Navbar() {
+  const [navbar, setNavbar] = useState(null);
   const pathname = usePathname(); // ✅ get current path
   const { cart = {}, wishlist = [] } = useCart() || {};
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,9 +33,9 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [me, setMe] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0);
   const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
   useEffect(() => {
     (async () => {
@@ -47,6 +48,19 @@ export default function Navbar() {
         setLoadingUser(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const fetchNavbar = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/navbar`);
+        const data = await res.json();
+        setNavbar(data);
+      } catch (err) {
+        console.error("❌ Failed to load navbar:", err);
+      }
+    };
+    fetchNavbar();
   }, []);
 
   useEffect(() => {
@@ -98,10 +112,25 @@ export default function Navbar() {
             <FaSearch className="w-5 h-5" />
           </button>
 
-          {/* Logo */}
-          <Link href="/" className="text-xl font-bold text-blue-600">
-            𝐇𝐚𝐛𝐢𝐛'𝐬 𝐅𝐚𝐬𝐡𝐢𝐨𝐧
-          </Link>
+        {/* Brand Logo + Name */}
+        <Link href="/" className="flex items-center gap-2">
+          {navbar?.brand?.logo ? (
+            <img
+              src={navbar.brand.logo}
+              alt="Logo"
+              className="h-10 w-auto object-contain"
+            />
+          ) : (
+            <span className="text-xl font-bold text-blue-600">
+              {navbar?.brand?.name || "Brand Name"}
+            </span>
+          )}
+          {navbar?.brand?.name && navbar?.brand?.logo && (
+            <span className="text-lg font-semibold text-gray-800">
+              {navbar.brand.name}
+            </span>
+          )}
+        </Link>
 
           {/* Mobile Hamburger */}
           <button
