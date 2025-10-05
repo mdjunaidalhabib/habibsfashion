@@ -1,71 +1,111 @@
-// backend/pdfTemplates/receiptContent.js
+// backend/pdfTemplates/receiptPDF.js
+import PDFDocument from "pdfkit";
 import dayjs from "dayjs";
 
-const BRAND_NAME = "Habib's Fashion";
+const BRAND_NAME = "হাবিব'স ফ্যাশন";
+const BENGALI_FONT = "fonts/NotoSansBengali-Regular.ttf";
 
-// Helper function for currency
 function formatCurrency(amount) {
   return `৳${Number(amount).toLocaleString()}`;
 }
 
-export function getReceiptContent(order) {
-  const lines = [];
+// ===== Draw table row with optional fill color =====
+function drawTableRow(doc, y, item, isHeader = false, fillColor = null) {
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const tableWidth = right - left;
 
-  // ===================== HEADER =====================
-  lines.push({
-    text: `🛍️ ${BRAND_NAME} - Receipt`,
-    options: { fontSize: 22, align: "center", bold: true, color: "#1D4ED8" }, // Tailwind blue-700
-  });
-  lines.push({ moveDown: 1.5 });
+  if (fillColor) {
+    doc.rect(left, y, tableWidth, 20).fill(fillColor).fillColor("black");
+  }
 
-  // ===================== ORDER INFO =====================
-  lines.push({ text: "📄 Order Information", options: { fontSize: 14, bold: true, underline: true, color: "#1E40AF" } });
-  lines.push({ text: `Order ID: ${order.orderId || order._id}`, options: { fontSize: 12 } });
-  lines.push({ text: `Date: ${dayjs(order.createdAt).format("DD/MM/YYYY HH:mm")}`, options: { fontSize: 12 } });
-  lines.push({ text: `Status: ${order.status}`, options: { fontSize: 12 } });
-  lines.push({ moveDown: 0.5 });
-  lines.push({ canvas: [{ type: "line", x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 1, color: "#E5E7EB" }] }); // Tailwind gray-200
-  lines.push({ moveDown: 0.5 });
+  doc.fontSize(12).font(BENGALI_FONT).fillColor("black");
 
-  // ===================== CUSTOMER INFO =====================
+  const col1 = left + 5;               // পণ্য
+  const col2 = left + tableWidth * 0.5; // পরিমাণ
+  const col3 = left + tableWidth * 0.65; // মূল্য (প্রতি)
+  const col4 = left + tableWidth * 0.85; // মোট
+
+  doc.text(item.name, col1, y + 5, { width: tableWidth * 0.45 });
+  doc.text(item.qty, col2, y + 5, { width: tableWidth * 0.15, align: "right" });
+  doc.text(item.unitPrice, col3, y + 5, { width: tableWidth * 0.2, align: "right" });
+  doc.text(item.total, col4, y + 5, { width: tableWidth * 0.15, align: "right" });
+}
+
+export function generateReceiptPDF(order, stream) {
+  const doc = new PDFDocument({ size: "A4", margin: 72 }); // 1 inch margin
+  doc.pipe(stream);
+
+  // ===== Background =====
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill("#F9FAFB"); // light gray background
+  doc.fillColor("black"); // reset text color
+
+  // ===== Header =====
+  doc.font(BENGALI_FONT).fillColor("#1D4ED8")
+    .fontSize(24).text(`🛍️ ${BRAND_NAME}`, { align: "center" });
+  doc.moveDown(0.3);
+  doc.fontSize(14).fillColor("#374151").text(`রসিদ`, { align: "center" });
+  doc.moveDown(1);
+
+  // ===== Order Info =====
+  doc.fillColor("#1E40AF").fontSize(14).text("📄 অর্ডারের তথ্য", { underline: true });
+  doc.fillColor("black").fontSize(12);
+  doc.text(`অর্ডার আইডি: ${order.orderId || order._id}`);
+  doc.text(`তারিখ: ${dayjs(order.createdAt).format("DD/MM/YYYY HH:mm")}`);
+  doc.text(`স্ট্যাটাস: ${order.status}`);
+  doc.moveDown(0.5);
+  doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).strokeColor("#E5E7EB").stroke();
+  doc.moveDown(0.5);
+
+  // ===== Customer Info =====
   const billing = order.billing || {};
   const address = [billing.address, billing.thana, billing.district, billing.division].filter(Boolean).join(", ");
+  doc.fillColor("#166534").fontSize(14).text("👤 গ্রাহকের তথ্য", { underline: true });
+  doc.fillColor("black").fontSize(12);
+  doc.text(`নাম: ${billing.name || "-"}`);
+  doc.text(`ফোন: ${billing.phone || "-"}`);
+  doc.text(`ঠিকানা: ${address || "-"}`);
+  doc.moveDown(0.5);
+  doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).strokeColor("#E5E7EB").stroke();
+  doc.moveDown(0.5);
 
-  lines.push({ text: "👤 Customer Information", options: { fontSize: 14, bold: true, underline: true, color: "#166534" } });
-  lines.push({ text: `Name: ${billing.name || "-"}`, options: { fontSize: 12 } });
-  lines.push({ text: `Phone: ${billing.phone || "-"}`, options: { fontSize: 12 } });
-  lines.push({ text: `Address: ${address || "-"}`, options: { fontSize: 12 } });
-  lines.push({ moveDown: 0.5 });
-  lines.push({ canvas: [{ type: "line", x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 1, color: "#E5E7EB" }] });
-  lines.push({ moveDown: 0.5 });
+  // ===== Items Table =====
+  doc.fillColor("#374151").fontSize(14).text("📦 ক্রয়কৃত পণ্যসমূহ", { underline: true });
+  doc.moveDown(0.3);
 
-  // ===================== ITEMS =====================
-  lines.push({ text: "📦 Items Purchased", options: { fontSize: 14, bold: true, underline: true, color: "#374151" } });
+  const tableTop = doc.y;
+  drawTableRow(doc, tableTop, { name: "পণ্য", qty: "পরিমাণ", unitPrice: "মূল্য (প্রতি)", total: "মোট" }, true, "#E5E7EB");
+  let y = tableTop + 20;
+
   order.items.forEach((item, idx) => {
-    lines.push({
-      text: `${idx + 1}. ${item.name} x ${item.qty} — ${formatCurrency(item.price * item.qty)}`,
-      options: { indent: 15, fontSize: 12 },
-    });
+    const fill = idx % 2 === 0 ? "#F3F4F6" : null; // alternating light rows
+    drawTableRow(doc, y, {
+      name: item.name,
+      qty: item.qty.toString(),
+      unitPrice: formatCurrency(item.price),
+      total: formatCurrency(item.price * item.qty)
+    }, false, fill);
+    y += 20;
   });
-  lines.push({ moveDown: 0.5 });
-  lines.push({ canvas: [{ type: "line", x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 1, color: "#E5E7EB" }] });
-  lines.push({ moveDown: 0.5 });
 
-  // ===================== PRICING =====================
-  lines.push({ text: "💰 Pricing Summary", options: { fontSize: 14, bold: true, underline: true, color: "#B45309" } });
-  lines.push({ text: `Subtotal: ${formatCurrency(order.subtotal)}`, options: { fontSize: 12, indent: 15 } });
-  lines.push({ text: `Delivery Charge: ${formatCurrency(order.deliveryCharge)}`, options: { fontSize: 12, indent: 15 } });
+  doc.moveDown(0.5);
+
+  // ===== Pricing Summary =====
+  doc.moveDown(1);
+  doc.fillColor("#B45309").fontSize(14).text("💰 মূল্যসারণি", { underline: true });
+  doc.fillColor("black").fontSize(12);
+  doc.text(`মোট: ${formatCurrency(order.subtotal)}`, doc.page.width - doc.page.margins.right - 150, doc.y, { width: 150, align: "right" });
+  doc.text(`ডেলিভারি চার্জ: ${formatCurrency(order.deliveryCharge)}`, doc.page.width - doc.page.margins.right - 150, doc.y, { width: 150, align: "right" });
   if (order.discount) {
-    lines.push({ text: `Discount: -${formatCurrency(order.discount)}`, options: { fontSize: 12, indent: 15, color: "#DC2626" } }); // red-600
+    doc.fillColor("#DC2626").text(`ডিসকাউন্ট: -${formatCurrency(order.discount)}`, doc.page.width - doc.page.margins.right - 150, doc.y, { width: 150, align: "right" });
+    doc.fillColor("black");
   }
-  lines.push({ text: `Total: ${formatCurrency(order.total)}`, options: { fontSize: 16, bold: true, underline: true, color: "#15803D" } }); // green-700
-  lines.push({ moveDown: 1 });
+  doc.fontSize(16).fillColor("#15803D").text(`সর্বমোট: ${formatCurrency(order.total)}`, doc.page.width - doc.page.margins.right - 150, doc.y, { width: 150, align: "right", underline: true });
+  doc.moveDown(1);
 
-  // ===================== FOOTER =====================
-  lines.push({
-    text: `✅ Thank you for shopping with ${BRAND_NAME}!`,
-    options: { align: "center", fontSize: 12, italics: true, color: "#6B7280" }, // gray-500
-  });
+  // ===== Footer =====
+  doc.fillColor("#6B7280").fontSize(12).text("✅ আমাদের সাথে কেনাকাটার জন্য ধন্যবাদ!", { align: "center", italics: true });
+  doc.text("📞 Contact: 01234-567890 | ✉️ Email: info@habibsfashion.com", { align: "center" });
 
-  return lines;
+  doc.end();
 }

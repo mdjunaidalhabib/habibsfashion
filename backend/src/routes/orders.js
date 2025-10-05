@@ -1,8 +1,7 @@
 // backend/routes/orders.js
 import express from "express";
 import Order from "../models/Order.js";
-import PDFDocument from "pdfkit";
-import { getReceiptContent } from "../pdfTemplates/receiptContent.js";
+import { generateReceiptPDF } from "../pdfTemplates/receiptContent.js";
 
 const router = express.Router();
 
@@ -47,20 +46,12 @@ router.get("/:id/receipt", async (req, res) => {
 
     const fileName = `HabibsFashion-${order.orderId || order._id}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
 
-    const doc = new PDFDocument();
-    doc.pipe(res);
-
-    // Use modular PDF content
-    const content = getReceiptContent(order);
-    content.forEach(line => {
-      if (line.moveDown) doc.moveDown(line.moveDown);
-      else doc.text(line.text, line.options || {});
-    });
-
-    doc.end();
+    // Directly generate PDF using generateReceiptPDF
+    generateReceiptPDF(order, res);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to generate receipt", details: err.message });
   }
 });
