@@ -5,6 +5,11 @@ import Header from "../../components/Header";
 export const metadata = {
   title: "Admin Panel",
   description: "Admin section for managing the application",
+    icons: {
+    icon: "/Logo-Rounted.ico",
+    shortcut: "/Logo-Rounted.ico",
+    apple: "/Logo-Rounted.ico",
+  },
 };
 
 export default function AdminLayout({ children }) {
