@@ -4,18 +4,9 @@ import Link from "next/link";
 import ProductCard from "./ProductCard";
 import { apiFetch } from "../../utils/api";
 import { motion } from "framer-motion";
+import ProductCardSkeleton from "../skeletons/ProductCardSkeleton"; // ✅ imported
 
-// Skeleton Loader
-const ProductCardSkeleton = () => (
-  <div className="bg-white shadow-md p-3 rounded-lg animate-pulse flex flex-col">
-    <div className="h-40 sm:h-48 md:h-52 bg-gray-200 rounded-lg mb-3"></div>
-    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-    <div className="mt-auto h-10 bg-gray-200 rounded"></div>
-  </div>
-);
-
-// Category Row Component
+// ========================== Category Row ==========================
 const CategoryRow = ({ category, items, autoPlayMs = 3000, delay = 0 }) => {
   const trackRef = useRef(null);
   const [index, setIndex] = useState(0);
@@ -166,7 +157,7 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, delay = 0 }) => {
                   className="shrink-0 px-2"
                   style={{ width: `${100 / slidesPerView}%` }}
                 >
-                  <ProductCardSkeleton />
+                  <ProductCardSkeleton /> {/* ✅ use external skeleton */}
                 </div>
               ))}
         </div>
@@ -175,14 +166,14 @@ const CategoryRow = ({ category, items, autoPlayMs = 3000, delay = 0 }) => {
   );
 };
 
+// ========================== Main Component ==========================
 export default function HomeCategorySections() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // category._id অনুযায়ী speed সেট করুন
   const speedByCategoryId = {
-    "68d2645569c371024fb0f519": 4000, 
+    "68d2645569c371024fb0f519": 4000,
     "68d2a92d28415e4dc80bc4d2": 5000,
   };
 
@@ -197,14 +188,23 @@ export default function HomeCategorySections() {
         setCategories(cRes);
         setLoading(false);
       } catch (err) {
-console.log("Categories in HomeCategorySections:", categories);
+        console.log("Error fetching categories:", err);
         setLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  if (loading) return <p className="text-center py-10">Loading...</p>;
+if (loading)
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 px-4 py-10">
+      {Array.from({ length: 8 }).map((_, i) => (
+        // ✅ page-level skeletons
+        <ProductCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+
 
   return (
     <div className="space-y-10">
@@ -215,7 +215,7 @@ console.log("Categories in HomeCategorySections:", categories);
         if (!items.length) return null;
 
         const speed = speedByCategoryId[cat._id] ?? 3000;
-        const delay = idx * 1000; // প্রতিটি row stagger করে শুরু হবে
+        const delay = idx * 1000;
 
         return (
           <CategoryRow

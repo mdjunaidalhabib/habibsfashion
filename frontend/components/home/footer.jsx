@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import FooterSkeleton from "../skeletons/FooterSkeleton";
+
 import { useEffect, useState } from "react";
 import {
   FaFacebookF,
@@ -53,11 +55,7 @@ export default function Footer() {
   }, []);
 
   if (loading) {
-    return (
-      <footer className="bg-gray-900 text-gray-200 pt-10 pb-6 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto">Loading footer...</div>
-      </footer>
-    );
+    return <FooterSkeleton />;
   }
 
   if (!data) {
