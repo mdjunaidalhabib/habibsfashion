@@ -1,18 +1,18 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // ✅ active path detect
+import { usePathname } from "next/navigation";
 import { useCart } from "../../context/CartContext";
 import { apiFetch } from "../../utils/api";
 import { FaHome, FaThLarge, FaSearch } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 import SearchBox from "./SearchBox";
 import MobileAccountMenu from "./MobileAccountMenu";
 import AccountMenu from "./AccountMenu";
 import CartIcon from "./CartIcon";
 import WishlistIcon from "./WishlistIcon";
-import { X } from "lucide-react";
 
 const sideMenu = {
   hidden: { x: "-100%" },
@@ -25,12 +25,10 @@ const bottomBar = { open: { rotate: -45, y: -7 }, closed: { rotate: 0, y: 0 } };
 
 export default function Navbar() {
   const [navbar, setNavbar] = useState(null);
-  const pathname = usePathname(); // ✅ get current path
+  const pathname = usePathname();
   const { cart = {}, wishlist = [] } = useCart() || {};
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
   const [me, setMe] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0);
@@ -78,32 +76,14 @@ export default function Navbar() {
     document.body.style.overflow = menuOpen || mobileSearchOpen ? "hidden" : "auto";
   }, [menuOpen, mobileSearchOpen]);
 
-  const handleSearch = async (q) => {
-    setSearchQuery(q);
-    if (!q.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    try {
-      const products = await apiFetch("/api/products");
-      const filtered = products.filter((p) =>
-        String(p?.name || "").toLowerCase().includes(q.toLowerCase())
-      );
-      setSearchResults(filtered.slice(0, 20));
-    } catch {
-      setSearchResults([]);
-    }
-  };
-
-  // ✅ helper to check active link
   const isActive = (path) => pathname === path;
 
   return (
     <>
-      {/* TOP NAVBAR */}
+      {/* 🧭 Top Navbar */}
       <nav className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center py-3 px-4">
-          {/* Mobile Left: Search icon */}
+          {/* 📱 Mobile Search Icon */}
           <button
             className="md:hidden p-2 rounded hover:bg-gray-100"
             onClick={() => setMobileSearchOpen(true)}
@@ -112,27 +92,27 @@ export default function Navbar() {
             <FaSearch className="w-5 h-5" />
           </button>
 
-        {/* Brand Logo + Name */}
-        <Link href="/" className="flex items-center gap-2">
-          {navbar?.brand?.logo ? (
-            <img
-              src={navbar.brand.logo}
-              alt="Logo"
-              className="h-10 w-auto object-contain"
-            />
-          ) : (
-            <span className="text-xl font-bold text-blue-600">
-              {navbar?.brand?.name || "Brand Name"}
-            </span>
-          )}
-          {navbar?.brand?.name && navbar?.brand?.logo && (
-            <span className="text-lg font-semibold text-gray-800">
-              {navbar.brand.name}
-            </span>
-          )}
-        </Link>
+          {/* 🏷 Brand Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            {navbar?.brand?.logo ? (
+              <img
+                src={navbar.brand.logo}
+                alt="Logo"
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <span className="text-xl font-bold text-blue-600">
+                {navbar?.brand?.name || "Brand Name"}
+              </span>
+            )}
+            {navbar?.brand?.name && navbar?.brand?.logo && (
+              <span className="text-lg font-semibold text-gray-800">
+                {navbar.brand.name}
+              </span>
+            )}
+          </Link>
 
-          {/* Mobile Hamburger */}
+          {/* 📱 Hamburger */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden relative w-8 h-8 flex flex-col justify-center items-center gap-[5px] z-50"
@@ -158,38 +138,71 @@ export default function Navbar() {
             />
           </button>
 
-          {/* Desktop Menu */}
+          {/* 💻 Desktop Menu */}
           <div className="hidden md:flex items-center gap-6 font-medium">
             <Link
               href="/"
-              className={`hover:text-blue-600 transition ${isActive("/") ? "text-blue-600 border-b-2 border-blue-600" : ""}`}
+              className={`hover:text-blue-600 transition ${
+                isActive("/") ? "text-blue-600 border-b-2 border-blue-600" : ""
+              }`}
             >
               Home
             </Link>
             <Link
               href="/products"
-              className={`hover:text-blue-600 transition ${isActive("/products") ? "text-blue-600 border-b-2 border-blue-600" : ""}`}
+              className={`hover:text-blue-600 transition ${
+                isActive("/products")
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : ""
+              }`}
             >
               All Products
             </Link>
             <Link
               href="/categories"
-              className={`hover:text-blue-600 transition ${isActive("/categories") ? "text-blue-600 border-b-2 border-blue-600" : ""}`}
+              className={`hover:text-blue-600 transition ${
+                isActive("/categories")
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : ""
+              }`}
             >
               Shop by Category
             </Link>
           </div>
 
-          {/* Desktop Actions */}
+          {/* 💻 Desktop Actions */}
           <div className="hidden md:flex items-center gap-4 relative">
-            <SearchBox mobileSearchOpen={mobileSearchOpen} setMobileSearchOpen={setMobileSearchOpen} />
+            <SearchBox
+              mobileSearchOpen={mobileSearchOpen}
+              setMobileSearchOpen={setMobileSearchOpen}
+            />
             <AccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
             <CartIcon cartCount={cartCount} />
             <WishlistIcon wishlistCount={wishlistCount} />
           </div>
         </div>
 
-        {/* MOBILE MENU */}
+        {/* 📱 Mobile Search Inside Navbar */}
+        {mobileSearchOpen && (
+          <div className="md:hidden bg-white shadow-inner border-t px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <SearchBox
+                  mobileSearchOpen={mobileSearchOpen}
+                  setMobileSearchOpen={setMobileSearchOpen}
+                />
+              </div>
+              <button
+                onClick={() => setMobileSearchOpen(false)}
+                className="p-2 text-gray-600 hover:text-red-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 📱 Mobile Menu */}
         <AnimatePresence>
           {menuOpen && (
             <>
@@ -202,8 +215,6 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
               />
               <motion.div
-                id="mobile-menu"
-                role="navigation"
                 variants={sideMenu}
                 initial="hidden"
                 animate="visible"
@@ -213,21 +224,31 @@ export default function Navbar() {
               >
                 <Link
                   href="/"
-                  className={`block px-4 py-2 rounded ${isActive("/") ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"}`}
+                  className={`block px-4 py-2 rounded ${
+                    isActive("/") ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"
+                  }`}
                   onClick={() => setMenuOpen(false)}
                 >
                   Home
                 </Link>
                 <Link
                   href="/products"
-                  className={`block px-4 py-2 rounded ${isActive("/products") ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"}`}
+                  className={`block px-4 py-2 rounded ${
+                    isActive("/products")
+                      ? "bg-blue-100 font-semibold"
+                      : "hover:bg-gray-100"
+                  }`}
                   onClick={() => setMenuOpen(false)}
                 >
                   All Products
                 </Link>
                 <Link
                   href="/categories"
-                  className={`block px-4 py-2 rounded ${isActive("/categories") ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"}`}
+                  className={`block px-4 py-2 rounded ${
+                    isActive("/categories")
+                      ? "bg-blue-100 font-semibold"
+                      : "hover:bg-gray-100"
+                  }`}
                   onClick={() => setMenuOpen(false)}
                 >
                   Shop by Category
@@ -237,7 +258,8 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </nav>
-      {/* MOBILE BOTTOM NAV */}
+
+      {/* 📱 Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t md:hidden z-50">
         <div className="flex justify-around items-center py-2 text-sm">
           <Link href="/" className="flex flex-col items-center">
@@ -250,11 +272,7 @@ export default function Navbar() {
           </Link>
           <WishlistIcon wishlistCount={wishlistCount} mobile />
           <CartIcon cartCount={cartCount} mobile />
-          <MobileAccountMenu
-            me={me}
-            setMe={setMe}
-            loadingUser={loadingUser}
-          />
+          <MobileAccountMenu me={me} setMe={setMe} loadingUser={loadingUser} />
         </div>
       </div>
     </>
