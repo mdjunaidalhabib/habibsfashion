@@ -98,7 +98,7 @@ export default function Navbar() {
               <img
                 src={navbar.brand.logo}
                 alt="Logo"
-                className="h-10 w-auto object-contain"
+                className="h-8 w-8 md:h-10 md:w-10 object-cover rounded-full"
               />
             ) : (
               <span className="text-xl font-bold text-blue-600">

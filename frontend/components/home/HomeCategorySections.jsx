@@ -4,7 +4,7 @@ import Link from "next/link";
 import ProductCard from "./ProductCard";
 import { apiFetch } from "../../utils/api";
 import { motion } from "framer-motion";
-import ProductCardSkeleton from "../skeletons/ProductCardSkeleton"; // ✅ imported
+import ProductCardSkeleton from "../skeletons/ProductCardSkeleton"; 
 
 // ========================== Category Row ==========================
 const CategoryRow = ({ category, items, autoPlayMs = 3000, delay = 0 }) => {

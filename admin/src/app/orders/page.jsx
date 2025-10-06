@@ -53,10 +53,8 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter.status, filter.paymentStatus]);
 
-  // Search filter
   const filtered = useMemo(() => {
     if (!filter.q) return orders;
     const q = filter.q.toLowerCase();
@@ -135,7 +133,7 @@ export default function OrdersPage() {
     doc.save("orders.pdf");
   }
 
-  // --------------------------------------------------
+  // ---------------- Helper Components ----------------
   function Badge({ children, className = "" }) {
     return (
       <span className={`inline-block rounded px-2 py-0.5 text-xs border ${className}`}>
@@ -143,6 +141,7 @@ export default function OrdersPage() {
       </span>
     );
   }
+
   function statusColor(s) {
     switch (s) {
       case "pending":
@@ -161,6 +160,7 @@ export default function OrdersPage() {
         return "border-gray-300 text-gray-700 bg-gray-50";
     }
   }
+
   function payColor(p) {
     switch (p) {
       case "paid":
@@ -172,21 +172,57 @@ export default function OrdersPage() {
     }
   }
 
+  // ---------------- Edit / Delete Functions ----------------
+  function openEdit(order) {
+    setCurrentId(order._id);
+    setForm({
+      status: order.status || "pending",
+      paymentMethod: order.paymentMethod || "cod",
+      paymentStatus: order.paymentStatus || "pending",
+      trackingId: order.trackingId || "",
+      cancelReason: order.cancelReason || "",
+    });
+    setOpen(true);
+  }
+
+  async function updateOrder() {
+    try {
+      const res = await fetch(`${API}/api/orders/${currentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Update failed");
+      setOpen(false);
+      fetchOrders();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update order.");
+    }
+  }
+
+  async function deleteOrder(id) {
+    if (!confirm("Are you sure you want to delete this order?")) return;
+    try {
+      const res = await fetch(`${API}/api/orders/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      fetchOrders();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to delete order.");
+    }
+  }
+
+  // ---------------- UI ----------------
   return (
     <div className="space-y-4 px-2 sm:px-4">
       {/* Header + Export */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h2 className="text-xl sm:text-2xl font-bold">Orders</h2>
         <div className="flex flex-wrap gap-2">
-          <button onClick={exportCSV} className="bg-indigo-600 text-white px-3 py-1 rounded text-sm">
-            CSV
-          </button>
-          <button onClick={exportExcel} className="bg-green-600 text-white px-3 py-1 rounded text-sm">
-            Excel
-          </button>
-          <button onClick={exportPDF} className="bg-red-600 text-white px-3 py-1 rounded text-sm">
-            PDF
-          </button>
+          <button onClick={exportCSV} className="bg-indigo-600 text-white px-3 py-1 rounded text-sm">CSV</button>
+          <button onClick={exportExcel} className="bg-green-600 text-white px-3 py-1 rounded text-sm">Excel</button>
+          <button onClick={exportPDF} className="bg-red-600 text-white px-3 py-1 rounded text-sm">PDF</button>
         </div>
       </div>
 
@@ -205,9 +241,7 @@ export default function OrdersPage() {
         >
           <option value="">All status</option>
           {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
+            <option key={s} value={s}>{s}</option>
           ))}
         </select>
         <select
@@ -217,19 +251,15 @@ export default function OrdersPage() {
         >
           <option value="">All payments</option>
           {PAYMENT_STATUS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
+            <option key={p} value={p}>{p}</option>
           ))}
         </select>
-        <button onClick={fetchOrders} className="bg-gray-700 text-white px-4 py-2 rounded text-sm">
-          Refresh
-        </button>
+        <button onClick={fetchOrders} className="bg-gray-700 text-white px-4 py-2 rounded text-sm">Refresh</button>
       </div>
 
       {loading && <div className="text-gray-600">Loading orders…</div>}
 
-      {/* Mobile Cards */}
+      {/* Orders Grid */}
       <div className="grid gap-3 md:hidden">
         {filtered.map((o) => (
           <div key={o._id} className="border rounded-lg p-3 bg-white">
@@ -249,9 +279,7 @@ export default function OrdersPage() {
               <div className="font-medium">Items</div>
               <ul className="list-disc ml-5">
                 {o.items?.map((it, idx) => (
-                  <li key={idx}>
-                    {it.name} × {it.qty} — ৳{it.price}
-                  </li>
+                  <li key={idx}>{it.name} × {it.qty} — ৳{it.price}</li>
                 ))}
               </ul>
             </div>
@@ -302,9 +330,7 @@ export default function OrdersPage() {
               <tr key={o._id} className="border-t">
                 <td className="p-3 align-top">
                   <div className="font-mono text-xs text-gray-500 break-all">#{o._id}</div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(o.createdAt).toLocaleString()}
-                  </div>
+                  <div className="text-xs text-gray-500">{new Date(o.createdAt).toLocaleString()}</div>
                 </td>
                 <td className="p-3 align-top">
                   <div className="font-semibold">{o.billing?.name}</div>
@@ -314,9 +340,7 @@ export default function OrdersPage() {
                 <td className="p-3 align-top">
                   <ul className="list-disc ml-5">
                     {o.items?.map((it, idx) => (
-                      <li key={idx}>
-                        {it.name} × {it.qty} — ৳{it.price}
-                      </li>
+                      <li key={idx}>{it.name} × {it.qty} — ৳{it.price}</li>
                     ))}
                   </ul>
                 </td>
@@ -335,28 +359,14 @@ export default function OrdersPage() {
                 <td className="p-3 align-top">
                   <div className="flex flex-col gap-1">
                     <Badge className={statusColor(o.status)}>{o.status}</Badge>
-                    {o.trackingId && (
-                      <span className="text-xs text-gray-600">Track: {o.trackingId}</span>
-                    )}
-                    {o.cancelReason && (
-                      <span className="text-xs text-red-600">Reason: {o.cancelReason}</span>
-                    )}
+                    {o.trackingId && <span className="text-xs text-gray-600">Track: {o.trackingId}</span>}
+                    {o.cancelReason && <span className="text-xs text-red-600">Reason: {o.cancelReason}</span>}
                   </div>
                 </td>
                 <td className="p-3 align-top">
                   <div className="flex gap-2 flex-wrap">
-                    <button
-                      onClick={() => openEdit(o)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteOrder(o._id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Delete
-                    </button>
+                    <button onClick={() => openEdit(o)} className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Edit</button>
+                    <button onClick={() => deleteOrder(o._id)} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -371,6 +381,81 @@ export default function OrdersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit Modal */}
+      {open && (
+        <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-md p-4 space-y-4">
+            <h3 className="text-lg font-bold">Edit Order</h3>
+
+            <div className="flex flex-col gap-2">
+              <label>Status</label>
+              <select
+                className="border rounded px-2 py-1"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+
+              <label>Payment Method</label>
+              <select
+                className="border rounded px-2 py-1"
+                value={form.paymentMethod}
+                onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+
+              <label>Payment Status</label>
+              <select
+                className="border rounded px-2 py-1"
+                value={form.paymentStatus}
+                onChange={(e) => setForm({ ...form, paymentStatus: e.target.value })}
+              >
+                {PAYMENT_STATUS.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+
+              <label>Tracking ID</label>
+              <input
+                type="text"
+                className="border rounded px-2 py-1"
+                value={form.trackingId}
+                onChange={(e) => setForm({ ...form, trackingId: e.target.value })}
+              />
+
+              <label>Cancel Reason</label>
+              <input
+                type="text"
+                className="border rounded px-2 py-1"
+                value={form.cancelReason}
+                onChange={(e) => setForm({ ...form, cancelReason: e.target.value })}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="bg-gray-300 px-3 py-1 rounded"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-blue-600 text-white px-3 py-1 rounded"
+                onClick={updateOrder}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
