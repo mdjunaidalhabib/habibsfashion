@@ -1,9 +1,9 @@
-// routes/navbarRoutes.js
 import express from "express";
 import Navbar from "../models/Navbar.js";
 import upload from "../../utils/upload.js"; // multer
-import cloudinary from "../../utils/cloudinary.js";
 import fs from "fs";
+import { deleteFromCloudinary } from "../../utils/cloudinaryHelpers.js";
+import cloudinary from "../../utils/cloudinary.js";
 
 const router = express.Router();
 
@@ -13,35 +13,50 @@ router.get("/", async (req, res) => {
     const navbar = await Navbar.findOne();
     res.json(navbar || {});
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// POST/PUT Navbar + optional logo upload
+// POST Navbar + optional logo upload
 router.post("/", upload.single("logo"), async (req, res) => {
   try {
-    const data = req.body;
+    let data = {};
 
-    // যদি logo file আসে
+    // Parse brand JSON string
+    if (req.body.brand) {
+      try {
+        data.brand = JSON.parse(req.body.brand);
+      } catch {
+        data.brand = {};
+      }
+    }
+
+    let navbar = await Navbar.findOne();
+
+    // Handle logo upload
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "brand_logos",
-      });
+      // Delete old logo
+      if (navbar?.brand?.logo) await deleteFromCloudinary(navbar.brand.logo);
+
+      const result = await cloudinary.uploader.upload(req.file.path, { folder: "brand_logos" });
       fs.unlinkSync(req.file.path);
+
       data.brand = data.brand || {};
       data.brand.logo = result.secure_url;
     }
 
-    let navbar = await Navbar.findOne();
     if (!navbar) {
       navbar = await Navbar.create(data);
     } else {
-      Object.assign(navbar, data);
+      if (data.brand) {
+        navbar.brand = { ...navbar.brand, ...data.brand };
+      }
       navbar.updatedAt = new Date();
       await navbar.save();
     }
 
-    res.json({ message: "Navbar updated successfully", navbar });
+    res.json({ message: "✅ Navbar updated successfully", navbar });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
