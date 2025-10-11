@@ -87,7 +87,7 @@ export default function FooterAdminPanel() {
       {/* BRAND INFO */}
       <div className="space-y-2 border p-3 rounded">
         <h3 className="font-semibold">Brand Info</h3>
-        <div className="flex justify-between items-center gap-4 border-b py-1">{renderFieldEditor("brand", "name", footer.brand?.name || "")}</div>
+        <div className="flex justify-between items-center gap-4 border-b py-1">{renderFieldEditor("brand", "title", footer.brand?.title || "")}</div>
         <div className="flex justify-between items-center gap-4 border-b py-1">{renderFieldEditor("brand", "about", footer.brand?.about || "")}</div>
 
         {/* Logo */}
@@ -111,7 +111,6 @@ export default function FooterAdminPanel() {
       <div className="space-y-2 border p-3 rounded">
         <h3 className="font-semibold flex justify-between items-center">
           Contact Info
-          <button onClick={() => { const newField = `custom${Object.keys(footer.contact || {}).length + 1}`; const updated = { ...footer, contact: { ...footer.contact, [newField]: "" } }; setFooter(updated); handleSave(updated); toast.success(`➕ Added new contact field: ${newField}`); }} className="bg-green-600 text-white px-2 py-1 rounded">➕ Add Field</button>
         </h3>
         {Object.keys(footer.contact).map((field) => (
           <div key={field} className="flex justify-between items-center gap-4 border-b py-1">

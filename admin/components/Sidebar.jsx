@@ -1,12 +1,12 @@
 "use client";
 
-import { navItems } from "./menuConfig";
 import MenuBar from "./MenuBar";
+import { navItems, settingsChildren } from "./menuConfig";
 
 export default function Sidebar() {
   return (
-    <div className="hidden md:block w-64 h-screen bg-white shadow-lg p-4">
-      <MenuBar items={navItems} />
-    </div>
+    <aside className="hidden md:block w-60 h-screen p-4 bg-white shadow">
+      <MenuBar items={navItems} settingsChildren={settingsChildren} vertical={true} />
+    </aside>
   );
 }
