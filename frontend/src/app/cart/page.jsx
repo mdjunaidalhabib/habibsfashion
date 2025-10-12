@@ -44,7 +44,6 @@ export default function CartPage() {
       });
   }, []);
 
-  // cart এর product details বানানো
   const items = useMemo(() => {
     if (!allProducts.length) return [];
     return Object.keys(cart)
@@ -57,16 +56,12 @@ export default function CartPage() {
   }, [cart, allProducts]);
 
   const grandTotal = items.reduce((sum, p) => sum + p.price * p.qty, 0);
-
-  const handleClearCart = () => {
-    setCart({});
-  };
+  const handleClearCart = () => setCart({});
 
   return (
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl sm:text-3xl font-semibold">Your Cart</h1>
-
         {items.length > 0 && !loading && (
           <button
             onClick={handleClearCart}
@@ -100,7 +95,6 @@ export default function CartPage() {
                 key={p._id}
                 className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row items-center gap-4"
               >
-                {/* Product Image */}
                 <Link
                   href={`/products/${p._id}`}
                   className="w-24 h-24 relative flex-shrink-0 block"
@@ -113,7 +107,6 @@ export default function CartPage() {
                   />
                 </Link>
 
-                {/* Product Info */}
                 <div className="flex-1">
                   <Link
                     href={`/products/${p._id}`}
@@ -136,12 +129,9 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Quantity Control */}
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      if (p.qty > 1) updateCart(p._id, -1);
-                    }}
+                    onClick={() => p.qty > 1 && updateCart(p._id, -1)}
                     className={`px-2 py-2 rounded text-white ${
                       p.qty > 1
                         ? "bg-red-500 hover:bg-red-600"
@@ -159,7 +149,6 @@ export default function CartPage() {
                   </button>
                 </div>
 
-                {/* Remove from Cart */}
                 <button
                   onClick={() => removeFromCart(p._id)}
                   className="bg-red-600 text-white px-3 py-2 rounded flex items-center gap-1 hover:bg-red-700"
@@ -167,7 +156,6 @@ export default function CartPage() {
                   <FaTrash /> Remove
                 </button>
 
-                {/* Wishlist Toggle */}
                 <button
                   onClick={() => toggleWishlist(p._id)}
                   className={`p-3 rounded-full shadow ${
@@ -179,7 +167,6 @@ export default function CartPage() {
                   <FaHeart />
                 </button>
 
-                {/* Line Item Total */}
                 <div className="font-semibold text-blue-600 ml-auto">
                   Total: ৳{p.price * p.qty}
                 </div>
@@ -187,14 +174,13 @@ export default function CartPage() {
             );
           })}
 
-          {/* Grand Total */}
           <div className="text-right font-bold text-lg mt-6">
             Grand Total: <span className="text-blue-600">৳{grandTotal}</span>
           </div>
 
-          {/* ✅ Unified Checkout Button → full cart checkout */}
+          {/* ✅ Cart Page Checkout → always "Checkout" */}
           <div className="text-right mt-4">
-            <CheckoutButton total={grandTotal} />
+            <CheckoutButton label="Checkout" fullWidth />
           </div>
         </div>
       )}

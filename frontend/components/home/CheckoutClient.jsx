@@ -60,7 +60,6 @@ export default function CheckoutPage() {
   const deliveryCharge = 100;
   const total = subtotal + deliveryCharge;
 
-  // --- Billing states ---
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -185,7 +184,9 @@ export default function CheckoutPage() {
                       stock={it.stock}
                       onChange={(change) =>
                         productId
-                          ? setCheckoutQty(Math.max(1, checkoutQty + change))
+                          ? setCheckoutQty((prev) =>
+                              Math.min(Math.max(1, prev + change), it.stock)
+                            )
                           : updateCart(it.productId, change, it.stock)
                       }
                     />
@@ -205,7 +206,6 @@ export default function CheckoutPage() {
               </div>
             ))}
 
-            {/* Totals */}
             <div className="flex justify-between mt-4 text-lg font-semibold">
               <span>Subtotal</span>
               <span>৳{subtotal}</span>
@@ -219,9 +219,11 @@ export default function CheckoutPage() {
               <span>৳{total}</span>
             </div>
 
+            {/* ✅ Checkout Page → অর্ডার কনফার্ম করুন */}
             <CheckoutButton
+              product={cartItems[0]}
               productId={productId}
-              qty={productId ? checkoutQty : null}
+              qty={productId ? checkoutQty : 1}
               total={total}
               fullWidth
               onClick={placeOrder}
