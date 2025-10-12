@@ -23,7 +23,7 @@ export default function AccountMenuDesktop() {
   if (loadingUser) {
     return (
       <button className="p-2 rounded text-gray-400 flex items-center gap-1" disabled>
-        <FaUser /> Loading...
+          <FaUser className="w-6 h-6" /> <br />
       </button>
     );
   }

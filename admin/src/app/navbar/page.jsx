@@ -110,7 +110,7 @@ export default function NavbarAdminPanel() {
 
       {/* Logo Upload */}
       <div className="mb-4">
-        <label className="block font-medium mb-1">Brand Logo</label>
+        <label className="block font-medium mb-1">Logo</label>
         {navbar?.brand?.logo && (
           <img
             src={navbar.brand.logo}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "../../context/CartContext";
 import { apiFetch } from "../../utils/api";
-import { FaHome, FaThLarge, FaSearch } from "react-icons/fa";
+import { FaHome, FaThLarge, FaSearch, FaUserCircle } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -14,23 +14,21 @@ import AccountMenu from "./AccountMenu";
 import CartIcon from "./CartIcon";
 import WishlistIcon from "./WishlistIcon";
 
-const sideMenu = {
-  hidden: { x: "-100%" },
-  visible: { x: 0 },
-  exit: { x: "-100%" },
-};
+const sideMenu = { hidden: { x: "-100%" }, visible: { x: 0 }, exit: { x: "-100%" } };
 const topBar = { open: { rotate: 45, y: 10 }, closed: { rotate: 0, y: 0 } };
 const middleBar = { open: { opacity: 0 }, closed: { opacity: 1 } };
 const bottomBar = { open: { rotate: -45, y: -7 }, closed: { rotate: 0, y: 0 } };
 
 export default function Navbar() {
   const [navbar, setNavbar] = useState(null);
-  const pathname = usePathname();
-  const { cart = {}, wishlist = [] } = useCart() || {};
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [me, setMe] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [imgError, setImgError] = useState(false);
+
+  const pathname = usePathname();
+  const { cart = {}, wishlist = [] } = useCart() || {};
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0);
   const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -92,25 +90,34 @@ export default function Navbar() {
             <FaSearch className="w-5 h-5" />
           </button>
 
-          {/* 🏷 Brand Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            {navbar?.brand?.logo ? (
-              <img
-                src={navbar.brand.logo}
-                alt="Logo"
-                className="h-8 w-8 md:h-10 md:w-10 object-cover rounded-full"
-              />
-            ) : (
-              <span className="text-xl font-bold text-blue-600">
-                {navbar?.brand?.name || "Brand Name"}
-              </span>
-            )}
-            {navbar?.brand?.name && navbar?.brand?.logo && (
-              <span className="text-lg font-semibold text-gray-800">
-                {navbar.brand.name}
-              </span>
-            )}
-          </Link>
+          {/* 🏷 Brand Logo / Fallback */}
+{/* 🏷 Brand Logo / Name with placeholder */}
+<Link href="/" className="flex items-center gap-2">
+  {/* Logo */}
+  {navbar?.brand?.logo && !imgError ? (
+    <img
+      src={navbar.brand.logo}
+      alt="Logo"
+      className="h-8 w-8 md:h-10 md:w-10 object-cover rounded-full"
+      onError={() => setImgError(true)}
+    />
+  ) : (
+    // Default icon block
+    <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-full bg-gray-100">
+      <FaUserCircle className="text-gray-400 w-6 h-6" />
+    </div>
+  )}
+
+  {/* Name placeholder */}
+  {navbar?.brand?.name ? (
+    <span className="text-lg font-semibold text-gray-800 block min-w-[100px] truncate">
+      {navbar.brand.name}
+    </span>
+  ) : (
+    <div className="h-5 md:h-6 w-24 md:w-28 bg-gray-200 rounded block" />
+  )}
+</Link>
+
 
           {/* 📱 Hamburger */}
           <button
@@ -151,9 +158,7 @@ export default function Navbar() {
             <Link
               href="/products"
               className={`hover:text-blue-600 transition ${
-                isActive("/products")
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : ""
+                isActive("/products") ? "text-blue-600 border-b-2 border-blue-600" : ""
               }`}
             >
               All Products
@@ -161,9 +166,7 @@ export default function Navbar() {
             <Link
               href="/categories"
               className={`hover:text-blue-600 transition ${
-                isActive("/categories")
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : ""
+                isActive("/categories") ? "text-blue-600 border-b-2 border-blue-600" : ""
               }`}
             >
               Shop by Category
@@ -234,9 +237,7 @@ export default function Navbar() {
                 <Link
                   href="/products"
                   className={`block px-4 py-2 rounded ${
-                    isActive("/products")
-                      ? "bg-blue-100 font-semibold"
-                      : "hover:bg-gray-100"
+                    isActive("/products") ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"
                   }`}
                   onClick={() => setMenuOpen(false)}
                 >
@@ -245,9 +246,7 @@ export default function Navbar() {
                 <Link
                   href="/categories"
                   className={`block px-4 py-2 rounded ${
-                    isActive("/categories")
-                      ? "bg-blue-100 font-semibold"
-                      : "hover:bg-gray-100"
+                    isActive("/categories") ? "bg-blue-100 font-semibold" : "hover:bg-gray-100"
                   }`}
                   onClick={() => setMenuOpen(false)}
                 >
