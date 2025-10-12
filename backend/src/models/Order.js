@@ -21,9 +21,6 @@ const orderSchema = new mongoose.Schema(
       name: { type: String, required: true },
       phone: { type: String, required: true },
       address: { type: String, required: true },
-      division: { type: String, required: true },
-      district: { type: String, required: true },
-      thana: { type: String, required: true },
       note: String,
     },
 
@@ -35,11 +32,6 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ["cod", "bkash"],
       default: "cod",
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["pending", "paid", "failed"],
-      default: "pending",
     },
 
     // Order lifecycle

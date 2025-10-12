@@ -7,147 +7,87 @@ export default function OrderSummary({ orderId }) {
 
   useEffect(() => {
     if (!orderId) return;
-    const fetchOrder = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}`,
-          { credentials: "include" }
-        );
-        if (!res.ok) throw new Error("Order fetch failed");
-        const data = await res.json();
-        setOrder(data);
-      } catch (err) {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}`)
+      .then((res) => res.json())
+      .then(setOrder)
+      .catch((err) => {
         console.error("❌ Failed to fetch order:", err);
         setOrder(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
+      })
+      .finally(() => setLoading(false));
   }, [orderId]);
 
   if (loading)
-    return (
-      <p className="p-3 text-center text-xs text-gray-500 animate-pulse">
-        ⏳ Loading order...
-      </p>
-    );
+    return <p className="text-center text-gray-500 mt-10 animate-pulse">⏳ অর্ডার তথ্য লোড হচ্ছে...</p>;
   if (!order)
-    return (
-      <p className="p-3 text-center text-xs text-red-500">❌ Order not found</p>
-    );
+    return <p className="text-center text-red-500 mt-10">❌ অর্ডার খুঁজে পাওয়া যায়নি</p>;
 
   return (
-    <div className="max-w-xs mx-auto my-4 bg-white shadow rounded-lg overflow-hidden text-xs">
+    <div className="max-w-sm mx-auto my-4 bg-white shadow rounded-lg divide-y divide-gray-200 text-sm">
+
       {/* Header */}
-      <div className="border-b px-2 py-3 text-center">
-        <h2 className="text-sm font-semibold text-green-700">🧾 Order Summary</h2>
-        <p className="text-[11px] text-gray-500 mt-0.5">
-          Thank you for your purchase
-        </p>
+      <div className="p-3 text-center">
+        <h2 className="text-base font-semibold text-green-700">🎉 অর্ডার সফল!</h2>
+        <p className="text-gray-500 text-xs mt-0.5">ধন্যবাদ আমাদের থেকে অর্ডার করার জন্য 💚</p>
       </div>
 
       {/* Order Info */}
-      <div className="flex justify-between gap-2 px-2 py-3 border-b">
-        <div>
-          <p className="text-gray-500">Order ID</p>
-          <p className="font-medium break-all">{order._id}</p>
-          <p className="text-gray-500 mt-1">Date</p>
-          <p className="font-medium">
-            {new Date(order.createdAt).toLocaleString()}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-gray-500 mb-1">Status</p>
-          <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-medium 
-              ${
-                order.status === "pending"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : order.status === "completed"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-          >
+      <div className="p-3 space-y-0.5">
+        <p><strong>Order ID:</strong> {order._id}</p>
+        <p><strong>Date:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        <p>
+          <strong>Status:</strong>{" "}
+          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+            order.status === "pending" ? "bg-yellow-100 text-yellow-700"
+            : order.status === "completed" ? "bg-green-100 text-green-700"
+            : "bg-gray-200 text-gray-600"
+          }`}>
             {order.status.toUpperCase()}
           </span>
-        </div>
+        </p>
       </div>
 
       {/* Billing */}
-      <div className="px-2 py-3 border-b">
-        <h3 className="font-semibold mb-1">🧍 Billing</h3>
-        <p>
-          <span className="font-medium">{order.billing?.name}</span> —{" "}
-          {order.billing?.phone}
-        </p>
-        <p className="text-gray-600">
-          {order.billing?.address}, {order.billing?.thana},{" "}
-          {order.billing?.district}, {order.billing?.division}
-        </p>
-        {order.billing?.note && (
-          <p className="mt-1 text-gray-500">
-            <span className="font-medium">Note:</span> {order.billing.note}
-          </p>
-        )}
+      <div className="p-3 space-y-0.5">
+        <h3 className="font-semibold text-gray-700 text-xs mb-1">🧾 Billing</h3>
+        <p><strong>Name:</strong> {order.billing?.name}</p>
+        <p><strong>Mobile:</strong> {order.billing?.phone}</p>
+        <p><strong>Address:</strong> {order.billing?.address}</p>
+        {order.billing?.note && <p className="italic text-gray-500"><strong>Note:</strong> {order.billing.note}</p>}
       </div>
 
-      {/* Items */}
-      <div className="px-2 py-3 border-b overflow-x-auto">
-        <h3 className="font-semibold mb-1">📦 Items</h3>
-        <table className="w-full border-collapse text-[11px] min-w-[240px]">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-1 text-left">Product</th>
-              <th className="p-1 text-center">Qty</th>
-              <th className="p-1 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((it, idx) => (
-              <tr key={idx} className="border-t">
-                <td className="p-1">{it.name}</td>
-                <td className="p-1 text-center">{it.qty}</td>
-                <td className="p-1 text-right font-medium">
-                  ৳{it.price * it.qty}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Product List */}
+      <div className="p-3 space-y-1">
+        <h3 className="font-semibold text-gray-700 text-xs mb-1">📦 Items</h3>
+        {order.items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between p-1 border rounded-lg hover:shadow-sm transition text-xs">
+            <div className="flex items-center gap-2">
+              <img src={item.image || "/placeholder.png"} alt={item.name} className="w-9 h-9 object-cover rounded" />
+              <div>
+                <p className="font-medium">{item.name}</p>
+                <p className="text-gray-500">Qty: {item.qty}</p>
+              </div>
+            </div>
+            <div className="text-right font-medium">৳{item.price * item.qty}</div>
+          </div>
+        ))}
       </div>
 
       {/* Totals */}
-      <div className="px-2 py-3 border-b space-y-1">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Subtotal</span>
-          <span className="font-medium">৳{order.subtotal}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Delivery</span>
-          <span className="font-medium">৳{order.deliveryCharge}</span>
-        </div>
-        <div className="flex justify-between text-green-700 font-semibold border-t pt-1">
-          <span>Total</span>
-          <span>৳{order.total}</span>
-        </div>
+      <div className="p-3 text-right space-y-0.5">
+        <p>Subtotal: ৳{order.subtotal}</p>
+        <p>Delivery: ৳{order.deliveryCharge}</p>
+        {order.discount > 0 && <p>Discount: -৳{order.discount}</p>}
+        <p className="text-green-700 font-semibold text-sm">Total: ৳{order.total}</p>
       </div>
 
       {/* Actions */}
-      <div className="px-2 py-3 flex flex-col sm:flex-row gap-2">
-        <a
-          href={`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${order._id}/receipt`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 px-2 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-center"
-        >
-          ⬇️ Receipt
+      <div className="flex gap-2 p-3">
+        <a href={`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${order._id}/receipt`} target="_blank" className="flex-1 bg-blue-600 text-white py-1.5 rounded text-center hover:bg-blue-700 text-xs">
+          🧾 Receipt
         </a>
-        <a
-          href="/orders"
-          className="flex-1 px-2 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 text-center"
-        >
-          📂 My Orders
+        <a href="/" className="flex-1 bg-gray-600 text-white py-1.5 rounded text-center hover:bg-gray-700 text-xs">
+          🏠 Home
         </a>
       </div>
     </div>
