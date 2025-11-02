@@ -245,17 +245,8 @@ export default function OrdersPage() {
                       href={`/orders/${order._id}`}
                       className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs rounded-md hover:from-blue-700 hover:to-blue-600 shadow-sm transition"
                     >
-                      View
+                     🧾Receipt
                     </Link>
-
-                    {/* 🧾 PDF View */}
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL}/api/receipts/${order._id}`}
-                      target="_blank"
-                      className="px-3 py-1 bg-gradient-to-r from-gray-700 to-gray-600 text-white text-xs rounded-md hover:from-gray-800 hover:to-gray-700 shadow-sm transition"
-                    >
-                      🧾 View
-                    </a>
 
                     {/* ⬇️ PDF Download */}
                     <a
