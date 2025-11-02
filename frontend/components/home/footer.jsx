@@ -77,7 +77,7 @@ export default function Footer() {
   const { brand = {}, contact = {}, copyrightText } = data;
 
   return (
-    <footer className="bg-gray-900 text-gray-200 pt-10 pb-6 px-6 md:px-12">
+    <footer className="bg-gray-900 text-gray-200 pt-10 pb-2 px-6 md:px-12 mb-16 md:mb-0">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
         {/* 1. Brand + About */}
         <div>
@@ -206,7 +206,7 @@ export default function Footer() {
 
       <hr className="border-t border-gray-700 mt-6" />
 
-      <div className="text-center text-sm text-gray-400 mt-4">
+      <div className="text-center text-sm text-gray-400 mt-2">
         {copyrightText ||
           `© ${new Date().getFullYear()} ${brand.title || "Habib's Fashion"}. All Rights Reserved.`}
       </div>
