@@ -2,13 +2,13 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FaUser, FaClipboardList, FaSignOutAlt } from "react-icons/fa"; // Logout icon
+import { FaUser, FaClipboardList, FaSignOutAlt } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmModal from "../ConfirmModal";
 import { useUser } from "../../context/UserContext";
 import { usePathname } from "next/navigation";
 
-export default function AccountMenuMobile() {
+export default function AccountMenuMobile({ onOpen }) {
   const { me, setMe, loadingUser } = useUser();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -39,10 +39,7 @@ export default function AccountMenuMobile() {
           message="আপনি কি Google দিয়ে লগইন করতে চান?"
           onConfirm={() => {
             const currentUrl = window.location.href;
-            window.location.href =
-              `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${encodeURIComponent(
-                currentUrl
-              )}`;
+            window.location.href = `${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
           }}
           onCancel={() => setConfirmOpen(false)}
         />
@@ -57,30 +54,43 @@ export default function AccountMenuMobile() {
     window.location.href = "/";
   };
 
-  // Active class helper
-  const isActive = (route) =>
-    pathname === route ? "bg-gray-100 font-medium" : "";
+  const isActive = (route) => pathname === route;
 
-  // Menu item with left icon
-  const MenuItem = ({ href, label, icon: Icon }) => (
-    <Link
-      href={href}
-      className={`flex items-center justify-between px-3 py-2 rounded hover:bg-gray-100 ${isActive(
-        href
-      )}`}
-      onClick={() => setOpen(false)}
-    >
-      <div className="flex items-center gap-2">
-        <Icon className="w-5 h-5 text-gray-600" />
-        <span>{label}</span>
-      </div>
-      {pathname === href && <div className="w-2 h-2 rounded-full bg-blue-500" />}
-    </Link>
-  );
+  const MenuItem = ({ href, label, icon: Icon }) => {
+    const active = isActive(href);
+    return (
+      <Link
+        href={href}
+        onClick={() => {
+          setOpen(false);
+          if (onOpen) onOpen();
+        }}
+        className={`flex items-center justify-between px-3 py-2 rounded hover:bg-gray-100 transition-all duration-300 ease-in-out ${
+          active ? "text-rose-600 bg-rose-50" : "text-gray-700"
+        }`}
+      >
+        <div className="flex items-center gap-2 transition-colors duration-300">
+          <Icon
+            className={`w-5 h-5 transition-colors duration-300 ${
+              active ? "text-rose-600" : "text-gray-600"
+            }`}
+          />
+          <span>{label}</span>
+        </div>
+        {active && <div className="w-2 h-2 rounded-full bg-rose-500 transition-all duration-300" />}
+      </Link>
+    );
+  };
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="flex flex-col items-center">
+      <button
+        onClick={() => {
+          setOpen(true);
+          if (onOpen) onOpen();
+        }}
+        className="flex flex-col items-center"
+      >
         {me.avatar ? (
           <Image
             src={me.avatar}
@@ -107,7 +117,7 @@ export default function AccountMenuMobile() {
             >
               <button
                 onClick={() => setOpen(false)}
-                className="absolute top-3 right-3 p-2 rounded hover:bg-gray-100"
+                className="absolute top-3 right-3 p-2 rounded text-rose-600 hover:bg-gray-100 transition-colors duration-200"
                 aria-label="Close account menu"
               >
                 ✕
@@ -118,25 +128,24 @@ export default function AccountMenuMobile() {
                   <Image
                     src={me.avatar}
                     alt={me.name}
-                    width={48}
-                    height={48}
+                    width={30}
+                    height={30}
                     className="rounded-full"
                   />
                 ) : (
                   <FaUser className="w-8 h-8" />
                 )}
-                <span className="font-medium text-lg truncate">{me.name}</span>
+                <span className="font-semibold text-lg truncate text-gray-800 ">{me.name}</span>
               </div>
 
               <MenuItem href="/profile" label="My Profile" icon={FaUser} />
               <MenuItem href="/orders" label="My Orders" icon={FaClipboardList} />
 
-              {/* Logout with icon */}
               <button
                 onClick={handleLogout}
-                className="flex items-center px-3 py-2 w-full rounded hover:bg-gray-100"
+                className="flex items-center px-3 py-2 w-full rounded hover:bg-gray-100 text-gray-700 transition-all duration-300"
               >
-                <FaSignOutAlt className="w-5 h-5 text-gray-600 mr-2" />
+                <FaSignOutAlt className="w-5 h-5 mr-2 text-gray-600" />
                 <span>Logout</span>
               </button>
             </motion.div>
