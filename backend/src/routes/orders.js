@@ -1,12 +1,10 @@
 import express from "express";
 import Order from "../models/Order.js";
-import { generateReceiptPDF } from "../pdfTemplates/receiptContent.js";
 
 const router = express.Router();
 
 /**
  * GET /api/orders
- * Optional query: ?status=pending&paymentStatus=paid
  */
 router.get("/", async (req, res) => {
   try {
@@ -37,39 +35,15 @@ router.get("/:id", async (req, res) => {
 });
 
 /**
- * GET /api/orders/:id/receipt
- * Generate PDF receipt
- */
-router.get("/:id/receipt", async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ error: "Order not found" });
-
-    const fileName = `HabibsFashion-${order._id}.pdf`;
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
-
-    // Generate the PDF directly
-    generateReceiptPDF(order, res);
-  } catch (err) {
-    console.error("❌ Failed to generate receipt:", err);
-    res.status(500).json({ error: "Failed to generate receipt", details: err.message });
-  }
-});
-
-/**
  * POST /api/orders
- * Create new order
  */
 router.post("/", async (req, res) => {
   try {
-    // 🛡️ Basic validation (prevents missing required fields)
     const { items, subtotal, deliveryCharge, total, billing } = req.body;
     if (!items?.length || !subtotal || !deliveryCharge || !total || !billing?.name) {
       return res.status(400).json({ error: "Missing required order fields" });
     }
 
-    // 🧩 Allowed fields only
     const orderData = {
       items: req.body.items,
       subtotal: req.body.subtotal,
@@ -98,7 +72,6 @@ router.post("/", async (req, res) => {
 
 /**
  * PUT /api/orders/:id
- * Update order details (admin or system)
  */
 router.put("/:id", async (req, res) => {
   try {
@@ -116,7 +89,6 @@ router.put("/:id", async (req, res) => {
 
 /**
  * DELETE /api/orders/:id
- * Delete an order
  */
 router.delete("/:id", async (req, res) => {
   try {

@@ -6,27 +6,24 @@ import helmet from "helmet";
 
 import dbConnect from "./src/lib/db.js";
 import { configurePassport } from "./src/auth/passport.js";
+
+// ✅ Routes
 import authRoutes from "./src/routes/auth.js";
 import locationRoutes from "./src/routes/locationRoutes.js";
 import ordersRoute from "./src/routes/orders.js";
+import receiptRoutes from "./src/routes/receiptRoutes.js"; // ⚠️ এখানে তোমার ভুলটা ঠিক করা হয়েছে (.src → ./src)
 import usersRoute from "./src/routes/users.js";
 import productRoutes from "./src/routes/productRoutes.js";
 import categoryRoutes from "./src/routes/categoryRoutes.js";
 import footerRoutes from "./src/routes/footerRoutes.js";
 import navbarRoutes from "./src/routes/navbarRoutes.js";
 
-
-
-
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 
-// ✅ Proxy trust
 app.set("trust proxy", 1);
-
-// ✅ Helmet
 app.use(
   helmet({
     contentSecurityPolicy: isProd ? undefined : false,
@@ -35,19 +32,17 @@ app.use(
   })
 );
 
-// ✅ Allowed origins from env (multiple URLs supported)
+// ✅ Allowed origins from env
 const rawOrigins =
   process.env.CLIENT_URLS ||
   process.env.CLIENT_URL ||
   "http://localhost:3000,http://localhost:3001";
-
 const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
 
-// ✅ CORS middleware
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // allow Postman / curl / server-to-server
+      if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error(`❌ CORS blocked for origin: ${origin}`), false);
     },
@@ -55,10 +50,7 @@ app.use(
   })
 );
 
-// ✅ JSON parser
 app.use(express.json());
-
-// ✅ Passport
 configurePassport();
 app.use(passport.initialize());
 
@@ -66,17 +58,15 @@ app.use(passport.initialize());
 app.use("/auth", authRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/orders", ordersRoute);
+app.use("/api/receipts", receiptRoutes); // ✅ রসিদ রাউট আলাদা
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", usersRoute);
-app.use('/api/footer', footerRoutes);
-app.use('/api/navbar', navbarRoutes);
+app.use("/api/footer", footerRoutes);
+app.use("/api/navbar", navbarRoutes);
 
-
-// ✅ Static files
 app.use("/uploads", express.static("uploads"));
 
-// ✅ Health check
 app.get(["/health", "/"], (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -85,7 +75,6 @@ app.get(["/health", "/"], (req, res) => {
   });
 });
 
-// ✅ Error handler
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught error:", err);
   res.status(500).json({
@@ -94,7 +83,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Start
 const startServer = async () => {
   try {
     await dbConnect(process.env.MONGO_URI);
