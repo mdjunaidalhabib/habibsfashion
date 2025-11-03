@@ -169,7 +169,7 @@ export default function SearchBox({ mobileSearchOpen, setMobileSearchOpen }) {
                   className="ml-3 p-2 hover:bg-gray-100 rounded"
                   onClick={() => setMobileSearchOpen(false)}
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-6 h-6 text-rose-600" />
                 </button>
               </div>
 
