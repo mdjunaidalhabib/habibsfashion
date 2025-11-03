@@ -160,7 +160,7 @@ export default function SearchBox({ mobileSearchOpen, setMobileSearchOpen }) {
                 <input
                   type="text"
                   placeholder="Search products..."
-                  className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-rose-600"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   autoFocus
