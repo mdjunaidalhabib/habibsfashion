@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 export default function ProductForm({ product, onClose, onSaved }) {
   const [categories, setCategories] = useState([]);
   const colorOptions = ["Red", "Blue", "Black", "White", "Green", "Yellow"];
-
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -21,12 +20,11 @@ export default function ProductForm({ product, onClose, onSaved }) {
   });
 
   const [previewImage, setPreviewImage] = useState("");
-  const [processing, setProcessing] = useState(false); // ✅ saving/updating state
+  const [processing, setProcessing] = useState(false);
   const objectUrls = useRef([]);
 
   useEffect(() => {
     loadCategories();
-
     if (product) {
       setForm({
         name: product.name || "",
@@ -44,10 +42,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
       });
       setPreviewImage(product.image || "");
     }
-
-    return () => {
-      objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
-    };
+    return () => objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
   }, [product]);
 
   const loadCategories = async () => {
@@ -83,22 +78,32 @@ export default function ProductForm({ product, onClose, onSaved }) {
     setForm({ ...form, images: newImgs });
   };
 
+  // 🎨 Color Section
   const addColor = () => {
     setForm({ ...form, colors: [...form.colors, { name: "Red", images: [] }] });
   };
-
   const handleColorSelect = (idx, value) => {
     const newColors = [...form.colors];
     newColors[idx].name = value;
     setForm({ ...form, colors: newColors });
   };
-
+  const addColorImage = (cIdx, files) => {
+    const newColors = [...form.colors];
+    const imgs = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    newColors[cIdx].images.push(...imgs);
+    setForm({ ...form, colors: newColors });
+  };
   const removeColorImage = (cIdx, imgIdx) => {
     const newColors = [...form.colors];
     newColors[cIdx].images = newColors[cIdx].images.filter((_, i) => i !== imgIdx);
     setForm({ ...form, colors: newColors });
   };
+  const removeColor = (idx) => {
+    const newColors = form.colors.filter((_, i) => i !== idx);
+    setForm({ ...form, colors: newColors });
+  };
 
+  // ⭐ Review Section + Auto Rating Calculation
   const addReview = () => {
     setForm({ ...form, reviews: [...form.reviews, { user: "", rating: 0, comment: "" }] });
   };
@@ -106,17 +111,41 @@ export default function ProductForm({ product, onClose, onSaved }) {
   const handleReviewChange = (idx, field, value) => {
     const newReviews = [...form.reviews];
     newReviews[idx][field] = value;
-    setForm({ ...form, reviews: newReviews });
+
+    // 🧮 রিভিউ থেকে গড় রেটিং বের করা
+    const validRatings = newReviews
+      .map((r) => Number(r.rating))
+      .filter((r) => !isNaN(r) && r > 0);
+
+    const avgRating =
+      validRatings.length > 0
+        ? (validRatings.reduce((a, b) => a + b, 0) / validRatings.length).toFixed(1)
+        : 0;
+
+    setForm({ ...form, reviews: newReviews, rating: avgRating });
+  };
+
+  const removeReview = (idx) => {
+    const newReviews = form.reviews.filter((_, i) => i !== idx);
+
+    // 🧮 রিভিউ মুছে ফেললে আবার গড় রেটিং আপডেট
+    const validRatings = newReviews
+      .map((r) => Number(r.rating))
+      .filter((r) => !isNaN(r) && r > 0);
+
+    const avgRating =
+      validRatings.length > 0
+        ? (validRatings.reduce((a, b) => a + b, 0) / validRatings.length).toFixed(1)
+        : 0;
+
+    setForm({ ...form, reviews: newReviews, rating: avgRating });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price || !form.category) {
-      return alert("⚠️ Name, Price & Category required!");
-    }
+    if (!form.name || !form.price || !form.category) return alert("⚠️ নাম, দাম ও ক্যাটাগরি দেওয়া দরকার!");
 
-    setProcessing(true); // ✅ start saving/updating
-
+    setProcessing(true);
     try {
       const data = new FormData();
       for (let key in form) {
@@ -139,165 +168,256 @@ export default function ProductForm({ product, onClose, onSaved }) {
         ? process.env.NEXT_PUBLIC_API_URL + "/api/products/" + product._id
         : process.env.NEXT_PUBLIC_API_URL + "/api/products";
       const method = product ? "PUT" : "POST";
-
       const res = await fetch(url, { method, body: data });
       if (res.ok) {
-        alert(product ? "✅ Product Updated!" : "✅ Product Saved!");
+        alert(product ? "✅ প্রোডাক্ট আপডেট হয়েছে!" : "✅ প্রোডাক্ট সংরক্ষিত হয়েছে!");
         onSaved();
-      } else {
-        alert("❌ Error saving product");
-      }
+      } else alert("❌ ডেটা সেভ করতে সমস্যা হয়েছে!");
     } catch (err) {
       console.error(err);
-      alert("❌ Something went wrong!");
+      alert("⚠️ কিছু ভুল হয়েছে!");
     } finally {
-      setProcessing(false); // ✅ end saving/updating
+      setProcessing(false);
     }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-xl shadow-lg p-6 space-y-4 border border-gray-100"
+      className="bg-gradient-to-b from-white to-gray-50 rounded-2xl shadow-2xl p-6 space-y-6 border border-gray-200"
     >
-      <h1 className="text-xl font-bold mb-2">{product ? "✏ Edit Product" : "➕ Add Product"}</h1>
+      <h1 className="text-2xl font-extrabold text-center text-indigo-600 mb-4">
+        {product ? "✏ পণ্য সম্পাদনা করুন" : "🛍️ নতুন পণ্য যোগ করুন"}
+      </h1>
 
-      {/* Name & Price */}
-      <input
-        className="w-full border p-2 rounded-lg"
-        placeholder="Name"
-        value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
-      />
-      <div className="grid grid-cols-2 gap-2">
+      {/* 🧾 Product Info */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <h2 className="text-lg font-bold text-blue-600 mb-2">📋 পণ্যের তথ্য</h2>
+        <label className="block font-semibold">নাম:</label>
         <input
-          type="number"
-          className="border p-2 rounded-lg"
-          placeholder="Price"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          className="w-full border p-2 rounded-lg mb-3"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
-        <input
-          type="number"
-          className="border p-2 rounded-lg"
-          placeholder="Old Price"
-          value={form.oldPrice}
-          onChange={(e) => setForm({ ...form, oldPrice: e.target.value })}
-        />
-      </div>
 
-      {/* Stock & Rating */}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          className="border p-2 rounded-lg"
-          placeholder="Stock"
-          value={form.stock}
-          onChange={(e) => setForm({ ...form, stock: e.target.value })}
-        />
-        <input
-          type="number"
-          min="0"
-          max="5"
-          className="border p-2 rounded-lg"
-          placeholder="Rating (0–5)"
-          value={form.rating}
-          onChange={(e) => setForm({ ...form, rating: e.target.value })}
-        />
-      </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block font-semibold">মূল্য:</label>
+            <input
+              type="number"
+              className="border p-2 rounded-lg w-full"
+              value={form.price}
+              onChange={(e) => setForm({ ...form, price: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block font-semibold">পুরনো মূল্য:</label>
+            <input
+              type="number"
+              className="border p-2 rounded-lg w-full"
+              value={form.oldPrice}
+              onChange={(e) => setForm({ ...form, oldPrice: e.target.value })}
+            />
+          </div>
+        </div>
 
-      {/* Description */}
-      <textarea
-        className="w-full border p-2 rounded-lg"
-        placeholder="Description"
-        value={form.description}
-        onChange={(e) => setForm({ ...form, description: e.target.value })}
-      />
-      <textarea
-        className="w-full border p-2 rounded-lg"
-        placeholder="Additional Info"
-        value={form.additionalInfo}
-        onChange={(e) => setForm({ ...form, additionalInfo: e.target.value })}
-      />
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          <div>
+            <label className="block font-semibold">স্টক:</label>
+            <input
+              type="number"
+              className="border p-2 rounded-lg w-full"
+              value={form.stock}
+              onChange={(e) => setForm({ ...form, stock: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block font-semibold">গড় রেটিং (Auto):</label>
+            <input
+              type="number"
+              min="0"
+              max="5"
+              className="border p-2 rounded-lg w-full bg-gray-100 cursor-not-allowed"
+              value={form.rating}
+              readOnly
+            />
+          </div>
+        </div>
 
-      {/* Category */}
-      <select
-        className="w-full border p-2 rounded-lg"
-        value={form.category}
-        onChange={(e) => setForm({ ...form, category: e.target.value })}
-      >
-        <option value="">-- Select Category --</option>
-        {categories.map((c) => (
-          <option key={c._id} value={c._id}>{c.name}</option>
-        ))}
-      </select>
-
-      {/* Primary Image */}
-      <div>
-        <label className="font-semibold block mb-1">Primary Image</label>
-        <input
-          type="file"
-          onChange={handleSingleImage}
+        <label className="block font-semibold mt-3">বর্ণনা:</label>
+        <textarea
           className="w-full border p-2 rounded-lg"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
-        {previewImage && (
-          <img src={previewImage} className="h-20 mt-2 rounded-lg shadow object-cover" />
-        )}
-      </div>
 
-      {/* Gallery */}
-      <div
-        onDrop={(e) => { e.preventDefault(); handleGalleryFiles(e.dataTransfer.files); }}
-        onDragOver={(e) => e.preventDefault()}
-        className="border-2 border-dashed p-4 rounded-lg text-center cursor-pointer hover:border-indigo-500 transition"
-      >
-        Drag & Drop Gallery Images Here or Click to Select
-        <input
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(e) => handleGalleryFiles(e.target.files)}
-          ref={(el) => { if (el) el.parentElement.onclick = () => el.click(); }}
+        <label className="block font-semibold mt-3">অতিরিক্ত তথ্য:</label>
+        <textarea
+          className="w-full border p-2 rounded-lg"
+          value={form.additionalInfo}
+          onChange={(e) => setForm({ ...form, additionalInfo: e.target.value })}
         />
       </div>
 
-      {/* Gallery Preview */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        {form.images.map((img, idx) => (
-          <div key={idx} className="relative group">
-            <img src={getImageSrc(img)} alt={`gallery-${idx}`} className="h-20 w-full object-cover rounded-lg shadow-md border" />
-            <button
-              type="button"
-              onClick={() => removeGalleryImage(idx)}
-              className="absolute top-1 right-1 bg-red-600 text-white rounded-full px-2 py-0.5 opacity-0 group-hover:opacity-100 transition"
-            >
-              ✖
-            </button>
+      {/* 📁 Category */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <h2 className="text-lg font-bold text-green-600 mb-2">📂 ক্যাটাগরি</h2>
+        <select
+          className="w-full border p-2 rounded-lg"
+          value={form.category}
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+        >
+          <option value="">-- ক্যাটাগরি বেছে নিন --</option>
+          {categories.map((c) => (
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 🖼️ Primary Image */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <h2 className="text-lg font-bold text-purple-600 mb-2">🖼️ প্রধান ছবি</h2>
+        <input type="file" onChange={handleSingleImage} className="w-full border p-2 rounded-lg" />
+        {previewImage && <img src={previewImage} className="h-24 mt-3 rounded-lg shadow-md object-cover mx-auto" />}
+      </div>
+
+      {/* 📸 Gallery */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <h2 className="text-lg font-bold text-pink-600 mb-2">📸 গ্যালারির ছবি</h2>
+        <div
+          onDrop={(e) => {
+            e.preventDefault();
+            handleGalleryFiles(e.dataTransfer.files);
+          }}
+          onDragOver={(e) => e.preventDefault()}
+          className="border-2 border-dashed p-4 rounded-lg text-center hover:border-pink-400"
+        >
+          ছবি টেনে আনুন বা ক্লিক করুন
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => handleGalleryFiles(e.target.files)}
+            ref={(el) => {
+              if (el) el.parentElement.onclick = () => el.click();
+            }}
+          />
+        </div>
+        <div className="grid grid-cols-4 gap-2 mt-3">
+          {form.images.map((img, idx) => (
+            <div key={idx} className="relative group">
+              <img src={getImageSrc(img)} className="h-20 w-full rounded-lg border object-cover" />
+              <button
+                type="button"
+                onClick={() => removeGalleryImage(idx)}
+                className="absolute top-1 right-1 bg-red-600 text-white rounded-full px-2 py-0.5 opacity-0 group-hover:opacity-100"
+              >
+                ✖
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 🎨 Colors */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-bold text-orange-600">🎨 রঙ সমূহ</h2>
+          <button type="button" onClick={addColor} className="text-blue-600 text-sm font-semibold">
+            + নতুন রঙ যোগ করুন
+          </button>
+        </div>
+        {form.colors.map((color, idx) => (
+          <div key={idx} className="border rounded-lg p-3 mt-2 bg-gray-50">
+            <div className="flex justify-between items-center mb-2">
+              <select
+                value={color.name}
+                onChange={(e) => handleColorSelect(idx, e.target.value)}
+                className="border p-2 rounded-lg w-2/3"
+              >
+                {colorOptions.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+              <button type="button" onClick={() => removeColor(idx)} className="text-red-500 text-sm">
+                🗑 মুছুন
+              </button>
+            </div>
+            <input type="file" multiple className="w-full border p-2 rounded-lg" onChange={(e) => addColorImage(idx, e.target.files)} />
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              {color.images.map((img, i) => (
+                <div key={i} className="relative group">
+                  <img src={getImageSrc(img)} className="h-16 w-full rounded-lg object-cover border" />
+                  <button
+                    type="button"
+                    onClick={() => removeColorImage(idx, i)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full px-1 opacity-0 group-hover:opacity-100"
+                  >
+                    ✖
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Save / Update Buttons */}
-      <button
-        type="submit"
-        disabled={processing}
-        className={`w-full py-3 rounded-lg text-white font-semibold shadow hover:scale-105 transition ${
-          processing ? "bg-gray-400 cursor-not-allowed" : "bg-green-500"
-        }`}
-      >
-        {processing ? (product ? "Updating..." : "Saving...") : product ? "💾 Update Product" : "💾 Save Product"}
-      </button>
+      {/* ⭐ Reviews */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-bold text-yellow-600">⭐ গ্রাহক রিভিউ</h2>
+          <button type="button" onClick={addReview} className="text-blue-600 text-sm font-semibold">
+            + নতুন রিভিউ যোগ করুন
+          </button>
+        </div>
+        {form.reviews.map((r, idx) => (
+          <div key={idx} className="border rounded-lg p-3 mt-2 bg-gray-50">
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-semibold">নাম:</label>
+              <button type="button" onClick={() => removeReview(idx)} className="text-red-500 text-sm">
+                🗑 মুছুন
+              </button>
+            </div>
+            <input className="w-full border p-2 rounded-lg mb-2" value={r.user} onChange={(e) => handleReviewChange(idx, "user", e.target.value)} />
+            <label className="font-semibold">রেটিং (০–৫):</label>
+            <input type="number" min="0" max="5" className="w-full border p-2 rounded-lg mb-2" value={r.rating} onChange={(e) => handleReviewChange(idx, "rating", e.target.value)} />
+            <label className="font-semibold">মন্তব্য:</label>
+            <textarea className="w-full border p-2 rounded-lg" value={r.comment} onChange={(e) => handleReviewChange(idx, "comment", e.target.value)} />
+          </div>
+        ))}
+      </div>
 
-      <button
-        type="button"
-        onClick={onClose}
-        disabled={processing}
-        className={`mt-2 w-full py-2 rounded-lg text-black font-medium ${
-          processing ? "bg-gray-200 cursor-not-allowed" : "bg-gray-300"
-        }`}
-      >
-        ✖ Cancel
-      </button>
+      {/* Buttons */}
+      <div className="flex flex-col gap-2 mt-4">
+        <button
+          type="submit"
+          disabled={processing}
+          className={`w-full py-3 rounded-lg text-white font-semibold shadow ${
+            processing
+              ? "bg-gray-400"
+              : "bg-gradient-to-r from-green-500 to-lime-500 hover:scale-105 transition"
+          }`}
+        >
+          {processing
+            ? product
+              ? "আপডেট হচ্ছে..."
+              : "সংরক্ষণ হচ্ছে..."
+            : product
+            ? "💾 আপডেট করুন"
+            : "💾 সংরক্ষণ করুন"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={processing}
+          className="w-full py-2 rounded-lg text-black font-medium bg-gray-200 hover:bg-gray-300 transition"
+        >
+          ✖ বাতিল
+        </button>
+      </div>
     </form>
   );
 }
