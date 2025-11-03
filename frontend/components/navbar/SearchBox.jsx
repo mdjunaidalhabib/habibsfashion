@@ -83,7 +83,7 @@ export default function SearchBox({ mobileSearchOpen, setMobileSearchOpen }) {
         <input
           type="text"
           placeholder="Search products..."
-          className="border rounded-lg px-3 py-1 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded-lg px-3 py-1 w-64 focus:outline-none focus:ring-1 focus:ring-rose-500"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search products"
