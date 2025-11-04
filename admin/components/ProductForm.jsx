@@ -1,76 +1,82 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProductForm({ product, onClose, onSaved }) {
   const [categories, setCategories] = useState([]);
-  const colorOptions = ["Red", "Blue", "Black", "White", "Green", "Yellow"];
+  const [processing, setProcessing] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     price: "",
     oldPrice: "",
-    stock: 0,
-    rating: 0,
+    stock: "",
+    rating: "",
     description: "",
     additionalInfo: "",
     category: "",
     image: null,
     images: [],
-    colors: [],
     reviews: [],
   });
 
   const [previewImage, setPreviewImage] = useState("");
-  const [processing, setProcessing] = useState(false);
-  const objectUrls = useRef([]);
 
+  // 🧭 ক্যাটাগরি লোড + প্রোডাক্ট সেট
   useEffect(() => {
     loadCategories();
+
     if (product) {
       setForm({
         name: product.name || "",
-        price: product.price || "",
-        oldPrice: product.oldPrice || "",
-        stock: product.stock || 0,
-        rating: product.rating || 0,
+        price: Number(product.price) || 0,
+        oldPrice: Number(product.oldPrice) || 0,
+        stock: Number(product.stock) || 0,
+        rating: Number(product.rating) || 0,
         description: product.description || "",
         additionalInfo: product.additionalInfo || "",
         category: product.category?._id || "",
         image: null,
         images: product.images || [],
-        colors: product.colors || [],
         reviews: product.reviews || [],
       });
       setPreviewImage(product.image || "");
     }
-    return () => objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
   }, [product]);
 
+  // 🗂️ ক্যাটাগরি ফেচ
   const loadCategories = async () => {
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/categories");
-    setCategories(await res.json());
-  };
-
-  const getImageSrc = (img) => {
-    if (!img) return "";
-    if (typeof img === "string") return img;
-    const url = URL.createObjectURL(img);
-    objectUrls.current.push(url);
-    return url;
-  };
-
-  const handleSingleImage = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      objectUrls.current.push(url);
-      setForm({ ...form, image: file });
-      setPreviewImage(url);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
+      if (!res.ok) throw new Error("ক্যাটাগরি লোড করতে সমস্যা হয়েছে!");
+      setCategories(await res.json());
+    } catch (err) {
+      console.error("Category load error:", err);
+      setCategories([]);
     }
   };
 
+  // 🖼️ প্রধান ইমেজ (Fast Preview)
+  const handleSingleImage = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+        setForm({ ...form, image: file });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 📸 গ্যালারি ইমেজ (Fast Preview সহ)
   const handleGalleryFiles = (files) => {
     const imgFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    if (imgFiles.length) setForm({ ...form, images: [...form.images, ...imgFiles] });
+    if (imgFiles.length) {
+      setForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...imgFiles],
+      }));
+    }
   };
 
   const removeGalleryImage = (idx) => {
@@ -78,48 +84,27 @@ export default function ProductForm({ product, onClose, onSaved }) {
     setForm({ ...form, images: newImgs });
   };
 
-  // 🎨 Color Section
-  const addColor = () => {
-    setForm({ ...form, colors: [...form.colors, { name: "Red", images: [] }] });
-  };
-  const handleColorSelect = (idx, value) => {
-    const newColors = [...form.colors];
-    newColors[idx].name = value;
-    setForm({ ...form, colors: newColors });
-  };
-  const addColorImage = (cIdx, files) => {
-    const newColors = [...form.colors];
-    const imgs = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    newColors[cIdx].images.push(...imgs);
-    setForm({ ...form, colors: newColors });
-  };
-  const removeColorImage = (cIdx, imgIdx) => {
-    const newColors = [...form.colors];
-    newColors[cIdx].images = newColors[cIdx].images.filter((_, i) => i !== imgIdx);
-    setForm({ ...form, colors: newColors });
-  };
-  const removeColor = (idx) => {
-    const newColors = form.colors.filter((_, i) => i !== idx);
-    setForm({ ...form, colors: newColors });
-  };
-
-  // ⭐ Review Section + Auto Rating Calculation
+  // ⭐ রিভিউ + অটো রেটিং
   const addReview = () => {
-    setForm({ ...form, reviews: [...form.reviews, { user: "", rating: 0, comment: "" }] });
+    setForm({
+      ...form,
+      reviews: [...form.reviews, { user: "", rating: 0, comment: "" }],
+    });
   };
 
   const handleReviewChange = (idx, field, value) => {
     const newReviews = [...form.reviews];
     newReviews[idx][field] = value;
 
-    // 🧮 রিভিউ থেকে গড় রেটিং বের করা
     const validRatings = newReviews
       .map((r) => Number(r.rating))
       .filter((r) => !isNaN(r) && r > 0);
 
     const avgRating =
       validRatings.length > 0
-        ? (validRatings.reduce((a, b) => a + b, 0) / validRatings.length).toFixed(1)
+        ? (
+            validRatings.reduce((a, b) => a + Number(b), 0) / validRatings.length
+          ).toFixed(1)
         : 0;
 
     setForm({ ...form, reviews: newReviews, rating: avgRating });
@@ -127,47 +112,42 @@ export default function ProductForm({ product, onClose, onSaved }) {
 
   const removeReview = (idx) => {
     const newReviews = form.reviews.filter((_, i) => i !== idx);
-
-    // 🧮 রিভিউ মুছে ফেললে আবার গড় রেটিং আপডেট
     const validRatings = newReviews
       .map((r) => Number(r.rating))
       .filter((r) => !isNaN(r) && r > 0);
 
     const avgRating =
       validRatings.length > 0
-        ? (validRatings.reduce((a, b) => a + b, 0) / validRatings.length).toFixed(1)
+        ? (
+            validRatings.reduce((a, b) => a + Number(b), 0) / validRatings.length
+          ).toFixed(1)
         : 0;
 
     setForm({ ...form, reviews: newReviews, rating: avgRating });
   };
 
+  // 💾 সাবমিট
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price || !form.category) return alert("⚠️ নাম, দাম ও ক্যাটাগরি দেওয়া দরকার!");
+    if (!form.name || !form.price || !form.category)
+      return alert("⚠️ নাম, দাম ও ক্যাটাগরি দেওয়া দরকার!");
 
     setProcessing(true);
     try {
       const data = new FormData();
       for (let key in form) {
-        if (["image", "images", "colors", "reviews"].includes(key)) continue;
+        if (["image", "images", "reviews"].includes(key)) continue;
         data.append(key, form[key]);
       }
       if (form.image) data.append("image", form.image);
       form.images.forEach((img) => data.append("images", img));
-      form.colors.forEach((color, idx) => {
-        data.append(`colors[${idx}][name]`, color.name);
-        color.images.forEach((img) => data.append(`colors[${idx}][images]`, img));
-      });
-      form.reviews.forEach((r, idx) => {
-        data.append(`reviews[${idx}][user]`, r.user);
-        data.append(`reviews[${idx}][rating]`, r.rating);
-        data.append(`reviews[${idx}][comment]`, r.comment);
-      });
+      data.append("reviews", JSON.stringify(form.reviews));
 
       const url = product
-        ? process.env.NEXT_PUBLIC_API_URL + "/api/products/" + product._id
-        : process.env.NEXT_PUBLIC_API_URL + "/api/products";
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/products/${product._id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/products`;
       const method = product ? "PUT" : "POST";
+
       const res = await fetch(url, { method, body: data });
       if (res.ok) {
         alert(product ? "✅ প্রোডাক্ট আপডেট হয়েছে!" : "✅ প্রোডাক্ট সংরক্ষিত হয়েছে!");
@@ -190,7 +170,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
         {product ? "✏ পণ্য সম্পাদনা করুন" : "🛍️ নতুন পণ্য যোগ করুন"}
       </h1>
 
-      {/* 🧾 Product Info */}
+      {/* 🧾 পণ্যের তথ্য */}
       <div className="bg-white p-4 rounded-xl shadow">
         <h2 className="text-lg font-bold text-blue-600 mb-2">📋 পণ্যের তথ্য</h2>
         <label className="block font-semibold">নাম:</label>
@@ -207,7 +187,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
               type="number"
               className="border p-2 rounded-lg w-full"
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
+              onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
             />
           </div>
           <div>
@@ -216,7 +196,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
               type="number"
               className="border p-2 rounded-lg w-full"
               value={form.oldPrice}
-              onChange={(e) => setForm({ ...form, oldPrice: e.target.value })}
+              onChange={(e) => setForm({ ...form, oldPrice: Number(e.target.value) })}
             />
           </div>
         </div>
@@ -228,11 +208,11 @@ export default function ProductForm({ product, onClose, onSaved }) {
               type="number"
               className="border p-2 rounded-lg w-full"
               value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: e.target.value })}
+              onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
             />
           </div>
           <div>
-            <label className="block font-semibold">গড় রেটিং (Auto):</label>
+            <label className="block font-semibold">গড় রেটিং:</label>
             <input
               type="number"
               min="0"
@@ -259,7 +239,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
         />
       </div>
 
-      {/* 📁 Category */}
+      {/* 📂 ক্যাটাগরি */}
       <div className="bg-white p-4 rounded-xl shadow">
         <h2 className="text-lg font-bold text-green-600 mb-2">📂 ক্যাটাগরি</h2>
         <select
@@ -276,39 +256,34 @@ export default function ProductForm({ product, onClose, onSaved }) {
         </select>
       </div>
 
-      {/* 🖼️ Primary Image */}
+      {/* 🖼️ প্রধান ছবি */}
       <div className="bg-white p-4 rounded-xl shadow">
         <h2 className="text-lg font-bold text-purple-600 mb-2">🖼️ প্রধান ছবি</h2>
         <input type="file" onChange={handleSingleImage} className="w-full border p-2 rounded-lg" />
-        {previewImage && <img src={previewImage} className="h-24 mt-3 rounded-lg shadow-md object-cover mx-auto" />}
+        {previewImage && (
+          <img
+            src={previewImage}
+            className="h-24 mt-3 rounded-lg shadow-md object-cover mx-auto"
+          />
+        )}
       </div>
 
-      {/* 📸 Gallery */}
+      {/* 📸 গ্যালারির ছবি */}
       <div className="bg-white p-4 rounded-xl shadow">
         <h2 className="text-lg font-bold text-pink-600 mb-2">📸 গ্যালারির ছবি</h2>
-        <div
-          onDrop={(e) => {
-            e.preventDefault();
-            handleGalleryFiles(e.dataTransfer.files);
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed p-4 rounded-lg text-center hover:border-pink-400"
-        >
-          ছবি টেনে আনুন বা ক্লিক করুন
-          <input
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => handleGalleryFiles(e.target.files)}
-            ref={(el) => {
-              if (el) el.parentElement.onclick = () => el.click();
-            }}
-          />
-        </div>
+        <input
+          type="file"
+          multiple
+          onChange={(e) => handleGalleryFiles(e.target.files)}
+          className="w-full border p-2 rounded-lg"
+        />
         <div className="grid grid-cols-4 gap-2 mt-3">
           {form.images.map((img, idx) => (
             <div key={idx} className="relative group">
-              <img src={getImageSrc(img)} className="h-20 w-full rounded-lg border object-cover" />
+              <img
+                src={typeof img === "string" ? img : URL.createObjectURL(img)}
+                className="h-20 w-full rounded-lg border object-cover"
+              />
               <button
                 type="button"
                 onClick={() => removeGalleryImage(idx)}
@@ -321,54 +296,15 @@ export default function ProductForm({ product, onClose, onSaved }) {
         </div>
       </div>
 
-      {/* 🎨 Colors */}
-      <div className="bg-white p-4 rounded-xl shadow">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-lg font-bold text-orange-600">🎨 রঙ সমূহ</h2>
-          <button type="button" onClick={addColor} className="text-blue-600 text-sm font-semibold">
-            + নতুন রঙ যোগ করুন
-          </button>
-        </div>
-        {form.colors.map((color, idx) => (
-          <div key={idx} className="border rounded-lg p-3 mt-2 bg-gray-50">
-            <div className="flex justify-between items-center mb-2">
-              <select
-                value={color.name}
-                onChange={(e) => handleColorSelect(idx, e.target.value)}
-                className="border p-2 rounded-lg w-2/3"
-              >
-                {colorOptions.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-              <button type="button" onClick={() => removeColor(idx)} className="text-red-500 text-sm">
-                🗑 মুছুন
-              </button>
-            </div>
-            <input type="file" multiple className="w-full border p-2 rounded-lg" onChange={(e) => addColorImage(idx, e.target.files)} />
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              {color.images.map((img, i) => (
-                <div key={i} className="relative group">
-                  <img src={getImageSrc(img)} className="h-16 w-full rounded-lg object-cover border" />
-                  <button
-                    type="button"
-                    onClick={() => removeColorImage(idx, i)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full px-1 opacity-0 group-hover:opacity-100"
-                  >
-                    ✖
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ⭐ Reviews */}
+      {/* ⭐ রিভিউ */}
       <div className="bg-white p-4 rounded-xl shadow">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-bold text-yellow-600">⭐ গ্রাহক রিভিউ</h2>
-          <button type="button" onClick={addReview} className="text-blue-600 text-sm font-semibold">
+          <button
+            type="button"
+            onClick={addReview}
+            className="text-blue-600 text-sm font-semibold"
+          >
             + নতুন রিভিউ যোগ করুন
           </button>
         </div>
@@ -376,20 +312,45 @@ export default function ProductForm({ product, onClose, onSaved }) {
           <div key={idx} className="border rounded-lg p-3 mt-2 bg-gray-50">
             <div className="flex justify-between items-center mb-2">
               <label className="font-semibold">নাম:</label>
-              <button type="button" onClick={() => removeReview(idx)} className="text-red-500 text-sm">
+              <button
+                type="button"
+                onClick={() => removeReview(idx)}
+                className="text-red-500 text-sm"
+              >
                 🗑 মুছুন
               </button>
             </div>
-            <input className="w-full border p-2 rounded-lg mb-2" value={r.user} onChange={(e) => handleReviewChange(idx, "user", e.target.value)} />
+            <input
+              className="w-full border p-2 rounded-lg mb-2"
+              value={r.user}
+              onChange={(e) =>
+                handleReviewChange(idx, "user", e.target.value)
+              }
+            />
             <label className="font-semibold">রেটিং (০–৫):</label>
-            <input type="number" min="0" max="5" className="w-full border p-2 rounded-lg mb-2" value={r.rating} onChange={(e) => handleReviewChange(idx, "rating", e.target.value)} />
+            <input
+              type="number"
+              min="0"
+              max="5"
+              className="w-full border p-2 rounded-lg mb-2"
+              value={r.rating}
+              onChange={(e) =>
+                handleReviewChange(idx, "rating", e.target.value)
+              }
+            />
             <label className="font-semibold">মন্তব্য:</label>
-            <textarea className="w-full border p-2 rounded-lg" value={r.comment} onChange={(e) => handleReviewChange(idx, "comment", e.target.value)} />
+            <textarea
+              className="w-full border p-2 rounded-lg"
+              value={r.comment}
+              onChange={(e) =>
+                handleReviewChange(idx, "comment", e.target.value)
+              }
+            />
           </div>
         ))}
       </div>
 
-      {/* Buttons */}
+      {/* 🧭 বোতাম */}
       <div className="flex flex-col gap-2 mt-4">
         <button
           type="submit"

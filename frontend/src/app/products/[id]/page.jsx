@@ -1,25 +1,53 @@
-// app/products/[id]/page.jsx
 import ProductDetailsClient from "../../../../components/home/ProductDetailsClient";
 import { apiFetch } from "../../../../utils/api";
 
+// 🟢 একক প্রোডাক্ট লোড
 async function getProduct(id) {
-  return await apiFetch(`/api/products/${id}`, { cache: "no-store" });
+  try {
+    const product = await apiFetch(`/api/products/${id}`, { cache: "no-store" });
+
+    // ✅ fallback: main image না থাকলে gallery image থেকে সেট করো
+    if (!product?.image && product?.images?.length > 0) {
+      product.image = product.images[0];
+    }
+
+    // ✅ fallback: কোনো image না থাকলে default সেট করো
+    if (!product?.image) {
+      product.image = "/no-image.png";
+    }
+
+    return product;
+  } catch (err) {
+    console.error("❌ Error fetching product:", err);
+    return null;
+  }
 }
 
+// 🟢 ক্যাটাগরি লোড
 async function getCategory(categoryId) {
   if (!categoryId) return null;
-  return await apiFetch(`/api/categories/${categoryId}`, { cache: "no-store" });
+  try {
+    return await apiFetch(`/api/categories/${categoryId}`, { cache: "no-store" });
+  } catch {
+    return null;
+  }
 }
 
+// 🟢 একই ক্যাটাগরির রিলেটেড প্রোডাক্ট
 async function getRelated(categoryId, productId) {
   if (!categoryId) return [];
-  const products = await apiFetch(`/api/products/category/${categoryId}`, {
-    cache: "no-store",
-  });
-  return products.filter((p) => p._id !== productId);
+  try {
+    const products = await apiFetch(`/api/products/category/${categoryId}`, {
+      cache: "no-store",
+    });
+    return products.filter((p) => p._id !== productId);
+  } catch {
+    return [];
+  }
 }
 
 export default async function ProductDetailsPage({ params }) {
+  // ✅ প্রোডাক্ট ডাটা লোড
   const product = await getProduct(params.id);
 
   if (!product?._id) {
@@ -32,12 +60,16 @@ export default async function ProductDetailsPage({ params }) {
     );
   }
 
+  // ✅ ক্যাটাগরি আইডি ঠিকভাবে নির্ধারণ
   const categoryId =
-    typeof product.category === "object" ? product.category._id : product.category;
+    typeof product.category === "object"
+      ? product.category?._id
+      : product.category;
 
   const category = await getCategory(categoryId);
   const related = await getRelated(categoryId, product._id);
 
+  // ✅ ফাইনাল রেন্ডার
   return (
     <ProductDetailsClient
       product={product}

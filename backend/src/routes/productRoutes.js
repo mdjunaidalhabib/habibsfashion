@@ -6,39 +6,35 @@ import {
   deleteProduct,
   getProducts,
   getProductById,
-  getProductsByCategory, // ✅ Import the new controller
+  getProductsByCategory,
 } from "../../controllers/productController.js";
 
 const router = express.Router();
 
-// Dynamic Multer fields config
-const colorFields = Array.from({ length: 20 }).map((_, i) => ({
-  name: `colors[${i}][images]`,
-}));
+// 🔧 শুধুমাত্র প্রয়োজনীয় ফাইল ফিল্ড
 const productUpload = upload.fields([
-  { name: "image", maxCount: 1 },
-  { name: "images" },
-  ...colorFields,
+  { name: "image", maxCount: 1 }, // প্রধান ছবি
+  { name: "images" }, // গ্যালারি ছবি
 ]);
 
 // ------------------- Routes -------------------
 
-// Create product
+// 🟢 নতুন পণ্য যোগ
 router.post("/", productUpload, createProduct);
 
-// Update product
+// 🟡 পণ্য আপডেট
 router.put("/:id", productUpload, updateProduct);
 
-// Delete product
+// 🔴 পণ্য মুছে ফেলা
 router.delete("/:id", deleteProduct);
 
-// Get all products
+// 📦 সব পণ্য লোড
 router.get("/", getProducts);
 
-// Get products by category ✅
+// 📂 ক্যাটাগরি অনুযায়ী পণ্য
 router.get("/category/:categoryId", getProductsByCategory);
 
-// Get single product
+// 🔍 নির্দিষ্ট পণ্য
 router.get("/:id", getProductById);
 
 export default router;

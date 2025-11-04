@@ -7,27 +7,20 @@ import { FaPlus, FaMinus, FaTrash, FaHeart } from "react-icons/fa";
 import { apiFetch } from "../../../utils/api";
 import CheckoutButton from "../../../components/home/CheckoutButton";
 
-// Skeleton Loader
+// ✅ Skeleton Loader
 const CartSkeleton = () => (
-  <div className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row items-center gap-4 animate-pulse">
-    <div className="w-24 h-24 bg-gray-200 rounded"></div>
+  <div className="bg-white rounded-lg shadow p-4 flex items-center gap-4 animate-pulse">
+    <div className="w-20 h-20 bg-gray-200 rounded"></div>
     <div className="flex-1 space-y-2">
       <div className="h-4 w-32 bg-gray-200 rounded"></div>
       <div className="h-4 w-20 bg-gray-200 rounded"></div>
     </div>
-    <div className="h-10 w-20 bg-gray-200 rounded"></div>
   </div>
 );
 
 export default function CartPage() {
-  const {
-    cart,
-    setCart,
-    wishlist,
-    updateCart,
-    removeFromCart,
-    toggleWishlist,
-  } = useCart();
+  const { cart, setCart, wishlist, updateCart, removeFromCart, toggleWishlist } =
+    useCart();
 
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,45 +52,50 @@ export default function CartPage() {
   const handleClearCart = () => setCart({});
 
   return (
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="container mx-auto px-3 sm:px-6 py-6 bg-gray-50 min-h-screen">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl sm:text-3xl font-semibold">Your Cart</h1>
+        <h1 className="text-xl sm:text-3xl font-semibold text-gray-800">🛒 আপনার কার্ট</h1>
         {items.length > 0 && !loading && (
           <button
             onClick={handleClearCart}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600"
+            className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition"
           >
-            Clear All
+            সব মুছে ফেলুন
           </button>
         )}
       </div>
 
+      {/* Loader */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <CartSkeleton key={i} />
           ))}
         </div>
       ) : !items.length ? (
         <div className="bg-white rounded-xl shadow p-6 text-center">
-          <p>Your cart is empty.</p>
+          <p className="text-gray-500 text-lg">আপনার কার্ট খালি 😢</p>
+          <Link href="/products" className="text-blue-500 hover:underline mt-2 inline-block">
+            পণ্য দেখুন
+          </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {items.map((p) => {
             const discount =
-              p.oldPrice &&
-              (((p.oldPrice - p.price) / p.oldPrice) * 100).toFixed(1);
+              p.oldPrice && (((p.oldPrice - p.price) / p.oldPrice) * 100).toFixed(1);
             const isInWishlist = wishlist.includes(p._id);
 
             return (
               <div
                 key={p._id}
-                className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row items-center gap-4"
+                className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition-all duration-300"
               >
+                {/* ✅ Image Left */}
                 <Link
                   href={`/products/${p._id}`}
-                  className="w-24 h-24 relative flex-shrink-0 block"
+                  className="relative w-20 h-20 flex-shrink-0"
                 >
                   <Image
                     src={p.image}
@@ -107,80 +105,91 @@ export default function CartPage() {
                   />
                 </Link>
 
-                <div className="flex-1">
-                  <Link
-                    href={`/products/${p._id}`}
-                    className="font-semibold hover:underline"
-                  >
-                    {p.name}
-                  </Link>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-blue-600 font-bold">৳{p.price}</span>
-                    {p.oldPrice && (
-                      <span className="line-through text-gray-400 text-sm">
-                        ৳{p.oldPrice}
-                      </span>
-                    )}
-                    {discount && (
-                      <span className="text-red-500 text-sm font-medium">
-                        {discount}% OFF
-                      </span>
-                    )}
+                {/* ✅ Info Right */}
+                <div className="flex flex-col flex-1 justify-between">
+                  <div>
+                    <Link
+                      href={`/products/${p._id}`}
+                      className="font-semibold text-sm sm:text-base text-gray-800 hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-blue-600 font-bold text-sm">৳{p.price}</span>
+                      {p.oldPrice && (
+                        <span className="line-through text-gray-400 text-xs">
+                          ৳{p.oldPrice}
+                        </span>
+                      )}
+                      {discount && (
+                        <span className="text-red-500 text-xs font-medium">
+                          {discount}% OFF
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => p.qty > 1 && updateCart(p._id, -1)}
-                    className={`px-2 py-2 rounded text-white ${
-                      p.qty > 1
-                        ? "bg-red-500 hover:bg-red-600"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    <FaMinus />
-                  </button>
-                  <span className="font-bold">{p.qty}</span>
-                  <button
-                    onClick={() => updateCart(p._id, +1)}
-                    className="bg-green-500 text-white px-2 py-2 rounded hover:bg-green-600"
-                  >
-                    <FaPlus />
-                  </button>
-                </div>
+                  {/* ✅ Quantity + Buttons Row */}
+                  <div className="flex items-center justify-between mt-2">
+                    {/* Qty Control */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => p.qty > 1 && updateCart(p._id, -1)}
+                        className={`p-2 rounded text-white text-xs ${
+                          p.qty > 1
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        <FaMinus />
+                      </button>
+                      <span className="font-bold text-sm">{p.qty}</span>
+                      <button
+                        onClick={() => updateCart(p._id, +1)}
+                        className="bg-green-500 text-white p-2 rounded text-xs hover:bg-green-600"
+                      >
+                        <FaPlus />
+                      </button>
+                    </div>
 
-                <button
-                  onClick={() => removeFromCart(p._id)}
-                  className="bg-red-600 text-white px-3 py-2 rounded flex items-center gap-1 hover:bg-red-700"
-                >
-                  <FaTrash /> Remove
-                </button>
+                    {/* Remove / Wishlist */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => removeFromCart(p._id)}
+                        className="bg-red-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1 hover:bg-red-700"
+                      >
+                        <FaTrash /> <span>রিমুভ</span>
+                      </button>
+                      <button
+                        onClick={() => toggleWishlist(p._id)}
+                        className={`p-2 rounded-full ${
+                          isInWishlist
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                        }`}
+                      >
+                        <FaHeart size={12} />
+                      </button>
+                    </div>
+                  </div>
 
-                <button
-                  onClick={() => toggleWishlist(p._id)}
-                  className={`p-3 rounded-full shadow ${
-                    isInWishlist
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  <FaHeart />
-                </button>
-
-                <div className="font-semibold text-blue-600 ml-auto">
-                  Total: ৳{p.price * p.qty}
+                  {/* ✅ Total */}
+                  <div className="text-blue-600 font-semibold text-sm mt-2 text-right">
+                    মোট: ৳{p.price * p.qty}
+                  </div>
                 </div>
               </div>
             );
           })}
 
-          <div className="text-right font-bold text-lg mt-6">
-            Grand Total: <span className="text-blue-600">৳{grandTotal}</span>
+          {/* ✅ Grand Total */}
+          <div className="text-right font-bold text-lg mt-6 border-t pt-4">
+            মোট মূল্য: <span className="text-blue-600">৳{grandTotal}</span>
           </div>
 
-          {/* ✅ Cart Page Checkout → always "Checkout" */}
-          <div className="text-right mt-4">
-            <CheckoutButton label="Checkout" fullWidth />
+          {/* ✅ Checkout Button */}
+          <div className="mt-4 flex justify-end">
+            <CheckoutButton label="চেকআউট করুন" fullWidth={false} />
           </div>
         </div>
       )}

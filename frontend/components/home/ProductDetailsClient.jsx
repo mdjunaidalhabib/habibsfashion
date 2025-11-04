@@ -7,30 +7,29 @@ import ProductCard from "./ProductCard";
 import { useCartUtils } from "../../hooks/useCartUtils";
 import QuantityController from "./QuantityController";
 import CheckoutButton from "./CheckoutButton";
-import ProductDetailsSkeleton from "../skeletons/ProductDetailsSkeleton"; // ✅ Skeleton added
+import ProductDetailsSkeleton from "../skeletons/ProductDetailsSkeleton";
 
 export default function ProductDetailsClient({ product, category, related = [], loading = false }) {
   const { cart, wishlist, toggleWishlist, updateCart } = useCartUtils();
 
-  // ✅ লোডিং অবস্থায় Skeleton দেখাবে
-  if (loading || !product?._id) {
-    return <ProductDetailsSkeleton />;
-  }
+  if (loading || !product?._id) return <ProductDetailsSkeleton />;
 
-  const [activeColor, setActiveColor] = useState(
-    product.colors?.length ? product.colors[0].name : null
-  );
   const [activeIdx, setActiveIdx] = useState(0);
   const [tab, setTab] = useState("desc");
 
+  // ✅ Safe image handling (main + gallery + fallback)
   const images = useMemo(() => {
-    if (product.colors && activeColor) {
-      const colorObj = product.colors.find((c) => c.name === activeColor);
-      return colorObj?.images?.length ? colorObj.images : [product.image];
+    const gallery = Array.isArray(product.images) ? product.images : [];
+    const main = product.image && product.image.startsWith("http") ? product.image : null;
+
+    if (main && !gallery.includes(main)) {
+      return [main, ...gallery];
     }
-    if (Array.isArray(product.images) && product.images.length) return product.images;
-    return [product.image];
-  }, [product, activeColor]);
+
+    if (gallery.length > 0) return gallery;
+
+    return ["/no-image.png"];
+  }, [product]);
 
   const quantity = cart[product._id] || 0;
   const totalPrice = product.price * quantity;
@@ -43,9 +42,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
     <button
       onClick={() => setTab(key)}
       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-        tab === key
-          ? "bg-blue-600 text-white shadow"
-          : "text-gray-600 hover:bg-gray-200"
+        tab === key ? "bg-blue-600 text-white shadow" : "text-gray-600 hover:bg-gray-200"
       }`}
     >
       {label}
@@ -69,21 +66,22 @@ export default function ProductDetailsClient({ product, category, related = [], 
         <span className="text-gray-700">{product.name}</span>
       </nav>
 
-      {/* Gallery + Summary */}
+      {/* 🖼️ Gallery + Summary */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gallery */}
+        {/* 🖼️ Product Image with Hover Zoom */}
         <div className="bg-white rounded-2xl shadow p-4">
-          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100">
-            {images[activeIdx] && (
-              <Image
-                src={images[activeIdx]}
-                alt={product?.name || "Product"}
-                fill
-                className="object-cover rounded-lg"
-                priority
-              />
-            )}
+          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100 group">
+            <Image
+              src={images[activeIdx] || "/no-image.png"}
+              alt={product?.name || "Product"}
+              fill
+              className="object-cover rounded-lg transition-transform duration-500 ease-in-out group-hover:scale-110"
+              priority
+              onError={(e) => (e.currentTarget.src = "/no-image.png")}
+            />
           </div>
+
+          {/* 🖼️ Thumbnail Gallery */}
           {images.length > 1 && (
             <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
               {images.map((src, i) => (
@@ -96,21 +94,25 @@ export default function ProductDetailsClient({ product, category, related = [], 
                       : "border-gray-200 hover:border-gray-400"
                   }`}
                 >
-                  <Image src={src} alt={`${product.name} ${i + 1}`} fill className="object-cover" />
+                  <Image
+                    src={src || "/no-image.png"}
+                    alt={`${product.name} ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    onError={(e) => (e.currentTarget.src = "/no-image.png")}
+                  />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Summary */}
+        {/* 🧾 Summary Section */}
         <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
           <h1 className="text-2xl sm:text-3xl font-semibold mb-2">{product.name}</h1>
 
           {category?.name && (
-            <p className="text-sm text-gray-600 mb-1">
-              Category: {category.name}
-            </p>
+            <p className="text-sm text-gray-600 mb-1">Category: {category.name}</p>
           )}
 
           <p
@@ -123,32 +125,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
               : "❌ Out of Stock"}
           </p>
 
-          {/* Colors */}
-          {product.colors?.length > 0 && (
-            <div className="mb-4">
-              <p className="font-medium text-sm mb-2">Available Colors:</p>
-              <div className="flex gap-2 flex-wrap">
-                {product.colors.map((c) => (
-                  <button
-                    key={c.name}
-                    onClick={() => {
-                      setActiveColor(c.name);
-                      setActiveIdx(0);
-                    }}
-                    className={`px-3 py-1 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                      activeColor === c.name
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Rating */}
+          {/* ⭐ Rating */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
@@ -161,19 +138,18 @@ export default function ProductDetailsClient({ product, category, related = [], 
             <span className="text-sm text-gray-500">{product.rating || 0}/5</span>
           </div>
 
-          {/* Price + Wishlist */}
+          {/* 💰 Price + Wishlist */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <p className="text-blue-600 font-bold text-2xl">৳{product.price}</p>
               {product.oldPrice && (
-                <p className="text-gray-400 line-through text-lg">
-                  ৳{product.oldPrice}
-                </p>
+                <p className="text-gray-400 line-through text-lg">৳{product.oldPrice}</p>
               )}
               {discountPct && (
                 <span className="text-red-500 font-semibold">-{discountPct}%</span>
               )}
             </div>
+
             <button
               onClick={() => toggleWishlist(product._id)}
               className={`p-3 rounded-full shadow transition-all duration-200 ${
@@ -186,7 +162,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
             </button>
           </div>
 
-          {/* Cart + Checkout Section */}
+          {/* 🛒 Cart + Checkout */}
           <div className="flex flex-wrap md:flex-nowrap gap-4 items-start">
             {!quantity ? (
               <>
@@ -210,27 +186,25 @@ export default function ProductDetailsClient({ product, category, related = [], 
               </>
             ) : (
               <>
-                {quantity > 0 && (
-                  <div className="flex-1 md:flex-[2] flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm sm:font-medium">Quantity</span>
-                      <QuantityController
-                        qty={quantity}
-                        stock={product.stock}
-                        onChange={(change) =>
-                          updateCart(product._id, change, product.stock)
-                        }
-                        allowZero={true}
-                      />
-                    </div>
-                    <p className="text-sm font-medium">
-                      Total:{" "}
-                      <span className="text-blue-600 font-semibold">
-                        ৳{totalPrice}
-                      </span>
-                    </p>
+                <div className="flex-1 md:flex-[2] flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:font-medium">Quantity</span>
+                    <QuantityController
+                      qty={quantity}
+                      stock={product.stock}
+                      onChange={(change) =>
+                        updateCart(product._id, change, product.stock)
+                      }
+                      allowZero={true}
+                    />
                   </div>
-                )}
+                  <p className="text-sm font-medium">
+                    Total:{" "}
+                    <span className="text-blue-600 font-semibold">
+                      ৳{totalPrice}
+                    </span>
+                  </p>
+                </div>
 
                 <CheckoutButton
                   productId={product._id}
@@ -243,7 +217,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
         </div>
       </section>
 
-      {/* Tabs */}
+      {/* 📋 Tabs */}
       <section className="mt-8">
         <div className="inline-flex bg-gray-100 rounded-xl p-1">
           {tabBtn("desc", "Description")}
@@ -261,9 +235,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
                   <div key={i} className="border-b py-2">
                     <p className="font-semibold">
                       {r.user}{" "}
-                      <span className="text-yellow-500">
-                        {"★".repeat(r.rating)}
-                      </span>{" "}
+                      <span className="text-yellow-500">{"★".repeat(r.rating)}</span>{" "}
                       <span className="text-gray-500">{r.rating}/5</span>
                     </p>
                     <p>{r.comment}</p>
@@ -277,7 +249,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
         </div>
       </section>
 
-      {/* Related Products */}
+      {/* 🧩 Related Products */}
       {related?.length > 0 && (
         <section className="mt-10">
           <div className="flex items-center justify-between mb-4">

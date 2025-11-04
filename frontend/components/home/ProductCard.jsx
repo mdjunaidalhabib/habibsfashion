@@ -24,34 +24,28 @@ const ProductCard = ({ product }) => {
   const isInWishlist = wishlist.includes(productId);
   const totalPrice = product?.price * quantity;
 
-  // ✅ Main image (Cloudinary URL direct)
+  // ✅ Safe main image selection (Cloudinary > Gallery > Fallback)
   const mainImage =
-    product?.images && product.images.length > 0
-      ? product.images[0]
-      : product?.image;
+    product?.image && product.image.startsWith("http")
+      ? product.image
+      : product?.images?.[0] || "/no-image.png";
 
-  // ✅ Updated Cart Logic
+  // ✅ Cart Logic
   const updateCart = (id, change) => {
     setCart((prev) => {
       const exists = prev[id] || 0;
-
-      // প্রথমবার Add করলে cart এ 1 product count হবে
-      if (!exists && change > 0) {
-        return { ...prev, [id]: 1 };
-      }
-
-      // Quantity change হলে শুধু সেই product update হবে
+      if (!exists && change > 0) return { ...prev, [id]: 1 };
       const qty = exists + change;
       if (qty <= 0) {
         const copy = { ...prev };
         delete copy[id];
         return copy;
       }
-
       return { ...prev, [id]: qty };
     });
   };
 
+  // ✅ Wishlist Toggle
   const toggleWishlist = (id) => {
     setWishlist((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -63,24 +57,22 @@ const ProductCard = ({ product }) => {
       href={`/products/${productId}`}
       className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col"
     >
-      {/* ✅ Image Container */}
-      <div className="relative w-full h-40 sm:h-48 md:h-52 mb-3">
-        {/* ✅ Top Badges inside image container */}
+      {/* 🖼️ Image Container */}
+      <div className="relative w-full h-40 sm:h-48 md:h-52 mb-3 overflow-hidden rounded-lg">
+        {/* 🏷️ Discount & Wishlist */}
         <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
-          {/* Discount badge */}
           {product?.oldPrice && (
             <div className="bg-red-500 text-white px-1 py-0 rounded-full text-xs font-semibold shadow-sm transition transform hover:scale-105">
               -{discount}%
             </div>
           )}
 
-          {/* Wishlist */}
           <button
             onClick={(e) => {
               e.preventDefault();
               toggleWishlist(productId);
             }}
-            className={`p-1 mt-0 rounded-full shadow-md transition transform hover:scale-110 ${
+            className={`p-1 rounded-full shadow-md transition transform hover:scale-110 ${
               isInWishlist ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
             }`}
           >
@@ -88,25 +80,25 @@ const ProductCard = ({ product }) => {
           </button>
         </div>
 
-        {/* ✅ Product Image */}
-        {mainImage && (
-          <Image
-            src={mainImage} // ✅ Direct Cloudinary URL
-            alt={product?.name || "Product"}
-            fill
-            className="rounded-lg object-cover"
-            priority
-          />
-        )}
+        {/* 🖼️ Product Image */}
+        <Image
+          src={mainImage}
+          alt={product?.name || "Product"}
+          fill
+          className="object-cover rounded-lg"
+          priority
+          onError={(e) => {
+            e.currentTarget.src = "/no-image.png";
+          }}
+        />
       </div>
 
+      {/* 📋 Product Info */}
       <div className="px-4 pb-3">
-        {/* Title */}
         <h4 className="font-semibold text-base sm:text-lg mb-1 truncate">
           {product?.name}
         </h4>
 
-        {/* Stock Info */}
         <p
           className={`text-xs font-medium mb-2 ${
             product?.stock > 0 ? "text-green-600" : "text-red-500"
@@ -115,7 +107,6 @@ const ProductCard = ({ product }) => {
           {product?.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
         </p>
 
-        {/* Rating */}
         <div className="flex items-center mb-2">
           {[...Array(5)].map((_, i) => (
             <FaStar
@@ -127,7 +118,6 @@ const ProductCard = ({ product }) => {
           ))}
         </div>
 
-        {/* Price */}
         <div className="flex items-center space-x-2">
           <p className="text-blue-600 font-bold text-sm sm:text-base">
             ৳{product?.price}
@@ -139,34 +129,33 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* Cart actions */}
+        {/* 🛒 Cart Buttons */}
         {!quantity ? (
           <button
-  onClick={(e) => {
-    e.preventDefault();
-    updateCart(productId, +1);
-  }}
-  disabled={product?.stock <= 0}
-  className={`my-3 sm:mt-4 sm:mb-2 w-full px-3 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base
-    ${
-      product?.stock <= 0
-        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-        : "bg-blue-900 text-white hover:bg-blue-800"
-    }`}
->
-  <FaShoppingCart /> Add
-</button>
+            onClick={(e) => {
+              e.preventDefault();
+              updateCart(productId, +1);
+            }}
+            disabled={product?.stock <= 0}
+            className={`my-3 sm:mt-4 sm:mb-2 w-full px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
+              product?.stock <= 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-rose-600 text-white hover:bg-blue-800"
+            }`}
+          >
+            <FaShoppingCart /> Add
+          </button>
         ) : (
           <div>
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">Quantity:</span>
-              <div className="flex items-center space-x-1 sm:space-x-2 rounded-lg">
+              <div className="flex items-center space-x-2 rounded-lg">
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     updateCart(productId, -1);
                   }}
-                  className="bg-gray-50 text-black p-1 sm:p-2 rounded-lg hover:bg-gray-100"
+                  className="bg-gray-50 text-black p-2 rounded-lg hover:bg-gray-100"
                 >
                   <FaMinus className="w-3 h-3" />
                 </button>
@@ -177,7 +166,7 @@ const ProductCard = ({ product }) => {
                     updateCart(productId, +1);
                   }}
                   disabled={quantity >= product?.stock}
-                  className="bg-gray-50 text-black p-1 sm:p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                  className="bg-gray-50 text-black p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
                 >
                   <FaPlus className="w-2 h-3" />
                 </button>
@@ -188,8 +177,6 @@ const ProductCard = ({ product }) => {
               Total: <span className="text-blue-600">৳{totalPrice}</span>
             </p>
           </div>
-
-          
         )}
       </div>
     </Link>

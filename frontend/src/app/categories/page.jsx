@@ -11,10 +11,19 @@ export default function CategoryPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
 
+  // 🔹 প্রথমে ক্যাটাগরি ফেচ করা
   useEffect(() => {
     axios
       .get(`${API_URL}/api/categories`)
-      .then((res) => setCategories(res.data))
+      .then((res) => {
+        setCategories(res.data);
+        // ✅ প্রথম ক্যাটাগরি ডিফল্টভাবে সিলেক্ট করা
+        if (res.data.length > 0) {
+          const firstCat = res.data[0];
+          setSelectedCategory(firstCat._id);
+          fetchProducts(firstCat._id);
+        }
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -32,7 +41,6 @@ export default function CategoryPage() {
       <div className="md:w-64 bg-white shadow-md rounded-xl p-3 md:p-4">
         <h3 className="text-lg font-semibold mb-3 border-b pb-2">🗂️ Categories</h3>
 
-        {/* 👉 মোবাইলে horizontal scroll */}
         <ul className="flex md:flex-col gap-3 overflow-x-auto md:space-y-2 no-scrollbar">
           {categories.map((cat) => (
             <li
