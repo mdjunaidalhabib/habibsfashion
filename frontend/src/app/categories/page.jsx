@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
 import ProductCard from "../../../components/home/ProductCard";
+import CategorySkeleton from "../../../components/skeletons/CategorySkeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -10,34 +11,41 @@ export default function CategoryPage() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // 🔹 প্রথমে ক্যাটাগরি ফেচ করা
+  // 🔹 ক্যাটাগরি ফেচ করা
   useEffect(() => {
     axios
       .get(`${API_URL}/api/categories`)
       .then((res) => {
         setCategories(res.data);
-        // ✅ প্রথম ক্যাটাগরি ডিফল্টভাবে সিলেক্ট করা
         if (res.data.length > 0) {
           const firstCat = res.data[0];
           setSelectedCategory(firstCat._id);
           fetchProducts(firstCat._id);
         }
       })
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
   }, []);
 
+  // 🔹 প্রোডাক্ট ফেচ করা
   const fetchProducts = (categoryId) => {
     setSelectedCategory(categoryId);
+    setLoading(true);
     axios
       .get(`${API_URL}/api/products/category/${categoryId}`)
       .then((res) => setProducts(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
   };
+
+  // 🌀 লোডিং অবস্থায় Skeleton দেখানো
+  if (loading) return <CategorySkeleton />;
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-3 md:p-6">
-      {/* === Category Sidebar / Topbar === */}
+      {/* === Category Sidebar === */}
       <div className="md:w-64 bg-white shadow-md rounded-xl p-3 md:p-4">
         <h3 className="text-lg font-semibold mb-3 border-b pb-2">🗂️ Categories</h3>
 
@@ -71,14 +79,18 @@ export default function CategoryPage() {
       {/* === Product List === */}
       <div className="flex-1">
         <h3 className="text-xl font-semibold mb-4">
-          {selectedCategory ? "Products" : "👉 প্রথমে কোনো Category সিলেক্ট করুন"}
+          {selectedCategory ? "🛍️ Products" : "👉 প্রথমে কোনো Category সিলেক্ট করুন"}
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {products.map((p) => (
-            <ProductCard key={p._id} product={p} />
-          ))}
-        </div>
+        {products.length === 0 ? (
+          <p className="text-gray-500">কোনো পণ্য পাওয়া যায়নি 😔</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {products.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
