@@ -9,7 +9,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
     name: "",
     price: "",
     oldPrice: "",
-    stock: "",
+    stock: 0,
     rating: "",
     description: "",
     additionalInfo: "",

@@ -8,26 +8,24 @@ import { useCartUtils } from "../../hooks/useCartUtils";
 import QuantityController from "./QuantityController";
 import CheckoutButton from "./CheckoutButton";
 import ProductDetailsSkeleton from "../skeletons/ProductDetailsSkeleton";
+import { useRouter } from "next/navigation"; // ✅ যোগ করা হয়েছে
 
 export default function ProductDetailsClient({ product, category, related = [], loading = false }) {
   const { cart, wishlist, toggleWishlist, updateCart } = useCartUtils();
+  const router = useRouter(); // ✅ রাউটার ব্যবহার করা হবে
 
   if (loading || !product?._id) return <ProductDetailsSkeleton />;
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [tab, setTab] = useState("desc");
 
-  // ✅ Safe image handling (main + gallery + fallback)
+  // ✅ ছবি হ্যান্ডলিং
   const images = useMemo(() => {
     const gallery = Array.isArray(product.images) ? product.images : [];
     const main = product.image && product.image.startsWith("http") ? product.image : null;
 
-    if (main && !gallery.includes(main)) {
-      return [main, ...gallery];
-    }
-
+    if (main && !gallery.includes(main)) return [main, ...gallery];
     if (gallery.length > 0) return gallery;
-
     return ["/no-image.png"];
   }, [product]);
 
@@ -49,6 +47,19 @@ export default function ProductDetailsClient({ product, category, related = [], 
     </button>
   );
 
+  // ✅ Checkout লজিক: আগে add করে তারপর checkout
+  const handleCheckout = async () => {
+    if (product.stock <= 0) return;
+
+    // যদি পণ্য কার্টে না থাকে → আগে add করো
+    if (!quantity || quantity === 0) {
+      await updateCart(product._id, +1, product.stock);
+    }
+
+    // তারপর checkout পেজে যাও
+    router.push(`/checkout?productId=${product._id}&qty=${quantity || 1}`);
+  };
+
   return (
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
@@ -68,7 +79,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
 
       {/* 🖼️ Gallery + Summary */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 🖼️ Product Image with Hover Zoom */}
+        {/* Product Image */}
         <div className="bg-white rounded-2xl shadow p-4">
           <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100 group">
             <Image
@@ -81,7 +92,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
             />
           </div>
 
-          {/* 🖼️ Thumbnail Gallery */}
+          {/* Thumbnail Gallery */}
           {images.length > 1 && (
             <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
               {images.map((src, i) => (
@@ -179,9 +190,10 @@ export default function ProductDetailsClient({ product, category, related = [], 
                 </button>
 
                 <CheckoutButton
+                  product={product}
                   productId={product._id}
-                  qty={quantity}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold px-6 py-3 rounded-lg"
+                  qty={1}
+                  onClick={handleCheckout}
                 />
               </>
             ) : (
@@ -192,9 +204,7 @@ export default function ProductDetailsClient({ product, category, related = [], 
                     <QuantityController
                       qty={quantity}
                       stock={product.stock}
-                      onChange={(change) =>
-                        updateCart(product._id, change, product.stock)
-                      }
+                      onChange={(change) => updateCart(product._id, change, product.stock)}
                       allowZero={true}
                     />
                   </div>
@@ -207,9 +217,10 @@ export default function ProductDetailsClient({ product, category, related = [], 
                 </div>
 
                 <CheckoutButton
+                  product={product}
                   productId={product._id}
                   qty={quantity}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold px-6 py-3 rounded-lg"
+                  onClick={handleCheckout}
                 />
               </>
             )}
@@ -226,8 +237,8 @@ export default function ProductDetailsClient({ product, category, related = [], 
         </div>
 
         <div className="mt-4 bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-700 leading-relaxed">
-          {tab === "desc" && <p>{product.description || "No description available."}</p>}
-          {tab === "info" && <p>{product.additionalInfo || "No additional information provided."}</p>}
+          {tab === "desc" && <p className="whitespace-pre-wrap">{product.description || "No description available."}</p>}
+          {tab === "info" && <p className="whitespace-pre-wrap">{product.additionalInfo || "No additional information provided."}</p>}
           {tab === "reviews" && (
             <div className="text-sm">
               {product.reviews?.length ? (
