@@ -4,6 +4,7 @@ import axios from "axios";
 import Image from "next/image";
 import ProductCard from "../../../components/home/ProductCard";
 import CategorySkeleton from "../../../components/skeletons/CategorySkeleton";
+import ProductDetailsSkeleton from "../../../components/skeletons/ProductDetailsSkeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -12,8 +13,9 @@ export default function CategoryPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [productLoading, setProductLoading] = useState(false);
 
-  // 🔹 ক্যাটাগরি ফেচ করা
+  // 🔹 ক্যাটাগরি লোড
   useEffect(() => {
     axios
       .get(`${API_URL}/api/categories`)
@@ -29,18 +31,18 @@ export default function CategoryPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 🔹 প্রোডাক্ট ফেচ করা
+  // 🔹 প্রোডাক্ট লোড
   const fetchProducts = (categoryId) => {
     setSelectedCategory(categoryId);
-    setLoading(true);
+    setProductLoading(true);
     axios
       .get(`${API_URL}/api/products/category/${categoryId}`)
       .then((res) => setProducts(res.data))
       .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .finally(() => setProductLoading(false));
   };
 
-  // 🌀 লোডিং অবস্থায় Skeleton দেখানো
+  // 🌀 প্রথমবার পুরো Skeleton
   if (loading) return <CategorySkeleton />;
 
   return (
@@ -82,7 +84,9 @@ export default function CategoryPage() {
           {selectedCategory ? "🛍️ Products" : "👉 প্রথমে কোনো Category সিলেক্ট করুন"}
         </h3>
 
-        {products.length === 0 ? (
+        {productLoading ? (
+          <ProductDetailsSkeleton />
+        ) : products.length === 0 ? (
           <p className="text-gray-500">কোনো পণ্য পাওয়া যায়নি 😔</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
