@@ -29,7 +29,7 @@ export const updateCategory = async (req, res) => {
     if (!category) return res.status(404).json({ error: "Category not found" });
 
     if (req.file) {
-      // Delete old image
+      // পুরনো ছবি ডিলিট করো
       if (category.image) await deleteFromCloudinary(category.image);
 
       const result = await cloudinary.uploader.upload(req.file.path, { folder: "categories" });
@@ -53,10 +53,13 @@ export const deleteCategory = async (req, res) => {
     const category = await Category.findById(req.params.id);
     if (!category) return res.status(404).json({ error: "Category not found" });
 
-    if (category.image) await deleteFromCloudinary(category.image);
+    // যদি ছবি থাকে, তাহলে Cloudinary থেকে মুছে ফেলো (ছবি + ফোল্ডার)
+    if (category.image) await deleteFromCloudinary(category.image, "categories");
 
+    // ডাটাবেজ থেকে ডিলিট
     await category.deleteOne();
-    res.json({ message: "🗑️ Category deleted" });
+
+    res.json({ message: "🗑️ Category deleted successfully (and folder if empty)" });
   } catch (err) {
     console.error("❌ Error deleting category:", err);
     res.status(400).json({ error: err.message });

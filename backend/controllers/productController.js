@@ -72,7 +72,7 @@ export const updateProduct = async (req, res) => {
 
     // ---- Primary Image ----
     if (req.files?.image?.[0]) {
-      if (product.image) await deleteFromCloudinary(product.image);
+      if (product.image) await deleteFromCloudinary(product.image, "products");
       const uploaded = await cloudinary.uploader.upload(req.files.image[0].path, {
         folder: "products",
       });
@@ -82,8 +82,9 @@ export const updateProduct = async (req, res) => {
 
     // ---- Gallery Images ----
     if (req.files?.images) {
-      // পুরানো সব ছবি মুছে ফেলা
-      for (let url of product.images || []) await deleteFromCloudinary(url);
+      // পুরনো সব ছবি মুছে ফেলা
+      for (let url of product.images || []) await deleteFromCloudinary(url, "products/gallery");
+
       let newGallery = [];
       for (let file of req.files.images) {
         const uploaded = await cloudinary.uploader.upload(file.path, {
@@ -126,11 +127,16 @@ export const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    if (product.image) await deleteFromCloudinary(product.image);
-    for (let url of product.images || []) await deleteFromCloudinary(url);
+    // মূল ছবি মুছে ফেলা
+    if (product.image) await deleteFromCloudinary(product.image, "products");
 
+    // গ্যালারি ছবি মুছে ফেলা
+    for (let url of product.images || []) await deleteFromCloudinary(url, "products/gallery");
+
+    // ডাটাবেজ থেকে ডিলিট
     await product.deleteOne();
-    res.json({ message: "🗑️ Product deleted" });
+
+    res.json({ message: "🗑️ Product deleted successfully (and folders if empty)" });
   } catch (err) {
     console.error("❌ Error deleting product:", err);
     res.status(500).json({ error: "Server error" });
