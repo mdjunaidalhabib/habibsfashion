@@ -14,7 +14,11 @@ import AccountMenuMobile from "./AccountMenuMobile";
 import CartIcon from "./CartIcon";
 import WishlistIcon from "./WishlistIcon";
 
-const sideMenu = { hidden: { x: "-100%" }, visible: { x: 0 }, exit: { x: "-100%" } };
+const sideMenu = {
+  hidden: { x: "-100%" },
+  visible: { x: 0 },
+  exit: { x: "-100%" },
+};
 const topBar = { open: { rotate: 45, y: 10 }, closed: { rotate: 0, y: 0 } };
 const middleBar = { open: { opacity: 0 }, closed: { opacity: 1 } };
 const bottomBar = { open: { rotate: -45, y: -7 }, closed: { rotate: 0, y: 0 } };
@@ -29,7 +33,7 @@ export default function Navbar() {
 
   const pathname = usePathname();
   const { cart = {}, wishlist = [] } = useCart() || {};
-  const cartCount = Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0);
+  const cartCount = Object.keys(cart).length;
   const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -75,7 +79,8 @@ export default function Navbar() {
 
   // 🔹 Disable scroll
   useEffect(() => {
-    document.body.style.overflow = menuOpen || mobileSearchOpen ? "hidden" : "auto";
+    document.body.style.overflow =
+      menuOpen || mobileSearchOpen ? "hidden" : "auto";
   }, [menuOpen, mobileSearchOpen]);
 
   const isActive = (path) => pathname === path;
@@ -146,7 +151,9 @@ export default function Navbar() {
             <Link
               href="/"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
-                isActive("/") ? "text-rose-600 bg-rose-100 font-medium" : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
+                isActive("/")
+                  ? "text-rose-600 bg-rose-100 font-medium"
+                  : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
               }`}
             >
               Home
@@ -154,7 +161,9 @@ export default function Navbar() {
             <Link
               href="/products"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
-                isActive("/products") ? "text-rose-600 bg-rose-100 font-medium" : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
+                isActive("/products")
+                  ? "text-rose-600 bg-rose-100 font-medium"
+                  : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
               }`}
             >
               All Products
@@ -162,7 +171,9 @@ export default function Navbar() {
             <Link
               href="/categories"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
-                isActive("/categories") ? "text-rose-600 bg-rose-100 font-medium" : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
+                isActive("/categories")
+                  ? "text-rose-600 bg-rose-100 font-medium"
+                  : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
               }`}
             >
               Shop by Category
@@ -171,12 +182,16 @@ export default function Navbar() {
 
           {/* 💻 Desktop Actions */}
           <div className="hidden md:flex items-center gap-4 relative">
-            <SearchBox mobileSearchOpen={mobileSearchOpen} setMobileSearchOpen={setMobileSearchOpen} />
+            <SearchBox
+              mobileSearchOpen={mobileSearchOpen}
+              setMobileSearchOpen={setMobileSearchOpen}
+            />
 
             {/* ✅ Account Active Only on Profile/Orders */}
             <div
               className={`transition-colors duration-200 ${
-                pathname.startsWith("/profile") || pathname.startsWith("/orders")
+                pathname.startsWith("/profile") ||
+                pathname.startsWith("/orders")
                   ? "text-rose-600"
                   : "text-gray-700 hover:text-rose-600"
               }`}
@@ -184,11 +199,23 @@ export default function Navbar() {
               <AccountMenuDesktop />
             </div>
 
-            <div className={pathname === "/cart" ? "text-rose-600" : "text-gray-700 hover:text-rose-600"}>
+            <div
+              className={
+                pathname === "/cart"
+                  ? "text-rose-600"
+                  : "text-gray-700 hover:text-rose-600"
+              }
+            >
               <CartIcon cartCount={cartCount} />
             </div>
 
-            <div className={pathname === "/wishlist" ? "text-rose-600" : "text-gray-700 hover:text-rose-600"}>
+            <div
+              className={
+                pathname === "/wishlist"
+                  ? "text-rose-600"
+                  : "text-gray-700 hover:text-rose-600"
+              }
+            >
               <WishlistIcon wishlistCount={wishlistCount} />
             </div>
           </div>
@@ -200,9 +227,15 @@ export default function Navbar() {
         <div className="md:hidden bg-white shadow-inner border-t px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex-1">
-              <SearchBox mobileSearchOpen={mobileSearchOpen} setMobileSearchOpen={setMobileSearchOpen} />
+              <SearchBox
+                mobileSearchOpen={mobileSearchOpen}
+                setMobileSearchOpen={setMobileSearchOpen}
+              />
             </div>
-            <button onClick={() => setMobileSearchOpen(false)} className="p-2 text-gray-600 hover:text-red-500">
+            <button
+              onClick={() => setMobileSearchOpen(false)}
+              className="p-2 text-gray-600 hover:text-red-500"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -232,7 +265,9 @@ export default function Navbar() {
               <Link
                 href="/"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
-                  isActive("/") ? "text-rose-600 bg-rose-100 font-medium" : "text-gray-700 hover:bg-gray-100"
+                  isActive("/")
+                    ? "text-rose-600 bg-rose-100 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -243,7 +278,9 @@ export default function Navbar() {
               <Link
                 href="/products"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
-                  isActive("/products") ? "text-rose-600 bg-rose-100 font-medium" : "text-gray-700 hover:bg-gray-100"
+                  isActive("/products")
+                    ? "text-rose-600 bg-rose-100 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -254,7 +291,9 @@ export default function Navbar() {
               <Link
                 href="/categories"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
-                  isActive("/categories") ? "text-rose-600 bg-rose-100 font-medium" : "text-gray-700 hover:bg-gray-100"
+                  isActive("/categories")
+                    ? "text-rose-600 bg-rose-100 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -269,26 +308,52 @@ export default function Navbar() {
       {/* 📱 Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t md:hidden z-50">
         <div className="flex justify-around items-center py-2 text-sm">
-          <Link href="/" className={`flex flex-col items-center ${isActive("/") ? "text-rose-600" : "text-gray-700"}`}>
+          <Link
+            href="/"
+            className={`flex flex-col items-center ${
+              isActive("/") ? "text-rose-600" : "text-gray-700"
+            }`}
+          >
             <FaHome className="w-5 h-5" />
             <span>Home</span>
           </Link>
 
-          <Link href="/categories" className={`flex flex-col items-center ${isActive("/categories") ? "text-rose-600" : "text-gray-700"}`}>
+          <Link
+            href="/categories"
+            className={`flex flex-col items-center ${
+              isActive("/categories") ? "text-rose-600" : "text-gray-700"
+            }`}
+          >
             <FaThLarge className="w-5 h-5" />
             <span>Category</span>
           </Link>
 
-          <div className={isActive("/wishlist") ? "text-rose-600" : "text-gray-700"}>
+          <div
+            className={
+              isActive("/wishlist") ? "text-rose-600" : "text-gray-700"
+            }
+          >
             <WishlistIcon wishlistCount={wishlistCount} mobile />
           </div>
 
-          <div className={isActive("/cart") ? "text-rose-600" : "text-gray-700"}>
+          <div
+            className={isActive("/cart") ? "text-rose-600" : "text-gray-700"}
+          >
             <CartIcon cartCount={cartCount} mobile />
           </div>
 
-          <div className={`${pathname.startsWith("/profile") || pathname.startsWith("/orders") ? "text-rose-600" : "text-gray-700"}`}>
-            <AccountMenuMobile me={me} setMe={setMe} loadingUser={loadingUser} />
+          <div
+            className={`${
+              pathname.startsWith("/profile") || pathname.startsWith("/orders")
+                ? "text-rose-600"
+                : "text-gray-700"
+            }`}
+          >
+            <AccountMenuMobile
+              me={me}
+              setMe={setMe}
+              loadingUser={loadingUser}
+            />
           </div>
         </div>
       </div>

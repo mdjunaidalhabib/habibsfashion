@@ -6,56 +6,60 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({});
   const [wishlist, setWishlist] = useState([]);
+  const [uniqueCount, setUniqueCount] = useState(0); // 🔹 আলাদা প্রোডাক্ট সংখ্যা ট্র্যাক
 
-  // ✅ কার্ট কাউন্ট
-  const cartCount = Object.keys(cart).length;
-
-  // ✅ Add / Update Cart Logic
   const updateCart = (id, change = 1, isFromAddButton = false) => {
     setCart((prev) => {
       const exists = prev[id] || 0;
+      let newCart = { ...prev };
 
-      // 🔹 "Add" বাটন থেকে নতুন প্রোডাক্ট যোগ
-      if (isFromAddButton) {
-        if (exists) return { ...prev, [id]: exists + 1 };
-        return { ...prev, [id]: 1 };
+      // ✅ শুধু প্রথমবার Add করলে unique count বাড়াবে
+      if (isFromAddButton && !exists) {
+        setUniqueCount((prevCount) => prevCount + 1);
       }
 
-      // 🔹 ➕ ➖ বাটনের জন্য
       const newQty = exists + change;
+
+      // ❌ Quantity শূন্য হলে প্রোডাক্ট রিমুভ করো
       if (newQty <= 0) {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
+        delete newCart[id];
+        setUniqueCount((prevCount) => Math.max(0, prevCount - 1)); // প্রোডাক্ট রিমুভ হলে কাউন্ট কমাও
+      }
+      // ✅ Quantity থাকলে শুধু আপডেট করো
+      else {
+        newCart[id] = newQty;
       }
 
-      return { ...prev, [id]: newQty };
+      return newCart;
     });
   };
 
-  // ✅ একক প্রোডাক্ট রিমুভ
   const removeFromCart = (id) => {
     setCart((prev) => {
       const copy = { ...prev };
-      delete copy[id];
+      if (copy[id]) {
+        delete copy[id];
+        setUniqueCount((prevCount) => Math.max(0, prevCount - 1)); // 🔹 রিমুভে কাউন্ট কমাও
+      }
       return copy;
     });
   };
 
-  // ✅ Wishlist toggle
   const toggleWishlist = (id) => {
     setWishlist((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  // ✅ LocalStorage Sync
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCart = localStorage.getItem("cart");
       const savedWishlist = localStorage.getItem("wishlist");
+      const savedCount = localStorage.getItem("uniqueCount");
+
       if (savedCart) setCart(JSON.parse(savedCart));
       if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
+      if (savedCount) setUniqueCount(Number(savedCount));
     }
   }, []);
 
@@ -63,8 +67,9 @@ export const CartProvider = ({ children }) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("cart", JSON.stringify(cart));
       localStorage.setItem("wishlist", JSON.stringify(wishlist));
+      localStorage.setItem("uniqueCount", uniqueCount);
     }
-  }, [cart, wishlist]);
+  }, [cart, wishlist, uniqueCount]);
 
   return (
     <CartContext.Provider
@@ -72,8 +77,7 @@ export const CartProvider = ({ children }) => {
         cart,
         setCart,
         wishlist,
-        setWishlist,
-        cartCount,
+        uniqueCount, // 🔹 নতুন count পাঠাও
         updateCart,
         removeFromCart,
         toggleWishlist,
