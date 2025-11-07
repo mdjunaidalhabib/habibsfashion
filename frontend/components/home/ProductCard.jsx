@@ -78,13 +78,13 @@ const ProductCard = memo(
         </Link>
 
         {/* 📋 Product Info */}
-        <div className="px-4 pb-3 min-h-[230px] transition-all duration-300">
-          <h4 className="font-semibold text-base sm:text-lg mb-1 truncate">
+        <div className="px-4 pb-2 transition-all duration-300">
+          <h4 className="font-semibold text-base sm:text-lg truncate">
             {product?.name}
           </h4>
 
           <p
-            className={`text-xs font-medium mb-2 ${
+            className={`text-xs font-medium ${
               product?.stock > 0 ? "text-green-600" : "text-red-500"
             }`}
           >
@@ -94,7 +94,7 @@ const ProductCard = memo(
           </p>
 
           {/* ⭐ Ratings */}
-          <div className="flex items-center mb-2">
+          <div className="flex items-center mb-1">
             {[...Array(5)].map((_, i) => (
               <FaStar
                 key={i}
@@ -128,44 +128,55 @@ const ProductCard = memo(
                 updateCart(productId, +1, true);
               }}
               disabled={product?.stock <= 0}
-              className={`my-3 sm:mt-4 sm:mb-2 w-full px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
+              className={`my- sm:mt-4 sm:mb-2 w-full px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
                 product?.stock <= 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-rose-600 text-white hover:bg-blue-800"
+                  : "bg-pink-600 text-white hover:bg-pink-500"
               }`}
             >
               <FaShoppingCart /> Add
             </button>
           ) : (
             <div className="transition-all duration-300">
+              {/* Quantity Row */}
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm">Quantity:</span>
-                <div className="flex items-center space-x-2 rounded-lg">
+                <span className="font-semibold text-xs sm:text-sm">
+                  Quantity:
+                </span>
+                <div className="flex items-center rounded-md px-1">
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       updateCart(productId, -1, false); // ➖ বাটনে সবসময় false
                     }}
-                    className="p-1 bg-gray-200 rounded"
+                    className="p-1.5 sm:p-1 bg-gray-200 hover:bg-gray-300 rounded-md transition"
                   >
-                    <FaMinus />
+                    <FaMinus className="text-[10px] sm:text-xs" />
                   </button>
-                  <span className="text-sm font-bold">{quantity}</span>
+
+                  <span className="text-xs sm:text-sm font-bold w-4 text-center select-none">
+                    {quantity}
+                  </span>
+
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       updateCart(productId, +1, false); // ➕ বাটনে সবসময় false
                     }}
-                    className="p-1 bg-gray-200 rounded"
+                    className="p-1.5 sm:p-1 bg-gray-200 hover:bg-gray-300 rounded-md transition"
                   >
-                    <FaPlus />
+                    <FaPlus className="text-[10px] sm:text-xs" />
                   </button>
                 </div>
               </div>
-              <hr className="border-t border-gray-300 m-1" />
-              <p className="text-center font-semibold text-gray-700 text-sm sm:text-base">
+
+              {/* Divider */}
+              <hr className="border-t border-gray-300 my-1" />
+
+              {/* Total */}
+              <p className="text-center font-semibold text-gray-700 text-xs sm:text-sm">
                 Total: <span className="text-blue-600">৳{totalPrice}</span>
               </p>
             </div>
