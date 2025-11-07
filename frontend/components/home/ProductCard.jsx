@@ -12,57 +12,35 @@ import {
 import { useCart } from "../../context/CartContext";
 
 const ProductCard = ({ product }) => {
-  const { cart, setCart, wishlist, setWishlist } = useCart();
+  const { cart, updateCart, wishlist, toggleWishlist } = useCart();
 
   const productId = product?._id || product?.id;
   const quantity = cart[productId] || 0;
 
   const discount = product?.oldPrice
-    ? (((product.oldPrice - product.price) / product.oldPrice) * 100).toFixed(1)
+    ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0;
 
-  const isInWishlist = wishlist.includes(productId);
+  const isInWishlist = wishlist.includes(String(productId));
   const totalPrice = product?.price * quantity;
 
-  // ✅ Safe main image selection (Cloudinary > Gallery > Fallback)
+  // ✅ Main image select
   const mainImage =
     product?.image && product.image.startsWith("http")
       ? product.image
       : product?.images?.[0] || "/no-image.png";
 
-  // ✅ Cart Logic
-  const updateCart = (id, change) => {
-    setCart((prev) => {
-      const exists = prev[id] || 0;
-      if (!exists && change > 0) return { ...prev, [id]: 1 };
-      const qty = exists + change;
-      if (qty <= 0) {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      }
-      return { ...prev, [id]: qty };
-    });
-  };
-
-  // ✅ Wishlist Toggle
-  const toggleWishlist = (id) => {
-    setWishlist((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
   return (
-    <Link
-      href={`/products/${productId}`}
-      className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col"
-    >
+    <div className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col">
       {/* 🖼️ Image Container */}
-      <div className="relative w-full h-40 sm:h-48 md:h-52 mb-3 overflow-hidden rounded-lg">
+      <Link
+        href={`/products/${productId}`}
+        className="relative w-full h-40 sm:h-48 md:h-52 mb-3 overflow-hidden rounded-lg"
+      >
         {/* 🏷️ Discount & Wishlist */}
         <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
           {product?.oldPrice && (
-            <div className="bg-red-500 text-white px-1 py-0 rounded-full text-xs font-semibold shadow-sm transition transform hover:scale-105">
+            <div className="bg-red-500 text-white px-1 py-0.5 rounded-full text-xs font-semibold shadow-sm transition-transform hover:scale-105 tracking-tight">
               -{discount}%
             </div>
           )}
@@ -70,10 +48,13 @@ const ProductCard = ({ product }) => {
           <button
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation(); // 🛑 লিংক ক্লিক বন্ধ
               toggleWishlist(productId);
             }}
-            className={`p-1 rounded-full shadow-md transition transform hover:scale-110 ${
-              isInWishlist ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
+            className={`px-1 py-1 rounded-full shadow-md transition transform hover:scale-110 ${
+              isInWishlist
+                ? "bg-red-500 text-white"
+                : "bg-gray-200 text-gray-600"
             }`}
           >
             <FaHeart className="w-4 h-4" />
@@ -91,10 +72,10 @@ const ProductCard = ({ product }) => {
             e.currentTarget.src = "/no-image.png";
           }}
         />
-      </div>
+      </Link>
 
       {/* 📋 Product Info */}
-      <div className="px-4 pb-3">
+      <div className="px-4 pb-3 min-h-[230px] transition-all duration-300">
         <h4 className="font-semibold text-base sm:text-lg mb-1 truncate">
           {product?.name}
         </h4>
@@ -112,7 +93,9 @@ const ProductCard = ({ product }) => {
             <FaStar
               key={i}
               className={
-                i < product?.rating ? "text-yellow-500 w-3" : "text-gray-300 w-3"
+                i < product?.rating
+                  ? "text-yellow-500 w-3"
+                  : "text-gray-300 w-3"
               }
             />
           ))}
@@ -134,7 +117,8 @@ const ProductCard = ({ product }) => {
           <button
             onClick={(e) => {
               e.preventDefault();
-              updateCart(productId, +1);
+              e.stopPropagation(); // ✅ লিংকে যাওয়া বন্ধ
+              updateCart(productId, +1, true); // নতুন যোগ করলে ব্যাগে যাবে
             }}
             disabled={product?.stock <= 0}
             className={`my-3 sm:mt-4 sm:mb-2 w-full px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
@@ -146,29 +130,32 @@ const ProductCard = ({ product }) => {
             <FaShoppingCart /> Add
           </button>
         ) : (
-          <div>
+          <div className="transition-all duration-300">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm">Quantity:</span>
               <div className="flex items-center space-x-2 rounded-lg">
+                {/* Minus Button */}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    updateCart(productId, -1);
+                    e.stopPropagation(); // ✅ লিংক ক্লিক বন্ধ
+                    updateCart(productId, -1, false); // শুধু quantity কমাবে
                   }}
-                  className="bg-gray-50 text-black p-2 rounded-lg hover:bg-gray-100"
+                  className="p-1 bg-gray-200 rounded"
                 >
-                  <FaMinus className="w-3 h-3" />
+                  <FaMinus />
                 </button>
                 <span className="text-sm font-bold">{quantity}</span>
+                {/* Plus Button */}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    updateCart(productId, +1);
+                    e.stopPropagation(); // ✅ লিংক ক্লিক বন্ধ
+                    updateCart(productId, +1, false); // শুধু quantity বাড়াবে
                   }}
-                  disabled={quantity >= product?.stock}
-                  className="bg-gray-50 text-black p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                  className="p-1 bg-gray-200 rounded"
                 >
-                  <FaPlus className="w-2 h-3" />
+                  <FaPlus />
                 </button>
               </div>
             </div>
@@ -179,7 +166,7 @@ const ProductCard = ({ product }) => {
           </div>
         )}
       </div>
-    </Link>
+    </div>
   );
 };
 

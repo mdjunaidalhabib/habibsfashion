@@ -12,18 +12,26 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow p-2 md:p-7 flex items-center justify-between relative">
-      <div className="md:hidden">
-        <Button variant="ghost" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X /> : <Menu />}
-        </Button>
-      </div>
-
+      {/* Title center এ */}
       <h1 className="text-xl font-bold absolute left-1/2 transform -translate-x-1/2">
         Admin Panel
       </h1>
 
+      {/* বাম দিকে ফাঁকা জায়গা */}
       <div className="w-8 md:hidden" />
 
+      
+
+      {/* Menu Icon এখন ডান পাশে */}
+      <div className="md:hidden">
+        <Button variant="ghost" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X className="text-rose-600" size={24}/> :     <Menu className="text-rose-600" size={24} />
+}
+        </Button>
+      </div>
+      
+
+      {/* মোবাইল মেনু */}
       <AnimatePresence>
         {menuOpen && (
           <>
@@ -36,6 +44,7 @@ export default function Header() {
               onClick={() => setMenuOpen(false)}
             />
 
+            {/* সাইড মেনু আগের মতো বাম দিক থেকে খুলবে */}
             <motion.aside
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}

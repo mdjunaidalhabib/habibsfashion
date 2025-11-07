@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Toast from "../Toast"; // 🔹 path ঠিক করে নাও
+import Toast from "../Toast"; // 🔹 নিশ্চিত হও path ঠিক আছে
 
 export default function EditOrderModal({ open, form, setForm, onSave, onClose }) {
   const [toast, setToast] = useState(null);
@@ -16,7 +16,6 @@ export default function EditOrderModal({ open, form, setForm, onSave, onClose })
     setLoading(true);
 
     try {
-      // pretend async save
       const result = await onSave?.();
       if (result?.success !== false) {
         setToast({ message: "✅ Order updated successfully!", type: "success" });
@@ -37,6 +36,7 @@ export default function EditOrderModal({ open, form, setForm, onSave, onClose })
 
   return (
     <>
+      {/* 🔹 Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}
@@ -45,29 +45,13 @@ export default function EditOrderModal({ open, form, setForm, onSave, onClose })
         />
       )}
 
+      {/* 🔹 Modal Overlay */}
       <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50 px-4">
         <div className="bg-white rounded-lg w-full max-w-md p-6 space-y-6 shadow-xl transition-all">
           <h3 className="text-xl font-bold text-gray-800 text-center">Edit Order</h3>
 
-          {/* Order Details */}
+          {/* 🔹 Order Details (Status বাদ দেওয়া হয়েছে) */}
           <div className="flex flex-col gap-3">
-            <div>
-              <label className="block font-medium text-gray-700 mb-1">Status</label>
-              <select
-                className="border rounded px-3 py-2 w-full"
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-              >
-                {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(
-                  (s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
             <div>
               <label className="block font-medium text-gray-700 mb-1">Payment Method</label>
               <select
@@ -104,7 +88,7 @@ export default function EditOrderModal({ open, form, setForm, onSave, onClose })
             </div>
           </div>
 
-          {/* Customer Details */}
+          {/* 🔹 Customer Details */}
           <div className="border rounded-lg p-4 bg-gray-50 space-y-3">
             <h4 className="font-semibold text-gray-800 text-lg">Customer Details</h4>
 
@@ -141,7 +125,7 @@ export default function EditOrderModal({ open, form, setForm, onSave, onClose })
             </div>
           </div>
 
-          {/* Buttons */}
+          {/* 🔹 Buttons */}
           <div className="flex justify-end gap-3 pt-2">
             <button
               className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition"

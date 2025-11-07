@@ -1,11 +1,14 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import ProductForm from "../../../components/ProductForm";
 import ProductCard from "../../../components/ProductCard";
 import Toast from "../../../components/Toast";
+import ProductsSkeleton from "../../../components/Skeleton/ProductsSkeleton";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [toast, setToast] = useState(null);
@@ -13,31 +16,47 @@ export default function ProductsPage() {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Load products
+  // 🔹 Load Products
   const loadProducts = async () => {
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/products");
-    setProducts(await res.json());
+    try {
+      setLoading(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setProducts([]);
+      setToast({ message: "⚠ Failed to load products", type: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { loadProducts(); }, []);
 
-  // Delete confirm
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // 🔹 Delete confirm modal
   const confirmDelete = (product) => setDeleteModal(product);
 
-  // Handle delete
+  // 🔹 Handle delete
   const handleDelete = async () => {
     if (!deleteModal) return;
     setDeleting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${deleteModal._id}`, { method: "DELETE" });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/products/${deleteModal._id}`,
+        { method: "DELETE" }
+      );
       if (res.ok) {
         setToast({ message: "🗑 Product deleted!", type: "error" });
         setDeleteModal(null);
         loadProducts();
       } else {
-        setToast({ message: "Error deleting product", type: "error" });
+        setToast({ message: "❌ Error deleting product", type: "error" });
       }
     } catch {
-      setToast({ message: "Network error", type: "error" });
+      setToast({ message: "🌐 Network error", type: "error" });
     }
     setDeleting(false);
   };
@@ -64,19 +83,29 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {products.map((p) => (
-          <ProductCard
-            key={p._id}
-            product={p}
-            onEdit={() => {
-              setEditProduct(p);
-              setShowForm(true);
-            }}
-            onDelete={() => confirmDelete(p)}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <ProductsSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {products.length > 0 ? (
+            products.map((p) => (
+              <ProductCard
+                key={p._id}
+                product={p}
+                onEdit={() => {
+                  setEditProduct(p);
+                  setShowForm(true);
+                }}
+                onDelete={() => confirmDelete(p)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center text-gray-500 py-10">
+              No products found.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showForm && (
@@ -134,7 +163,9 @@ export default function ProductsPage() {
       )}
 
       {/* Toast */}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      )}
     </div>
   );
 }

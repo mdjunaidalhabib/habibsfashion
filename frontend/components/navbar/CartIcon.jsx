@@ -9,6 +9,7 @@ export default function CartIcon({ cartCount, mobile }) {
       href="/cart"
       className={`relative flex flex-col items-center ${mobile ? "" : ""}`}
     >
+      
       <FaShoppingCart className="w-6 h-6" />
       {cartCount > 0 && (
         <span

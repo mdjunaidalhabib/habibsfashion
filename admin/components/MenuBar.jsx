@@ -55,7 +55,7 @@ export default function MenuBar({ items, settingsChildren = [], onItemClick, ver
                           href={cHref}
                           onClick={onItemClick}
                           className={`flex items-center gap-2 ml-6 px-4 py-2 rounded transition text-sm ${
-                            active ? "bg-gray-200 font-semibold text-blue-600" : "hover:bg-gray-100"
+                            active ? "bg-rose-50 font-semibold text-rose-600" : "hover:bg-gray-100"
                           }`}
                         >
                           {cIcon}
@@ -77,7 +77,7 @@ export default function MenuBar({ items, settingsChildren = [], onItemClick, ver
             href={href}
             onClick={onItemClick}
             className={`flex items-center gap-2 px-4 py-2 rounded transition ${
-              active ? "bg-gray-200 font-semibold text-blue-600" : "hover:bg-gray-100"
+              active ? "bg-rose-50 font-semibold text-rose-600" : "hover:bg-gray-100"
             }`}
           >
             {icon}

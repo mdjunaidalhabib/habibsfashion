@@ -1,90 +1,70 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const CartContext = createContext();
 
-export function CartProvider({ children }) {
+export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({});
   const [wishlist, setWishlist] = useState([]);
 
-  // ✅ LocalStorage থেকে load করার সময় normalize
-  useEffect(() => {
-    // ---- Cart ----
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      const parsed = JSON.parse(savedCart);
-      const normalized = {};
-      Object.keys(parsed).forEach((key) => {
-        if (String(key).length > 10) {
-          normalized[String(key)] = parsed[key];
-        }
-      });
-      setCart(normalized);
-      localStorage.setItem("cart", JSON.stringify(normalized));
-    }
+  // ✅ কার্ট কাউন্ট
+  const cartCount = Object.keys(cart).length;
 
-    // ---- Wishlist ----
-    const savedWishlist = localStorage.getItem("wishlist");
-    if (savedWishlist) {
-      const parsed = JSON.parse(savedWishlist);
-      const normalized = parsed.filter((id) => String(id).length > 10);
-      setWishlist(normalized.map((id) => String(id)));
-      localStorage.setItem("wishlist", JSON.stringify(normalized));
-    }
-  }, []);
-
-  // ✅ Save to localStorage
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
-
-  // ✅ Cart update logic (Unique product count)
-  const updateCart = (id, change) => {
-    const key = String(id);
+  // ✅ Add / Update Cart Logic
+  const updateCart = (id, change = 1, isFromAddButton = false) => {
     setCart((prev) => {
-      const exists = prev[key] || 0;
+      const exists = prev[id] || 0;
 
-      // 👉 প্রথমবার add করলে শুধু 1 হবে
-      if (!exists && change > 0) {
-        return { ...prev, [key]: 1 };
+      // 🔹 "Add" বাটন থেকে নতুন প্রোডাক্ট যোগ
+      if (isFromAddButton) {
+        if (exists) return { ...prev, [id]: exists + 1 };
+        return { ...prev, [id]: 1 };
       }
 
-      // 👉 quantity change হলে শুধু সেই product update হবে
-      const qty = exists + change;
-      if (qty <= 0) {
+      // 🔹 ➕ ➖ বাটনের জন্য
+      const newQty = exists + change;
+      if (newQty <= 0) {
         const copy = { ...prev };
-        delete copy[key];
+        delete copy[id];
         return copy;
       }
 
-      return { ...prev, [key]: qty };
+      return { ...prev, [id]: newQty };
     });
   };
 
-  // ✅ Remove product from cart
+  // ✅ একক প্রোডাক্ট রিমুভ
   const removeFromCart = (id) => {
-    const key = String(id);
     setCart((prev) => {
       const copy = { ...prev };
-      delete copy[key];
+      delete copy[id];
       return copy;
     });
   };
 
-  // ✅ Toggle wishlist
+  // ✅ Wishlist toggle
   const toggleWishlist = (id) => {
-    const key = String(id);
     setWishlist((prev) =>
-      prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  // ✅ Unique product count (cart icon এর জন্য)
-  const cartCount = Object.keys(cart).length;
+  // ✅ LocalStorage Sync
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedCart = localStorage.getItem("cart");
+      const savedWishlist = localStorage.getItem("wishlist");
+      if (savedCart) setCart(JSON.parse(savedCart));
+      if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cart", JSON.stringify(cart));
+      localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    }
+  }, [cart, wishlist]);
 
   return (
     <CartContext.Provider
@@ -93,17 +73,15 @@ export function CartProvider({ children }) {
         setCart,
         wishlist,
         setWishlist,
+        cartCount,
         updateCart,
         removeFromCart,
         toggleWishlist,
-        cartCount, // 👉 header/cart icon এ এইটা ব্যবহার করবেন
       }}
     >
       {children}
     </CartContext.Provider>
   );
-}
+};
 
-export function useCart() {
-  return useContext(CartContext);
-}
+export const useCart = () => useContext(CartContext);

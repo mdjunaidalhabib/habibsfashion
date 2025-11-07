@@ -10,6 +10,7 @@ import autoTable from "jspdf-autotable";
 import OrdersGrid from "../../../components/orders/OrdersGrid";
 import OrdersTable from "../../../components/orders/OrdersTable";
 import EditOrderModal from "../../../components/orders/EditOrderModal";
+import OrdersSkeleton from "../../../components/Skeleton/OrdersSkeleton";
 
 export default function OrdersPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
@@ -27,6 +28,7 @@ export default function OrdersPage() {
 
   const [filter, setFilter] = useState({ status: "", q: "" });
 
+  // 🔹 Fetch Orders
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -43,12 +45,15 @@ export default function OrdersPage() {
     }
   };
 
-  useEffect(() => { fetchOrders(); }, [filter.status]);
+  useEffect(() => {
+    fetchOrders();
+  }, [filter.status]);
 
+  // 🔹 Search Filter
   const filtered = useMemo(() => {
     if (!filter.q) return orders;
     const q = filter.q.toLowerCase();
-    return orders.filter(o => {
+    return orders.filter((o) => {
       const idHit = o._id?.toLowerCase().includes(q);
       const nameHit = o.billing?.name?.toLowerCase().includes(q);
       const phoneHit = o.billing?.phone?.toLowerCase().includes(q);
@@ -56,46 +61,61 @@ export default function OrdersPage() {
     });
   }, [orders, filter.q]);
 
-  // ---------------- Export ----------------
+  // 🔹 Export CSV / Excel / PDF
   const exportCSV = () => {
-    const csv = Papa.unparse(filtered.map(o => ({
-      OrderID: o._id,
-      Customer: o.billing?.name || "",
-      Phone: o.billing?.phone || "",
-      Address: o.billing?.address || "",
-      Status: o.status,
-      Method: o.paymentMethod,
-      Total: o.total,
-      Date: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
-    })));
+    const csv = Papa.unparse(
+      filtered.map((o) => ({
+        OrderID: o._id,
+        Customer: o.billing?.name || "",
+        Phone: o.billing?.phone || "",
+        Address: o.billing?.address || "",
+        Status: o.status,
+        Method: o.paymentMethod,
+        Total: o.total,
+        Date: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
+      }))
+    );
     saveAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), "orders.csv");
   };
 
   const exportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filtered.map(o => ({
-      OrderID: o._id,
-      Customer: o.billing?.name || "",
-      Phone: o.billing?.phone || "",
-      Address: o.billing?.address || "",
-      Status: o.status,
-      Method: o.paymentMethod,
-      Total: o.total,
-      Date: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
-    })));
+    const worksheet = XLSX.utils.json_to_sheet(
+      filtered.map((o) => ({
+        OrderID: o._id,
+        Customer: o.billing?.name || "",
+        Phone: o.billing?.phone || "",
+        Address: o.billing?.address || "",
+        Status: o.status,
+        Method: o.paymentMethod,
+        Total: o.total,
+        Date: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
+      }))
+    );
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    saveAs(new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "orders.xlsx");
+    saveAs(
+      new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+      "orders.xlsx"
+    );
   };
 
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Orders Report", 14, 16);
-    const tableData = filtered.map(o => [
-      o._id, o.billing?.name || "", o.billing?.phone || "", o.status, o.paymentMethod?.toUpperCase(), "৳" + o.total, o.createdAt ? new Date(o.createdAt).toLocaleDateString() : ""
+    const tableData = filtered.map((o) => [
+      o._id,
+      o.billing?.name || "",
+      o.billing?.phone || "",
+      o.status,
+      o.paymentMethod?.toUpperCase(),
+      "৳" + o.total,
+      o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "",
     ]);
     autoTable(doc, {
-      head: [["OrderID","Customer","Phone","Status","Method","Total","Date"]],
+      head: [["OrderID", "Customer", "Phone", "Status", "Method", "Total", "Date"]],
       body: tableData,
       startY: 20,
       styles: { fontSize: 8 },
@@ -103,6 +123,7 @@ export default function OrdersPage() {
     doc.save("orders.pdf");
   };
 
+  // 🔹 Edit Order Modal
   const openEdit = (order) => {
     setCurrentId(order._id);
     setForm({
@@ -119,6 +140,7 @@ export default function OrdersPage() {
     setOpen(true);
   };
 
+  // 🔹 Update Order (Modal)
   const updateOrder = async () => {
     try {
       const res = await fetch(`${API}/api/orders/${currentId}`, {
@@ -129,45 +151,129 @@ export default function OrdersPage() {
       if (!res.ok) throw new Error("Update failed");
       setOpen(false);
       fetchOrders();
-    } catch (e) { console.error(e); alert("Failed to update order."); }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update order.");
+    }
   };
 
+  // 🔹 Delete Order
   const deleteOrder = async (id) => {
     if (!confirm("Are you sure you want to delete this order?")) return;
     try {
       const res = await fetch(`${API}/api/orders/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       fetchOrders();
-    } catch (e) { console.error(e); alert("Failed to delete order."); }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to delete order.");
+    }
+  };
+
+  // ✅ Inline Status Update (Dropdown)
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const res = await fetch(`${API}/api/orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Status update failed");
+
+      setOrders((prev) =>
+        prev.map((o) => (o._id === id ? { ...o, status: newStatus } : o))
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status!");
+    }
   };
 
   return (
     <div className="space-y-4 px-2 sm:px-4">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h2 className="text-xl sm:text-2xl font-bold">Orders</h2>
         <div className="flex flex-wrap gap-2">
-          <button onClick={exportCSV} className="bg-indigo-600 text-white px-3 py-1 rounded text-sm">CSV</button>
-          <button onClick={exportExcel} className="bg-green-600 text-white px-3 py-1 rounded text-sm">Excel</button>
-          <button onClick={exportPDF} className="bg-red-600 text-white px-3 py-1 rounded text-sm">PDF</button>
+          <button
+            onClick={exportCSV}
+            className="bg-indigo-600 text-white px-3 py-1 rounded text-sm"
+          >
+            CSV
+          </button>
+          <button
+            onClick={exportExcel}
+            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Excel
+          </button>
+          <button
+            onClick={exportPDF}
+            className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+          >
+            PDF
+          </button>
         </div>
       </div>
 
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-        <input className="border rounded px-3 py-2 flex-1" placeholder="Search by OrderID / Name / Phone"
-          value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
-        <select className="border rounded px-3 py-2 sm:w-40"
-          value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
+        <input
+          className="border rounded px-3 py-2 flex-1"
+          placeholder="Search by OrderID / Name / Phone"
+          value={filter.q}
+          onChange={(e) => setFilter({ ...filter, q: e.target.value })}
+        />
+        <select
+          className="border rounded px-3 py-2 sm:w-40"
+          value={filter.status}
+          onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+        >
           <option value="">All status</option>
-          {["pending","confirmed","processing","shipped","delivered","cancelled"].map(s => <option key={s} value={s}>{s}</option>)}
+          {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(
+            (s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            )
+          )}
         </select>
-        <button onClick={fetchOrders} className="bg-gray-700 text-white px-4 py-2 rounded text-sm">Refresh</button>
+        <button
+          onClick={fetchOrders}
+          className="bg-gray-700 text-white px-4 py-2 rounded text-sm"
+        >
+          Refresh
+        </button>
       </div>
 
-      {loading && <div className="text-gray-600">Loading orders…</div>}
+      {/* 🧩 Show Skeleton While Loading */}
+      {loading ? (
+        <OrdersSkeleton />
+      ) : (
+        <>
+          <OrdersGrid
+            orders={filtered}
+            onEdit={openEdit}
+            onDelete={deleteOrder}
+            onStatusChange={handleStatusChange}
+          />
+          <OrdersTable
+            orders={filtered}
+            onEdit={openEdit}
+            onDelete={deleteOrder}
+            onStatusChange={handleStatusChange}
+          />
+        </>
+      )}
 
-      <OrdersGrid orders={filtered} onEdit={openEdit} onDelete={deleteOrder} />
-      <OrdersTable orders={filtered} onEdit={openEdit} onDelete={deleteOrder} />
-      <EditOrderModal open={open} form={form} setForm={setForm} onSave={updateOrder} onClose={() => setOpen(false)} />
+      {/* Modal */}
+      <EditOrderModal
+        open={open}
+        form={form}
+        setForm={setForm}
+        onSave={updateOrder}
+        onClose={() => setOpen(false)}
+      />
     </div>
   );
 }
