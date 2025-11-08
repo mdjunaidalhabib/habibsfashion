@@ -5,7 +5,7 @@ import FloatingActionButton from "../../components/home/FloatingActionButton";
 
 export default function HomePage() {
   return (
-    <section className="bg-rose-50 ">
+    <section className="bg-pink-50 ">
       <div>
         <ImageSlider />
         <HomeAllProduct />

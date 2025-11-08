@@ -95,7 +95,7 @@ export default function Navbar() {
             className="md:hidden p-2 rounded hover:bg-gray-100"
             onClick={() => setMobileSearchOpen(true)}
           >
-            <FaSearch className="w-5 h-5 text-rose-600" />
+            <FaSearch className="w-5 h-5 text-pink-600" />
           </button>
 
           {/* 🏷 Brand */}
@@ -130,19 +130,19 @@ export default function Navbar() {
               variants={topBar}
               animate={menuOpen ? "open" : "closed"}
               transition={{ duration: 0.3 }}
-              className="block h-1 w-6 bg-rose-600 rounded"
+              className="block h-1 w-6 bg-pink-600 rounded"
             />
             <motion.span
               variants={middleBar}
               animate={menuOpen ? "open" : "closed"}
               transition={{ duration: 0.3 }}
-              className="block h-1 w-6 bg-rose-600 rounded"
+              className="block h-1 w-6 bg-pink-600 rounded"
             />
             <motion.span
               variants={bottomBar}
               animate={menuOpen ? "open" : "closed"}
               transition={{ duration: 0.3 }}
-              className="block h-1 w-6 bg-rose-600 rounded"
+              className="block h-1 w-6 bg-pink-600 rounded"
             />
           </button>
 
@@ -152,8 +152,8 @@ export default function Navbar() {
               href="/"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
                 isActive("/")
-                  ? "text-rose-600 bg-rose-100 font-medium"
-                  : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
+                  ? "text-pink-600 bg-rose-100 font-medium"
+                  : "text-gray-700 hover:text-pink-600 hover:bg-gray-100"
               }`}
             >
               Home
@@ -162,8 +162,8 @@ export default function Navbar() {
               href="/products"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
                 isActive("/products")
-                  ? "text-rose-600 bg-rose-100 font-medium"
-                  : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
+                  ? "text-pink-600 bg-rose-100 font-medium"
+                  : "text-gray-700 hover:text-pink-600 hover:bg-gray-100"
               }`}
             >
               All Products
@@ -172,8 +172,8 @@ export default function Navbar() {
               href="/categories"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
                 isActive("/categories")
-                  ? "text-rose-600 bg-rose-100 font-medium"
-                  : "text-gray-700 hover:text-rose-600 hover:bg-gray-100"
+                  ? "text-pink-600 bg-rose-100 font-medium"
+                  : "text-gray-700 hover:text-pink-600 hover:bg-gray-100"
               }`}
             >
               Shop by Category
@@ -192,8 +192,8 @@ export default function Navbar() {
               className={`transition-colors duration-200 ${
                 pathname.startsWith("/profile") ||
                 pathname.startsWith("/orders")
-                  ? "text-rose-600"
-                  : "text-gray-700 hover:text-rose-600"
+                  ? "text-pink-600"
+                  : "text-gray-700 hover:text-pink-600"
               }`}
             >
               <AccountMenuDesktop />
@@ -202,8 +202,8 @@ export default function Navbar() {
             <div
               className={
                 pathname === "/cart"
-                  ? "text-rose-600"
-                  : "text-gray-700 hover:text-rose-600"
+                  ? "text-pink-600"
+                  : "text-gray-700 hover:text-pink-600"
               }
             >
               <CartIcon cartCount={cartCount} />
@@ -212,8 +212,8 @@ export default function Navbar() {
             <div
               className={
                 pathname === "/wishlist"
-                  ? "text-rose-600"
-                  : "text-gray-700 hover:text-rose-600"
+                  ? "text-pink-600"
+                  : "text-gray-700 hover:text-pink-600"
               }
             >
               <WishlistIcon wishlistCount={wishlistCount} />
@@ -234,7 +234,7 @@ export default function Navbar() {
             </div>
             <button
               onClick={() => setMobileSearchOpen(false)}
-              className="p-2 text-gray-600 hover:text-red-500"
+              className="p-2 text-gray-600 hover:text-pink-500"
             >
               <X className="w-5 h-5" />
             </button>
@@ -266,7 +266,7 @@ export default function Navbar() {
                 href="/"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/")
-                    ? "text-rose-600 bg-rose-100 font-medium"
+                    ? "text-pink-600 bg-rose-100 font-medium"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
@@ -279,7 +279,7 @@ export default function Navbar() {
                 href="/products"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/products")
-                    ? "text-rose-600 bg-rose-100 font-medium"
+                    ? "text-pink-600 bg-rose-100 font-medium"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
@@ -292,7 +292,7 @@ export default function Navbar() {
                 href="/categories"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/categories")
-                    ? "text-rose-600 bg-rose-100 font-medium"
+                    ? "text-pink-600 bg-rose-100 font-medium"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
@@ -311,7 +311,7 @@ export default function Navbar() {
           <Link
             href="/"
             className={`flex flex-col items-center ${
-              isActive("/") ? "text-rose-600" : "text-gray-700"
+              isActive("/") ? "text-pink-600" : "text-gray-700"
             }`}
           >
             <FaHome className="w-5 h-5" />
@@ -321,7 +321,7 @@ export default function Navbar() {
           <Link
             href="/categories"
             className={`flex flex-col items-center ${
-              isActive("/categories") ? "text-rose-600" : "text-gray-700"
+              isActive("/categories") ? "text-pink-600" : "text-gray-700"
             }`}
           >
             <FaThLarge className="w-5 h-5" />
@@ -330,14 +330,14 @@ export default function Navbar() {
 
           <div
             className={
-              isActive("/wishlist") ? "text-rose-600" : "text-gray-700"
+              isActive("/wishlist") ? "text-pink-600" : "text-gray-700"
             }
           >
             <WishlistIcon wishlistCount={wishlistCount} mobile />
           </div>
 
           <div
-            className={isActive("/cart") ? "text-rose-600" : "text-gray-700"}
+            className={isActive("/cart") ? "text-pink-600" : "text-gray-700"}
           >
             <CartIcon cartCount={cartCount} mobile />
           </div>
@@ -345,7 +345,7 @@ export default function Navbar() {
           <div
             className={`${
               pathname.startsWith("/profile") || pathname.startsWith("/orders")
-                ? "text-rose-600"
+                ? "text-pink-600"
                 : "text-gray-700"
             }`}
           >

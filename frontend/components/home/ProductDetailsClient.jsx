@@ -10,7 +10,12 @@ import CheckoutButton from "./CheckoutButton";
 import ProductDetailsSkeleton from "../skeletons/ProductDetailsSkeleton";
 import { useRouter } from "next/navigation"; // ✅ যোগ করা হয়েছে
 
-export default function ProductDetailsClient({ product, category, related = [], loading = false }) {
+export default function ProductDetailsClient({
+  product,
+  category,
+  related = [],
+  loading = false,
+}) {
   const { cart, wishlist, toggleWishlist, updateCart } = useCartUtils();
   const router = useRouter(); // ✅ রাউটার ব্যবহার করা হবে
 
@@ -22,7 +27,8 @@ export default function ProductDetailsClient({ product, category, related = [], 
   // ✅ ছবি হ্যান্ডলিং
   const images = useMemo(() => {
     const gallery = Array.isArray(product.images) ? product.images : [];
-    const main = product.image && product.image.startsWith("http") ? product.image : null;
+    const main =
+      product.image && product.image.startsWith("http") ? product.image : null;
 
     if (main && !gallery.includes(main)) return [main, ...gallery];
     if (gallery.length > 0) return gallery;
@@ -40,7 +46,9 @@ export default function ProductDetailsClient({ product, category, related = [], 
     <button
       onClick={() => setTab(key)}
       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-        tab === key ? "bg-blue-600 text-white shadow" : "text-gray-600 hover:bg-gray-200"
+        tab === key
+          ? "bg-blue-600 text-white shadow"
+          : "text-gray-600 hover:bg-gray-200"
       }`}
     >
       {label}
@@ -64,11 +72,16 @@ export default function ProductDetailsClient({ product, category, related = [], 
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-4">
-        <Link href="/" className="hover:underline">Home</Link>
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>
         <span className="mx-2">/</span>
         {category && (
           <>
-            <Link href={`/categories/${category._id}`} className="hover:underline">
+            <Link
+              href={`/categories/${category._id}`}
+              className="hover:underline"
+            >
               {category.name}
             </Link>
             <span className="mx-2">/</span>
@@ -120,10 +133,14 @@ export default function ProductDetailsClient({ product, category, related = [], 
 
         {/* 🧾 Summary Section */}
         <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
-          <h1 className="text-2xl sm:text-3xl font-semibold mb-2">{product.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
+            {product.name}
+          </h1>
 
           {category?.name && (
-            <p className="text-sm text-gray-600 mb-1">Category: {category.name}</p>
+            <p className="text-sm text-gray-600 mb-1">
+              Category: {category.name}
+            </p>
           )}
 
           <p
@@ -142,22 +159,34 @@ export default function ProductDetailsClient({ product, category, related = [], 
               {[...Array(5)].map((_, i) => (
                 <FaStar
                   key={i}
-                  className={i < (product.rating || 0) ? "text-yellow-500" : "text-gray-300"}
+                  className={
+                    i < (product.rating || 0)
+                      ? "text-yellow-500"
+                      : "text-gray-300"
+                  }
                 />
               ))}
             </div>
-            <span className="text-sm text-gray-500">{product.rating || 0}/5</span>
+            <span className="text-sm text-gray-500">
+              {product.rating || 0}/5
+            </span>
           </div>
 
           {/* 💰 Price + Wishlist */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <p className="text-blue-600 font-bold text-2xl">৳{product.price}</p>
+              <p className="text-blue-600 font-bold text-2xl">
+                ৳{product.price}
+              </p>
               {product.oldPrice && (
-                <p className="text-gray-400 line-through text-lg">৳{product.oldPrice}</p>
+                <p className="text-gray-400 line-through text-lg">
+                  ৳{product.oldPrice}
+                </p>
               )}
               {discountPct && (
-                <span className="text-red-500 font-semibold">-{discountPct}%</span>
+                <span className="text-red-500 font-semibold">
+                  -{discountPct}%
+                </span>
               )}
             </div>
 
@@ -204,7 +233,9 @@ export default function ProductDetailsClient({ product, category, related = [], 
                     <QuantityController
                       qty={quantity}
                       stock={product.stock}
-                      onChange={(change) => updateCart(product._id, change, product.stock)}
+                      onChange={(change) =>
+                        updateCart(product._id, change, product.stock)
+                      }
                       allowZero={true}
                     />
                   </div>
@@ -237,8 +268,16 @@ export default function ProductDetailsClient({ product, category, related = [], 
         </div>
 
         <div className="mt-4 bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-700 leading-relaxed">
-          {tab === "desc" && <p className="whitespace-pre-wrap">{product.description || "No description available."}</p>}
-          {tab === "info" && <p className="whitespace-pre-wrap">{product.additionalInfo || "No additional information provided."}</p>}
+          {tab === "desc" && (
+            <p className="whitespace-pre-wrap">
+              {product.description || "No description available."}
+            </p>
+          )}
+          {tab === "info" && (
+            <p className="whitespace-pre-wrap">
+              {product.additionalInfo || "No additional information provided."}
+            </p>
+          )}
           {tab === "reviews" && (
             <div className="text-sm">
               {product.reviews?.length ? (
@@ -246,7 +285,9 @@ export default function ProductDetailsClient({ product, category, related = [], 
                   <div key={i} className="border-b py-2">
                     <p className="font-semibold">
                       {r.user}{" "}
-                      <span className="text-yellow-500">{"★".repeat(r.rating)}</span>{" "}
+                      <span className="text-yellow-500">
+                        {"★".repeat(r.rating)}
+                      </span>{" "}
                       <span className="text-gray-500">{r.rating}/5</span>
                     </p>
                     <p>{r.comment}</p>
@@ -264,7 +305,9 @@ export default function ProductDetailsClient({ product, category, related = [], 
       {related?.length > 0 && (
         <section className="mt-10">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg sm:text-xl font-semibold">Related products</h3>
+            <h3 className="text-lg sm:text-xl font-semibold">
+              Related products
+            </h3>
             {category && (
               <Link
                 href={`/categories/${category._id}`}
