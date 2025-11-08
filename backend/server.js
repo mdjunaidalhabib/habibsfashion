@@ -11,12 +11,17 @@ import { configurePassport } from "./src/auth/passport.js";
 import authRoutes from "./src/routes/auth.js";
 import locationRoutes from "./src/routes/locationRoutes.js";
 import ordersRoute from "./src/routes/orders.js";
-import receiptRoutes from "./src/routes/receiptRoutes.js"; // ⚠️ এখানে তোমার ভুলটা ঠিক করা হয়েছে (.src → ./src)
+import receiptRoutes from "./src/routes/receiptRoutes.js";
 import usersRoute from "./src/routes/users.js";
 import productRoutes from "./src/routes/productRoutes.js";
 import categoryRoutes from "./src/routes/categoryRoutes.js";
 import footerRoutes from "./src/routes/footerRoutes.js";
 import navbarRoutes from "./src/routes/navbarRoutes.js";
+import courierSettingsRoute from "./src/routes/courierSettingsRoute.js";
+import sendOrderRoute from "./src/routes/sendOrderRoute.js";
+import courierRoute from "./src/routes/courierRoute.js";
+
+
 
 dotenv.config();
 const app = express();
@@ -64,6 +69,11 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/users", usersRoute);
 app.use("/api/footer", footerRoutes);
 app.use("/api/navbar", navbarRoutes);
+app.use(courierSettingsRoute);
+app.use(sendOrderRoute);
+app.use(courierRoute);
+
+
 
 app.use("/uploads", express.static("uploads"));
 

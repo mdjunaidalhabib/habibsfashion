@@ -24,4 +24,9 @@ export const navItems = [
 export const settingsChildren = [
   { icon: <LayoutDashboard size={16} />, label: "Navbar", href: "/navbar" },
   { icon: <LayoutDashboard size={16} />, label: "Footer", href: "/footer" },
+  {
+    icon: <LayoutDashboard size={16} />,
+    label: "courier",
+    href: "/courier-settings",
+  },
 ];

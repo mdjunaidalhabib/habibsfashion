@@ -1,12 +1,12 @@
 "use client";
-
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+import useOrders from "../../../hooks/useOrders";
 import OrdersGrid from "../../../components/orders/OrdersGrid";
 import OrdersTable from "../../../components/orders/OrdersTable";
 import EditOrderModal from "../../../components/orders/EditOrderModal";
@@ -14,8 +14,20 @@ import OrdersSkeleton from "../../../components/Skeleton/OrdersSkeleton";
 
 export default function OrdersPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // ✅ useOrders থেকে সব কিছু পাওয়া যাবে
+  const {
+    filtered,
+    loading,
+    filter,
+    setFilter,
+    fetchOrders,
+    sendingId,
+    sendToCourier, // 🔥 নতুন Dynamic Courier Function
+    updateStatus,
+    deleteOrder,
+  } = useOrders(API);
+
   const [open, setOpen] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [form, setForm] = useState({
@@ -26,42 +38,43 @@ export default function OrdersPage() {
     billing: { name: "", phone: "", address: "" },
   });
 
-  const [filter, setFilter] = useState({ status: "", q: "" });
+  // 🔹 Edit Modal খোলা
+  const openEdit = (order) => {
+    setCurrentId(order._id);
+    setForm({
+      status: order.status || "pending",
+      paymentMethod: order.paymentMethod || "cod",
+      trackingId: order.trackingId || "",
+      cancelReason: order.cancelReason || "",
+      billing: {
+        name: order.billing?.name || "",
+        phone: order.billing?.phone || "",
+        address: order.billing?.address || "",
+      },
+    });
+    setOpen(true);
+  };
 
-  // 🔹 Fetch Orders
-  const fetchOrders = async () => {
+  // ✅ Order আপডেট ফাংশন
+  const updateOrder = async (updatedForm) => {
     try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filter.status) params.append("status", filter.status);
-      const res = await fetch(`${API}/api/orders?${params.toString()}`);
-      const data = await res.json();
-      setOrders(Array.isArray(data) ? data : []);
+      const res = await fetch(`${API}/api/orders/${currentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedForm),
+      });
+      if (!res.ok) throw new Error("Update failed");
+      fetchOrders();
+      setOpen(false);
+      return { success: true };
     } catch (e) {
-      console.error(e);
-      setOrders([]);
-    } finally {
-      setLoading(false);
+      console.error("Update error:", e);
+      alert("Failed to update order.");
+      return { success: false };
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, [filter.status]);
-
-  // 🔹 Search Filter
-  const filtered = useMemo(() => {
-    if (!filter.q) return orders;
-    const q = filter.q.toLowerCase();
-    return orders.filter((o) => {
-      const idHit = o._id?.toLowerCase().includes(q);
-      const nameHit = o.billing?.name?.toLowerCase().includes(q);
-      const phoneHit = o.billing?.phone?.toLowerCase().includes(q);
-      return idHit || nameHit || phoneHit;
-    });
-  }, [orders, filter.q]);
-
-  // 🔹 Export CSV / Excel / PDF
+  // 🔹 CSV / Excel / PDF Export Functions (আগের মতোই থাকবে)
   const exportCSV = () => {
     const csv = Papa.unparse(
       filtered.map((o) => ({
@@ -93,7 +106,10 @@ export default function OrdersPage() {
     );
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
     saveAs(
       new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -115,78 +131,14 @@ export default function OrdersPage() {
       o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "",
     ]);
     autoTable(doc, {
-      head: [["OrderID", "Customer", "Phone", "Status", "Method", "Total", "Date"]],
+      head: [
+        ["OrderID", "Customer", "Phone", "Status", "Method", "Total", "Date"],
+      ],
       body: tableData,
       startY: 20,
       styles: { fontSize: 8 },
     });
     doc.save("orders.pdf");
-  };
-
-  // 🔹 Edit Order Modal
-  const openEdit = (order) => {
-    setCurrentId(order._id);
-    setForm({
-      status: order.status || "pending",
-      paymentMethod: order.paymentMethod || "cod",
-      trackingId: order.trackingId || "",
-      cancelReason: order.cancelReason || "",
-      billing: {
-        name: order.billing?.name || "",
-        phone: order.billing?.phone || "",
-        address: order.billing?.address || "",
-      },
-    });
-    setOpen(true);
-  };
-
-  // 🔹 Update Order (Modal)
-  const updateOrder = async () => {
-    try {
-      const res = await fetch(`${API}/api/orders/${currentId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error("Update failed");
-      setOpen(false);
-      fetchOrders();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to update order.");
-    }
-  };
-
-  // 🔹 Delete Order
-  const deleteOrder = async (id) => {
-    if (!confirm("Are you sure you want to delete this order?")) return;
-    try {
-      const res = await fetch(`${API}/api/orders/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
-      fetchOrders();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to delete order.");
-    }
-  };
-
-  // ✅ Inline Status Update (Dropdown)
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      const res = await fetch(`${API}/api/orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) throw new Error("Status update failed");
-
-      setOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, status: newStatus } : o))
-      );
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update status!");
-    }
   };
 
   return (
@@ -230,13 +182,18 @@ export default function OrdersPage() {
           onChange={(e) => setFilter({ ...filter, status: e.target.value })}
         >
           <option value="">All status</option>
-          {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(
-            (s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            )
-          )}
+          {[
+            "pending",
+            "confirmed",
+            "processing",
+            "shipped",
+            "delivered",
+            "cancelled",
+          ].map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
         <button
           onClick={fetchOrders}
@@ -246,7 +203,7 @@ export default function OrdersPage() {
         </button>
       </div>
 
-      {/* 🧩 Show Skeleton While Loading */}
+      {/* Table/Grid */}
       {loading ? (
         <OrdersSkeleton />
       ) : (
@@ -255,23 +212,27 @@ export default function OrdersPage() {
             orders={filtered}
             onEdit={openEdit}
             onDelete={deleteOrder}
-            onStatusChange={handleStatusChange}
+            onStatusChange={updateStatus}
+            onSendCourier={sendToCourier} // ✅ নতুন prop
+            sendingId={sendingId}
           />
           <OrdersTable
             orders={filtered}
             onEdit={openEdit}
             onDelete={deleteOrder}
-            onStatusChange={handleStatusChange}
+            onStatusChange={updateStatus}
+            onSendCourier={sendToCourier} // ✅ নতুন prop
+            sendingId={sendingId}
           />
         </>
       )}
 
-      {/* Modal */}
+      {/* Edit Modal */}
       <EditOrderModal
         open={open}
         form={form}
         setForm={setForm}
-        onSave={updateOrder}
+        onSave={() => updateOrder(form)}
         onClose={() => setOpen(false)}
       />
     </div>
