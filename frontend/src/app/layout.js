@@ -14,15 +14,16 @@ export const metadata = {
   },
 };
 
-
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      {/* পুরো পেজকে flex container বানানো */}
+      <body className="flex flex-col min-h-screen bg-gray-50">
         <UserProvider>
           <CartProvider>
             <Navbar />
-            {children}
+            {/* মূল কনটেন্ট বাড়বে, footer নিচে ঠেলে দেবে */}
+            <main className="flex-grow bg-pink-50">{children}</main>
             <Footer />
           </CartProvider>
         </UserProvider>

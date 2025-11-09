@@ -77,7 +77,7 @@ export default function Footer() {
   const { brand = {}, contact = {}, copyrightText } = data;
 
   return (
-    <footer className="bg-gray-900 text-gray-200 pt-10 pb-2 px-6 md:px-12 mb-15 md:mb-0">
+    <footer className="bg-pink-100 text-gray-900 pt-10 pb-2 px-6 md:px-12 mb-15 md:mb-0">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
         {/* 1. Brand + About */}
         <div>
@@ -94,17 +94,19 @@ export default function Footer() {
                 <FaUserCircle className="text-gray-300 w-6 h-6" />
               </div>
             )}
-            <span className="text-xl font-bold text-white block min-w-[100px] truncate">
+            <span className="text-xl font-bold text-pink-600 block min-w-[100px] truncate">
               {brand.title || "Habib's Fashion"}
             </span>
           </div>
-          <p className="text-sm mb-4">{brand.about || "Your fashion destination."}</p>
+          <p className="text-sm mb-4">
+            {brand.about || "Your fashion destination."}
+          </p>
           <div className="flex gap-4 text-xl">
             {socialLinksData.map((s, idx) => {
               const Icon = iconMap[s.icon] || FaGlobe;
               return (
                 <Link key={idx} href={s.url || "#"} target="_blank">
-                  <Icon className="hover:text-yellow-300" />
+                  <Icon className="hover:text-pink-600" />
                 </Link>
               );
             })}
@@ -117,7 +119,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm">
             {quickLinksData.map((l, i) => (
               <li key={i}>
-                <Link href={l.href} className="hover:text-yellow-300">
+                <Link href={l.href} className="hover:text-pink-600">
                   {l.label}
                 </Link>
               </li>
@@ -134,7 +136,7 @@ export default function Footer() {
                 <li key={cat._id || cat.name}>
                   <Link
                     href={`/categories/${cat._id}`}
-                    className="hover:text-yellow-300 block min-w-[100px] truncate"
+                    className="hover:text-pink-600 block min-w-[100px] truncate"
                   >
                     {cat.name}
                   </Link>
@@ -147,68 +149,81 @@ export default function Footer() {
         </div>
 
         {/* 4. Contact */}
-<div>
-  <h2 className="text-xl font-semibold mb-4">Contact Us</h2>
-  <ul className="space-y-2 text-sm">
-    {/* Address (optional link to Google Maps if address exists) */}
-    {contact.address && (
-      <li className="flex items-center gap-2">
-        <FaMapMarkerAlt />
-        <a
-          href={`https://www.google.com/maps/search/${encodeURIComponent(contact.address)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-yellow-300"
-        >
-          {contact.address}
-        </a>
-      </li>
-    )}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Contact Us</h2>
+          <ul className="space-y-2 text-sm">
+            {/* Address (optional link to Google Maps if address exists) */}
+            {contact.address && (
+              <li className="flex items-center gap-2">
+                <FaMapMarkerAlt />
+                <a
+                  href={`https://www.google.com/maps/search/${encodeURIComponent(
+                    contact.address
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-pink-600"
+                >
+                  {contact.address}
+                </a>
+              </li>
+            )}
 
-    {/* Phone */}
-    {contact.phone && (
-      <li className="flex items-center gap-2">
-        <FaPhoneAlt />
-        <a href={`tel:${contact.phone}`} className="hover:text-yellow-300">
-          {contact.phone}
-        </a>
-      </li>
-    )}
+            {/* Phone */}
+            {contact.phone && (
+              <li className="flex items-center gap-2">
+                <FaPhoneAlt />
+                <a
+                  href={`tel:${contact.phone}`}
+                  className="hover:text-pink-600"
+                >
+                  {contact.phone}
+                </a>
+              </li>
+            )}
 
-    {/* Email */}
-    {contact.email && (
-      <li className="flex items-center gap-2">
-        <FaEnvelope />
-        <a href={`mailto:${contact.email}`} className="hover:text-yellow-300">
-          {contact.email}
-        </a>
-      </li>
-    )}
+            {/* Email */}
+            {contact.email && (
+              <li className="flex items-center gap-2">
+                <FaEnvelope />
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="hover:text-pink-600"
+                >
+                  {contact.email}
+                </a>
+              </li>
+            )}
 
-    {/* Website */}
-    {contact.website && (
-      <li className="flex items-center gap-2">
-        <FaGlobe />
-        <a
-          href={contact.website.startsWith("http") ? contact.website : `https://${contact.website}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-yellow-300"
-        >
-          {contact.website}
-        </a>
-      </li>
-    )}
-  </ul>
-</div>
-
+            {/* Website */}
+            {contact.website && (
+              <li className="flex items-center gap-2">
+                <FaGlobe />
+                <a
+                  href={
+                    contact.website.startsWith("http")
+                      ? contact.website
+                      : `https://${contact.website}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-pink-600"
+                >
+                  {contact.website}
+                </a>
+              </li>
+            )}
+          </ul>
+        </div>
       </div>
 
-      <hr className="border-t border-gray-700 mt-6" />
+      <hr className="border-t border-gray-400 mt-6" />
 
-      <div className="text-center text-sm text-gray-400 mt-2">
+      <div className="text-center text-sm text-gray-900 mt-2">
         {copyrightText ||
-          `© ${new Date().getFullYear()} ${brand.title || "Habib's Fashion"}. All Rights Reserved.`}
+          `© ${new Date().getFullYear()} ${
+            brand.title || "Habib's Fashion"
+          }. All Rights Reserved.`}
       </div>
     </footer>
   );

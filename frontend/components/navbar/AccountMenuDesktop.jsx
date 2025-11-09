@@ -52,7 +52,7 @@ export default function AccountMenuDesktop() {
             currentUrl
           )}`;
         }}
-        className="p-2 rounded hover:bg-gray-100 flex items-center gap-1"
+        className="p-2 rounded hover:bg-pink-300 flex items-center gap-1"
       >
         <FaUser /> Login
       </button>

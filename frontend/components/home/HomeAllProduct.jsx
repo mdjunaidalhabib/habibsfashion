@@ -73,7 +73,7 @@ export default function CategoryTabsSection() {
             className={`flex flex-col items-center justify-center w-20 sm:w-24 md:w-28 p-2 rounded-xl transition-all duration-300 border shadow-sm hover:shadow-md ${
               activeCat === cat._id
                 ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white border-blue-600 scale-105"
-                : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+                : "bg-pink-100 hover:bg-pink-200 border-pink-300"
             }`}
           >
             <div className="overflow-hidden rounded-full border border-gray-300 mb-1">

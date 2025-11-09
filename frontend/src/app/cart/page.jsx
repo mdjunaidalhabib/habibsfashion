@@ -26,7 +26,7 @@ const CartItem = memo(
     const isInWishlist = wishlist.includes(p._id);
 
     return (
-      <div className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition-all duration-300">
+      <div className="bg-pink-100 rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition-all duration-300">
         {/* ✅ Image Left */}
         <Link
           href={`/products/${p._id}`}
@@ -119,7 +119,6 @@ const CartItem = memo(
     );
   },
   (prevProps, nextProps) => {
-    // ✅ prevent re-render when only qty changes
     return (
       prevProps.p._id === nextProps.p._id &&
       prevProps.p.qty === nextProps.p.qty &&
@@ -168,63 +167,68 @@ export default function CartPage() {
   const handleClearCart = () => setCart({});
 
   return (
-    <main className="container mx-auto px-3 sm:px-6 py-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl sm:text-3xl font-semibold text-gray-800">
-          🛒 আপনার কার্ট
-        </h1>
-        {items.length > 0 && !loading && (
-          <button
-            onClick={handleClearCart}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition"
-          >
-            সব মুছে ফেলুন
-          </button>
+    <main className="bg-pink-50 ">
+      <div className="container mx-auto px-3 sm:px-6 py-6">
+        {/* ✅ Header */}
+        <div className="flex items-center justify-between mb-6 relative">
+          {/* মাঝখানে টাইটেল */}
+          <h2 className="absolute left-1/2 transform -translate-x-1/2 text-xl sm:text-2xl font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-600 text-transparent bg-clip-text text-center">
+            🛒 আপনার কার্ট
+          </h2>
+
+          {/* ডান পাশে বাটন */}
+          {items.length > 0 && !loading && (
+            <button
+              onClick={handleClearCart}
+              className="ml-auto bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition"
+            >
+              সব মুছে ফেলুন
+            </button>
+          )}
+        </div>
+
+        {/* Loader */}
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <CartSkeleton key={i} />
+            ))}
+          </div>
+        ) : !items.length ? (
+          <div className="bg-pink-100 rounded-xl shadow p-6 text-center">
+            <p className="text-gray-500 text-lg">আপনার কার্ট খালি 😢</p>
+            <Link
+              href="/products"
+              className="text-blue-500 hover:underline mt-2 inline-block"
+            >
+              পণ্য দেখুন
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {items.map((p) => (
+              <CartItem
+                key={p._id}
+                p={p}
+                updateCart={updateCart}
+                removeFromCart={removeFromCart}
+                toggleWishlist={toggleWishlist}
+                wishlist={wishlist}
+              />
+            ))}
+
+            {/* ✅ Grand Total */}
+            <div className="text-right font-bold text-lg mt-6 border-t pt-4">
+              মোট মূল্য: <span className="text-blue-600">৳{grandTotal}</span>
+            </div>
+
+            {/* ✅ Checkout Button */}
+            <div className="pb-8 flex justify-end">
+              <CheckoutButton label="চেকআউট করুন" fullWidth={false} />
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Loader */}
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <CartSkeleton key={i} />
-          ))}
-        </div>
-      ) : !items.length ? (
-        <div className="bg-white rounded-xl shadow p-6 text-center">
-          <p className="text-gray-500 text-lg">আপনার কার্ট খালি 😢</p>
-          <Link
-            href="/products"
-            className="text-blue-500 hover:underline mt-2 inline-block"
-          >
-            পণ্য দেখুন
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {items.map((p) => (
-            <CartItem
-              key={p._id}
-              p={p}
-              updateCart={updateCart}
-              removeFromCart={removeFromCart}
-              toggleWishlist={toggleWishlist}
-              wishlist={wishlist}
-            />
-          ))}
-
-          {/* ✅ Grand Total */}
-          <div className="text-right font-bold text-lg mt-6 border-t pt-4">
-            মোট মূল্য: <span className="text-blue-600">৳{grandTotal}</span>
-          </div>
-
-          {/* ✅ Checkout Button */}
-          <div className="mt-4 flex justify-end">
-            <CheckoutButton label="চেকআউট করুন" fullWidth={false} />
-          </div>
-        </div>
-      )}
     </main>
   );
 }
