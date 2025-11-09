@@ -83,7 +83,7 @@ export default function SearchBox({ mobileSearchOpen, setMobileSearchOpen }) {
         <input
           type="text"
           placeholder="Search products..."
-          className="border rounded-lg px-3 py-1 w-64 focus:outline-none focus:ring-1 focus:ring-pink-500"
+          className="rounded-lg px-3 py-1 w-64 border border-pink-300  focus:outline-none focus:border-pink-400"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search products"
@@ -153,14 +153,14 @@ export default function SearchBox({ mobileSearchOpen, setMobileSearchOpen }) {
               animate="visible"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="fixed inset-0 bg-white z-50 flex flex-col"
+              className="fixed inset-0 bg-pink-50 z-50 flex flex-col"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b shadow-sm">
+              <div className="flex items-center justify-between p-4 border-b border-pink-200 shadow-sm">
                 <input
                   type="text"
                   placeholder="Search products..."
-                  className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-rose-600"
+                  className="flex-1 border border-pink-300  focus:outline-none focus:border-pink-400 rounded-lg px-3 py-2"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   autoFocus

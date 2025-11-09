@@ -8,7 +8,7 @@ import { useCartUtils } from "../../hooks/useCartUtils";
 import QuantityController from "./QuantityController";
 import CheckoutButton from "./CheckoutButton";
 import ProductDetailsSkeleton from "../skeletons/ProductDetailsSkeleton";
-import { useRouter } from "next/navigation"; // ✅ যোগ করা হয়েছে
+import { useRouter } from "next/navigation";
 
 export default function ProductDetailsClient({
   product,
@@ -17,7 +17,7 @@ export default function ProductDetailsClient({
   loading = false,
 }) {
   const { cart, wishlist, toggleWishlist, updateCart } = useCartUtils();
-  const router = useRouter(); // ✅ রাউটার ব্যবহার করা হবে
+  const router = useRouter();
 
   if (loading || !product?._id) return <ProductDetailsSkeleton />;
 
@@ -47,7 +47,7 @@ export default function ProductDetailsClient({
       onClick={() => setTab(key)}
       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
         tab === key
-          ? "bg-blue-600 text-white shadow"
+          ? "bg-pink-500 text-white shadow"
           : "text-gray-600 hover:bg-gray-200"
       }`}
     >
@@ -55,16 +55,14 @@ export default function ProductDetailsClient({
     </button>
   );
 
-  // ✅ Checkout লজিক: আগে add করে তারপর checkout
+  // ✅ Checkout লজিক
   const handleCheckout = async () => {
     if (product.stock <= 0) return;
 
-    // যদি পণ্য কার্টে না থাকে → আগে add করো
     if (!quantity || quantity === 0) {
       await updateCart(product._id, +1, product.stock);
     }
 
-    // তারপর checkout পেজে যাও
     router.push(`/checkout?productId=${product._id}&qty=${quantity || 1}`);
   };
 
@@ -90,11 +88,11 @@ export default function ProductDetailsClient({
         <span className="text-gray-700">{product.name}</span>
       </nav>
 
-      {/* 🖼️ Gallery + Summary */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 🖼️ Gallery + Summary এক কার্ডে */}
+      <section className="bg-pink-100 rounded-2xl shadow p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Product Image */}
-        <div className="bg-white rounded-2xl shadow p-4">
-          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-xl overflow-hidden bg-gray-100 group">
+        <div className="bg-pink-50 rounded-xl p-4">
+          <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-lg overflow-hidden bg-gray-100 group">
             <Image
               src={images[activeIdx] || "/no-image.png"}
               alt={product?.name || "Product"}
@@ -105,18 +103,25 @@ export default function ProductDetailsClient({
             />
           </div>
 
-          {/* Thumbnail Gallery */}
+          {/* ✅ Thumbnail Gallery (No Scroll + Glow Effect) */}
           {images.length > 1 && (
-            <div className="mt-3 flex gap-3 overflow-x-auto no-scrollbar">
+            <div
+              className="mt-3 flex gap-3 flex-wrap justify-center overflow-hidden"
+              style={{
+                maxHeight: "none",
+                overscrollBehavior: "contain",
+              }}
+            >
               {images.map((src, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveIdx(i)}
-                  className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all duration-200 ${
-                    i === activeIdx
-                      ? "border-blue-600 scale-105"
-                      : "border-gray-200 hover:border-gray-400"
-                  }`}
+                  className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all duration-200 
+        ${
+          i === activeIdx
+            ? "border-pink-600 ring-2 ring-pink-400 shadow-lg"
+            : "border-pink-200 hover:border-pink-400 hover:shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+        }`}
                 >
                   <Image
                     src={src || "/no-image.png"}
@@ -131,75 +136,77 @@ export default function ProductDetailsClient({
           )}
         </div>
 
-        {/* 🧾 Summary Section */}
-        <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
-          <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
-            {product.name}
-          </h1>
+        {/* Summary Section */}
+        <div className="flex flex-col justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
+              {product.name}
+            </h1>
 
-          {category?.name && (
-            <p className="text-sm text-gray-600 mb-1">
-              Category: {category.name}
-            </p>
-          )}
-
-          <p
-            className={`text-sm font-medium mb-3 ${
-              product.stock > 0 ? "text-green-600" : "text-red-500"
-            }`}
-          >
-            {product.stock > 0
-              ? `✅ In Stock (${product.stock} available)`
-              : "❌ Out of Stock"}
-          </p>
-
-          {/* ⭐ Rating */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <FaStar
-                  key={i}
-                  className={
-                    i < (product.rating || 0)
-                      ? "text-yellow-500"
-                      : "text-gray-300"
-                  }
-                />
-              ))}
-            </div>
-            <span className="text-sm text-gray-500">
-              {product.rating || 0}/5
-            </span>
-          </div>
-
-          {/* 💰 Price + Wishlist */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <p className="text-blue-600 font-bold text-2xl">
-                ৳{product.price}
+            {category?.name && (
+              <p className="text-sm text-gray-600 mb-1">
+                Category: {category.name}
               </p>
-              {product.oldPrice && (
-                <p className="text-gray-400 line-through text-lg">
-                  ৳{product.oldPrice}
-                </p>
-              )}
-              {discountPct && (
-                <span className="text-red-500 font-semibold">
-                  -{discountPct}%
-                </span>
-              )}
-            </div>
+            )}
 
-            <button
-              onClick={() => toggleWishlist(product._id)}
-              className={`p-3 rounded-full shadow transition-all duration-200 ${
-                isInWishlist
-                  ? "bg-red-500 text-white"
-                  : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+            <p
+              className={`text-sm font-medium mb-3 ${
+                product.stock > 0 ? "text-green-600" : "text-red-500"
               }`}
             >
-              <FaHeart />
-            </button>
+              {product.stock > 0
+                ? `✅ In Stock (${product.stock} available)`
+                : "❌ Out of Stock"}
+            </p>
+
+            {/* ⭐ Rating */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <FaStar
+                    key={i}
+                    className={
+                      i < (product.rating || 0)
+                        ? "text-yellow-500"
+                        : "text-gray-300"
+                    }
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-gray-500">
+                {product.rating || 0}/5
+              </span>
+            </div>
+
+            {/* 💰 Price + Wishlist */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <p className="text-blue-600 font-bold text-2xl">
+                  ৳{product.price}
+                </p>
+                {product.oldPrice && (
+                  <p className="text-gray-400 line-through text-lg">
+                    ৳{product.oldPrice}
+                  </p>
+                )}
+                {discountPct && (
+                  <span className="text-red-500 font-semibold">
+                    -{discountPct}%
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={() => toggleWishlist(product._id)}
+                className={`p-3 rounded-full shadow transition-all duration-200 ${
+                  isInWishlist
+                    ? "bg-red-500 text-white"
+                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                }`}
+              >
+                <FaHeart />
+              </button>
+            </div>
           </div>
 
           {/* 🛒 Cart + Checkout */}
@@ -211,7 +218,7 @@ export default function ProductDetailsClient({
                   onClick={() => updateCart(product._id, +1, product.stock)}
                   className={`flex-1 md:flex-[2] px-4 py-3 rounded-lg font-medium transition-all ${
                     product.stock > 0
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      ? "bg-pink-600 text-white hover:bg-pink-700"
                       : "bg-gray-400 text-white cursor-not-allowed"
                   }`}
                 >
@@ -261,13 +268,13 @@ export default function ProductDetailsClient({
 
       {/* 📋 Tabs */}
       <section className="mt-8">
-        <div className="inline-flex bg-gray-100 rounded-xl p-1">
+        <div className="inline-flex bg-pink-100 rounded-xl p-1">
           {tabBtn("desc", "Description")}
           {tabBtn("info", "Additional Information")}
           {tabBtn("reviews", "Reviews")}
         </div>
 
-        <div className="mt-4 bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-700 leading-relaxed">
+        <div className="mt-4 bg-pink-100 rounded-2xl shadow p-4 sm:p-6 text-gray-700 leading-relaxed">
           {tab === "desc" && (
             <p className="whitespace-pre-wrap">
               {product.description || "No description available."}

@@ -59,7 +59,7 @@ const FloatingActionButton = () => {
       {/* মূল বাটন */}
       <button
         onClick={() => setOpen(!open)}
-        className="bg-pink-600 text-white p-3 rounded-full shadow-xl hover:bg-pink-500 transition-all duration-300 flex items-center justify-center transform-gpu z-[9999]"
+        className="bg-pink-600 text-white p-3 rounded-full shadow-xl hover:bg-pink-700 transition-all duration-300 flex items-center justify-center transform-gpu z-[9999]"
         style={{ transition: "transform 0.6s ease-out" }}
       >
         <div

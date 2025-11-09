@@ -260,14 +260,14 @@ export default function Navbar() {
               animate="visible"
               exit="exit"
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="fixed top-[60px] left-0 bottom-0 w-56 bg-white shadow-lg p-3 flex flex-col space-y-2.5 z-50 text-[15px]"
+              className="fixed top-[60px] left-0 bottom-0 w-56 bg-pink-50 shadow-lg p-3 flex flex-col space-y-2.5 z-50 text-[15px]"
             >
               <Link
                 href="/"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/")
-                    ? "text-pink-600 bg-rose-100 font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "text-pink-600 bg-pink-200 font-medium"
+                    : "text-gray-700 hover:text-pink-600 hover:bg-pink-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -279,8 +279,8 @@ export default function Navbar() {
                 href="/products"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/products")
-                    ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
-                    : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
+                    ? "text-pink-600 bg-pink-200 font-medium"
+                    : "text-gray-700 hover:text-pink-600 hover:bg-pink-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -292,8 +292,8 @@ export default function Navbar() {
                 href="/categories"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/categories")
-                    ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
-                    : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
+                    ? "text-pink-600 bg-pink-200 font-medium"
+                    : "text-gray-700 hover:text-pink-600 hover:bg-pink-100"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -306,7 +306,7 @@ export default function Navbar() {
       </AnimatePresence>
 
       {/* 📱 Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t md:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-pink-100 shadow-inner border-t border-pink-300 md:hidden z-50">
         <div className="flex justify-around items-center py-2 text-sm">
           <Link
             href="/"

@@ -219,7 +219,7 @@ export default function Footer() {
 
       <hr className="border-t border-gray-400 mt-6" />
 
-      <div className="text-center text-sm text-gray-900 mt-2">
+      <div className="text-center text-sm text-gray-700 mt-2">
         {copyrightText ||
           `© ${new Date().getFullYear()} ${
             brand.title || "Habib's Fashion"

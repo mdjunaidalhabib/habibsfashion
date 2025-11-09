@@ -131,7 +131,7 @@ const ProductCard = memo(
               className={`my- sm:mt-4 sm:mb-2 w-full px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
                 product?.stock <= 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-pink-600 text-white hover:bg-pink-500"
+                  : "bg-pink-600 text-white hover:bg-pink-700"
               }`}
             >
               <FaShoppingCart /> Add
