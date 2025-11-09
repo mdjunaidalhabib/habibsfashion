@@ -72,8 +72,8 @@ export default function AccountMenuDesktop() {
         onClick={() => setOpen(!open)}
         className={`p-2 rounded flex items-center gap-1 transition ${
           pathname === "/profile" || pathname === "/orders"
-            ? "text-rose-600 bg-rose-50"
-            : "hover:bg-gray-100 text-gray-700"
+            ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+            : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
         }`}
       >
         {me.avatar ? (
@@ -122,8 +122,8 @@ export default function AccountMenuDesktop() {
               href="/profile"
               className={`block px-3 py-2 rounded transition ${
                 pathname === "/profile"
-                  ? "text-rose-600 bg-rose-50 font-semibold"
-                  : "hover:bg-gray-100 text-gray-700"
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
               }`}
             >
               My Profile
@@ -133,8 +133,8 @@ export default function AccountMenuDesktop() {
               href="/orders"
               className={`block px-3 py-2 rounded transition ${
                 pathname === "/orders"
-                  ? "text-rose-600 bg-rose-50 font-semibold"
-                  : "hover:bg-gray-100 text-gray-700"
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
               }`}
             >
               My Orders

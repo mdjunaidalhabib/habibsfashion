@@ -46,55 +46,61 @@ export default function CategoryPage() {
   if (loading) return <CategorySkeleton />;
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-3 md:p-6">
-      {/* === Category Sidebar === */}
-      <div className="md:w-64 bg-white shadow-md rounded-xl p-3 md:p-4">
-        <h3 className="text-lg font-semibold mb-3 border-b pb-2">🗂️ Categories</h3>
+    <div className="bg-pink-50">
+      <div className=" container mx-auto flex flex-col md:flex-row gap-6 p-3 md:p-6">
+        {/* === Category Sidebar === */}
+        <div className="md:w-64 bg-pink-100 shadow-md rounded-xl p-3 md:p-4">
+          <h3 className="text-lg font-semibold mb-3 border-b pb-2">
+            🗂️ Categories
+          </h3>
 
-        <ul className="flex md:flex-col gap-3 overflow-x-auto md:space-y-2 no-scrollbar">
-          {categories.map((cat) => (
-            <li
-              key={cat._id}
-              onClick={() => fetchProducts(cat._id)}
-              className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition min-w-[120px] md:min-w-0 ${
-                selectedCategory === cat._id
-                  ? "bg-blue-100 text-blue-700 font-medium border border-blue-500"
-                  : "hover:bg-gray-100"
-              }`}
-            >
-              {cat.image && (
-                <div className="relative w-8 h-8 md:w-10 md:h-10 flex-shrink-0">
-                  <Image
-                    src={cat.image}
-                    alt={cat.name}
-                    fill
-                    className="rounded-md object-cover border"
-                  />
-                </div>
-              )}
-              <span className="truncate">{cat.name}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* === Product List === */}
-      <div className="flex-1">
-        <h3 className="text-xl font-semibold mb-4">
-          {selectedCategory ? "🛍️ Products" : "👉 প্রথমে কোনো Category সিলেক্ট করুন"}
-        </h3>
-
-        {productLoading ? (
-          <ProductDetailsSkeleton />
-        ) : products.length === 0 ? (
-          <p className="text-gray-500">কোনো পণ্য পাওয়া যায়নি 😔</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {products.map((p) => (
-              <ProductCard key={p._id} product={p} />
+          <ul className="flex md:flex-col gap-3 overflow-x-auto md:space-y-2 no-scrollbar">
+            {categories.map((cat) => (
+              <li
+                key={cat._id}
+                onClick={() => fetchProducts(cat._id)}
+                className={`flex items-center gap-3 p-2 rounded-lg border border-pink-400 cursor-pointer transition min-w-[120px] md:min-w-0 ${
+                  selectedCategory === cat._id
+                    ? "bg-pink-300 text-pink-600 font-medium border"
+                    : "hover:bg-pink-300"
+                }`}
+              >
+                {cat.image && (
+                  <div className="relative w-8 h-8 md:w-10 md:h-10 flex-shrink-0">
+                    <Image
+                      src={cat.image}
+                      alt={cat.name}
+                      fill
+                      className="rounded-md object-cover border"
+                    />
+                  </div>
+                )}
+                <span className="truncate">{cat.name}</span>
+              </li>
             ))}
-          </div>
-        )}
+          </ul>
+        </div>
+
+        {/* === Product List === */}
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold mb-4">
+            {selectedCategory
+              ? "🛍️ Products"
+              : "👉 প্রথমে কোনো Category সিলেক্ট করুন"}
+          </h3>
+
+          {productLoading ? (
+            <ProductDetailsSkeleton />
+          ) : products.length === 0 ? (
+            <p className="text-gray-500">কোনো পণ্য পাওয়া যায়নি 😔</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {products.map((p) => (
+                <ProductCard key={p._id} product={p} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

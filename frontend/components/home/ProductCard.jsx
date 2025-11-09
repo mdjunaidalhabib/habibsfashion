@@ -34,7 +34,7 @@ const ProductCard = memo(
         : product?.images?.[0] || "/no-image.png";
 
     return (
-      <div className="relative bg-white shadow-md rounded-lg hover:shadow-lg transition flex flex-col">
+      <div className="relative bg-pink-100 shadow-md rounded-lg hover:shadow-lg transition flex flex-col">
         {/* 🖼️ Image Container */}
         <Link
           href={`/products/${productId}`}

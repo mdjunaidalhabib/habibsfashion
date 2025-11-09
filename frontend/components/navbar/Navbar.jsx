@@ -88,7 +88,7 @@ export default function Navbar() {
   return (
     <>
       {/* 🧭 Top Navbar */}
-      <nav className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
+      <nav className="bg-pink-100 text-gray-800 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center py-3 px-4">
           {/* 📱 Mobile Search Icon */}
           <button
@@ -152,8 +152,8 @@ export default function Navbar() {
               href="/"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
                 isActive("/")
-                  ? "text-pink-600 bg-rose-100 font-medium"
-                  : "text-gray-700 hover:text-pink-600 hover:bg-gray-100"
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
               }`}
             >
               Home
@@ -162,8 +162,8 @@ export default function Navbar() {
               href="/products"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
                 isActive("/products")
-                  ? "text-pink-600 bg-rose-100 font-medium"
-                  : "text-gray-700 hover:text-pink-600 hover:bg-gray-100"
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
               }`}
             >
               All Products
@@ -172,8 +172,8 @@ export default function Navbar() {
               href="/categories"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
                 isActive("/categories")
-                  ? "text-pink-600 bg-rose-100 font-medium"
-                  : "text-gray-700 hover:text-pink-600 hover:bg-gray-100"
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
               }`}
             >
               Shop by Category
@@ -189,32 +189,32 @@ export default function Navbar() {
 
             {/* ✅ Account Active Only on Profile/Orders */}
             <div
-              className={`transition-colors duration-200 ${
+              className={`rounded transition-all duration-200 ${
                 pathname.startsWith("/profile") ||
                 pathname.startsWith("/orders")
-                  ? "text-pink-600"
-                  : "text-gray-700 hover:text-pink-600"
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
               }`}
             >
               <AccountMenuDesktop />
             </div>
 
             <div
-              className={
+              className={`rounded transition-all duration-200 p-2 ${
                 pathname === "/cart"
-                  ? "text-pink-600"
-                  : "text-gray-700 hover:text-pink-600"
-              }
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
+              }`}
             >
               <CartIcon cartCount={cartCount} />
             </div>
 
             <div
-              className={
+              className={`rounded transition-all duration-200 p-2 ${
                 pathname === "/wishlist"
-                  ? "text-pink-600"
-                  : "text-gray-700 hover:text-pink-600"
-              }
+                  ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                  : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
+              }`}
             >
               <WishlistIcon wishlistCount={wishlistCount} />
             </div>
@@ -279,8 +279,8 @@ export default function Navbar() {
                 href="/products"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/products")
-                    ? "text-pink-600 bg-rose-100 font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                    : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -292,8 +292,8 @@ export default function Navbar() {
                 href="/categories"
                 className={`flex items-center gap-2.5 px-3 py-2 rounded transition-all duration-200 ${
                   isActive("/categories")
-                    ? "text-pink-600 bg-rose-100 font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "text-pink-600 bg-pink-300 border border-pink-400 font-medium"
+                    : "text-gray-900 hover:text-pink-600 hover:bg-pink-300"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
