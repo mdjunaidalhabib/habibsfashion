@@ -6,11 +6,11 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import useOrders from "../../../hooks/useOrders";
-import OrdersGrid from "../../../components/orders/OrdersGrid";
-import OrdersTable from "../../../components/orders/OrdersTable";
-import EditOrderModal from "../../../components/orders/EditOrderModal";
-import OrdersSkeleton from "../../../components/Skeleton/OrdersSkeleton";
+import useOrders from "../../../../hooks/useOrders";
+import OrdersGrid from "../../../../components/orders/OrdersGrid";
+import OrdersTable from "../../../../components/orders/OrdersTable";
+import EditOrderModal from "../../../../components/orders/EditOrderModal";
+import OrdersSkeleton from "../../../../components/Skeleton/OrdersSkeleton";
 
 export default function OrdersPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;

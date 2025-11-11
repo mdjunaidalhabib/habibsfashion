@@ -1,0 +1,34 @@
+import generateToken from "../utils/generateToken.js";
+import Admin from "../models/Admin.js";
+
+export const loginAdmin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const admin = await Admin.findOne({ email });
+
+    if (admin && (await admin.matchPassword(password))) {
+      const token = generateToken(admin);
+
+      // ✅ কুকিতে টোকেন সেট করা
+      res.cookie("admin_token", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      res.status(200).json({
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      });
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

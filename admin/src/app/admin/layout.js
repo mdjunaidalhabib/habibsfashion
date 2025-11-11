@@ -1,4 +1,7 @@
-import "./globals.css";
+// app/dashboard/layout.jsx
+import Sidebar from "../../../components/Sidebar";
+import Header from "../../../components/Header";
+import "../globals.css";
 
 export const metadata = {
   title: "Dashboard | Admin Panel",
@@ -11,14 +14,12 @@ export const metadata = {
 
 export default function AdminLayout({ children }) {
   return (
-    <html lang="en">
-      <body>
-        <div className="flex h-screen bg-pink-50">
+        <div className="flex h-screen bg-gray-100">
+          <Sidebar />
           <div className="flex-1 flex flex-col">
-            <main>{children}</main>
+            <Header />
+            <main className="p-2 sm:p-4 overflow-auto flex-1">{children}</main>
           </div>
         </div>
-      </body>
-    </html>
   );
 }

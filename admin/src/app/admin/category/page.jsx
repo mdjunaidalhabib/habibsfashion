@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Toast from "../../../components/Toast";
-import CategoriesSkeleton from "../../../components/Skeleton/CategoriesSkeleton";
+import Toast from "../../../../components/Toast";
+import CategoriesSkeleton from "../../../../components/Skeleton/CategoriesSkeleton";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);

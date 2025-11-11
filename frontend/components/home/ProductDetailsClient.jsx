@@ -91,7 +91,7 @@ export default function ProductDetailsClient({
       {/* 🖼️ Gallery + Summary এক কার্ডে */}
       <section className="bg-pink-100 rounded-2xl shadow p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Product Image */}
-        <div className="bg-pink-50 rounded-xl p-4">
+        <div className="bg-pink-50 rounded-xl">
           <div className="relative w-full h-[320px] sm:h-[420px] md:h-[480px] rounded-lg overflow-hidden bg-gray-100 group">
             <Image
               src={images[activeIdx] || "/no-image.png"}

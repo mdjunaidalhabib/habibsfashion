@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProductForm from "../../../components/ProductForm";
-import ProductCard from "../../../components/ProductCard";
-import Toast from "../../../components/Toast";
-import ProductsSkeleton from "../../../components/Skeleton/ProductsSkeleton";
+import ProductForm from "../../../../components/ProductForm";
+import ProductCard from "../../../../components/ProductCard";
+import Toast from "../../../../components/Toast";
+import ProductsSkeleton from "../../../../components/Skeleton/ProductsSkeleton";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);

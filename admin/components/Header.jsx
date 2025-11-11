@@ -16,20 +16,19 @@ export default function Header() {
       <h1 className="text-xl font-bold absolute left-1/2 transform -translate-x-1/2">
         Admin Panel
       </h1>
-
       {/* বাম দিকে ফাঁকা জায়গা */}
       <div className="w-8 md:hidden" />
-
-      
 
       {/* Menu Icon এখন ডান পাশে */}
       <div className="md:hidden">
         <Button variant="ghost" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X className="text-rose-600" size={24}/> :     <Menu className="text-rose-600" size={24} />
-}
+          {menuOpen ? (
+            <X className="text-rose-600" size={24} />
+          ) : (
+            <Menu className="text-rose-600" size={24} />
+          )}
         </Button>
       </div>
-      
 
       {/* মোবাইল মেনু */}
       <AnimatePresence>

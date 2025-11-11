@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import UsersSkeleton from "../../../components/Skeleton/UsersSkeleton";
+import UsersSkeleton from "../../../../components/Skeleton/UsersSkeleton";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);

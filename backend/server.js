@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import passport from "passport";
 import helmet from "helmet";
+import cookieParser from "cookie-parser"; // ✅ নতুন যোগ করা
 
 import dbConnect from "./src/lib/db.js";
 import { configurePassport } from "./src/auth/passport.js";
@@ -20,15 +21,17 @@ import navbarRoutes from "./src/routes/navbarRoutes.js";
 import courierSettingsRoute from "./src/routes/courierSettingsRoute.js";
 import sendOrderRoute from "./src/routes/sendOrderRoute.js";
 import courierRoute from "./src/routes/courierRoute.js";
-
-
+import adminRoutes from "./src/routes/adminRoutes.js";
+import createSuperAdmin from "./src/config/createSuperAdmin.js";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 
+// ✅ Security & CORS
 app.set("trust proxy", 1);
+app.use(cookieParser()); // ✅ কুকি পার্স করার জন্য জরুরি
 app.use(
   helmet({
     contentSecurityPolicy: isProd ? undefined : false,
@@ -37,21 +40,16 @@ app.use(
   })
 );
 
-// ✅ Allowed origins from env
-const rawOrigins =
-  process.env.CLIENT_URLS ||
-  process.env.CLIENT_URL ||
-  "http://localhost:3000,http://localhost:3001";
-const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
+const allowedOrigins = (
+  process.env.CLIENT_URLS || "http://localhost:3000,http://localhost:3001"
+)
+  .split(",")
+  .map((o) => o.trim());
 
 app.use(
   cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error(`❌ CORS blocked for origin: ${origin}`), false);
-    },
-    credentials: true,
+    origin: allowedOrigins,
+    credentials: true, // ✅ কুকি পাঠানোর জন্য দরকার
   })
 );
 
@@ -63,7 +61,7 @@ app.use(passport.initialize());
 app.use("/auth", authRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/orders", ordersRoute);
-app.use("/api/receipts", receiptRoutes); // ✅ রসিদ রাউট আলাদা
+app.use("/api/receipts", receiptRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", usersRoute);
@@ -72,12 +70,12 @@ app.use("/api/navbar", navbarRoutes);
 app.use(courierSettingsRoute);
 app.use(sendOrderRoute);
 app.use(courierRoute);
+app.use("/api/admin", adminRoutes);
 
-
-
+app.get("/", (req, res) => res.send("Admin API is running..."));
 app.use("/uploads", express.static("uploads"));
 
-app.get(["/health", "/"], (req, res) => {
+app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
     message: "✅ API is running",
@@ -96,12 +94,13 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await dbConnect(process.env.MONGO_URI);
+    await createSuperAdmin();
     app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
   } catch (err) {
     console.error("❌ Failed to connect DB:", err);
     process.exit(1);
   }
 };
-startServer();
 
+startServer();
 export default app;
