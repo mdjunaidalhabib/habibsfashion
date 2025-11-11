@@ -25,5 +25,5 @@ export function middleware(req) {
 
 // ✅ কোন route এ middleware কাজ করবে
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/login"],
 };
