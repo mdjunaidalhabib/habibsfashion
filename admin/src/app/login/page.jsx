@@ -20,7 +20,7 @@ export default function LoginPage() {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/login`,
         { email, password },
-        { withCredentials: true } // ✅ cookie পাঠাবে
+        { withCredentials: true }
       );
 
       console.log("✅ Login success:", res.data);

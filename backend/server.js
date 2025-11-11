@@ -3,12 +3,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 import passport from "passport";
 import helmet from "helmet";
-import cookieParser from "cookie-parser"; // ✅ নতুন যোগ করা
-
+import cookieParser from "cookie-parser";
 import dbConnect from "./src/lib/db.js";
 import { configurePassport } from "./src/auth/passport.js";
 
-// ✅ Routes
+// Routes
 import authRoutes from "./src/routes/auth.js";
 import locationRoutes from "./src/routes/locationRoutes.js";
 import ordersRoute from "./src/routes/orders.js";
@@ -25,13 +24,15 @@ import adminRoutes from "./src/routes/adminRoutes.js";
 import createSuperAdmin from "./src/config/createSuperAdmin.js";
 
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 
-// ✅ Security & CORS
+// ✅ নিরাপত্তা ও CORS
 app.set("trust proxy", 1);
-app.use(cookieParser()); // ✅ কুকি পার্স করার জন্য জরুরি
+app.use(cookieParser());
+
 app.use(
   helmet({
     contentSecurityPolicy: isProd ? undefined : false,
@@ -40,8 +41,9 @@ app.use(
   })
 );
 
+// ✅ CORS কনফিগারেশন
 const allowedOrigins = (
-  process.env.CLIENT_URLS || "http://localhost:3000,http://localhost:3001"
+  process.env.CLIENT_URLS
 )
   .split(",")
   .map((o) => o.trim());
@@ -49,7 +51,7 @@ const allowedOrigins = (
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true, // ✅ কুকি পাঠানোর জন্য দরকার
+    credentials: true, // ✅ কুকি পাঠানোর জন্য অত্যাবশ্যক
   })
 );
 
@@ -72,7 +74,7 @@ app.use(sendOrderRoute);
 app.use(courierRoute);
 app.use("/api/admin", adminRoutes);
 
-app.get("/", (req, res) => res.send("Admin API is running..."));
+app.get("/", (req, res) => res.send("✅ Admin API is running..."));
 app.use("/uploads", express.static("uploads"));
 
 app.get("/health", (req, res) => {
@@ -91,11 +93,12 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ✅ Start Server
 const startServer = async () => {
   try {
     await dbConnect(process.env.MONGO_URI);
     await createSuperAdmin();
-    app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
   } catch (err) {
     console.error("❌ Failed to connect DB:", err);
     process.exit(1);

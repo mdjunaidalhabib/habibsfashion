@@ -13,10 +13,11 @@ export const loginAdmin = async (req, res) => {
       // ✅ কুকিতে টোকেন সেট করা
       res.cookie("admin_token", token, {
         httpOnly: true,
-        sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
+        sameSite: "none",
+        domain: process.env.COOKIE_DOMAIN,
         path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       res.status(200).json({
