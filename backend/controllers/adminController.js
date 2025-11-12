@@ -15,13 +15,11 @@ export const loginAdmin = async (req, res) => {
 
       res.cookie("admin_token", token, {
         httpOnly: true,
-        secure: isProduction, // only true in production (HTTPS)
-        sameSite: isProduction ? "none" : "lax", // cross-site cookie issue fix
-        domain: isProduction
-          ? process.env.COOKIE_DOMAIN || ".habibsfashion.com"
-          : "localhost",
+        secure: isProduction,
+        sameSite: "none",
+        domain: process.env.COOKIE_DOMAIN,
         path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       res.status(200).json({
