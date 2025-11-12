@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getToken } from "../../lib/auth";
+import { getAdmin } from "../../lib/auth";
 
 export default function RootRedirect() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken(); // 🔐 token check (frontend fallback)
+    const token = getAdmin(); // 🔐 token check (frontend fallback)
 
     const timeout = setTimeout(() => {
       if (token) {

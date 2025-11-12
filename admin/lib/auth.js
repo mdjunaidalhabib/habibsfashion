@@ -1,6 +1,4 @@
 // lib/auth.js
-
-// 🔹 লগইন করা অ্যাডমিনের তথ্য আনে
 export async function getAdmin() {
   try {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
