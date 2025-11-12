@@ -17,6 +17,7 @@ export const loginAdmin = async (req, res) => {
         httpOnly: true,
         secure: isProduction,
         sameSite: "none",
+        domain: process.env.COOKIE_DOMAIN,
         path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });

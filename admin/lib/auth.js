@@ -1,8 +1,45 @@
 // lib/auth.js
-export function getToken() {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token") || null; // localStorage থেকে টোকেন
-    return token && token !== "undefined" && token !== "null" ? token : null;
+
+// 🔹 লগইন করা অ্যাডমিনের তথ্য আনে
+export async function getAdmin() {
+  try {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetch(`${API_BASE}/api/admin/verify`, {
+      method: "GET",
+      credentials: "include", // ✅ কুকি পাঠাবে
+      cache: "no-store", // 🔄 সবসময় fresh ডেটা আনবে
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data.admin || null; // backend থেকে পাওয়া admin তথ্য
+  } catch (error) {
+    console.error("⚠️ Auth check failed:", error);
+    return null;
   }
-  return null;
+}
+
+// 🔹 লগআউট করার ফাংশন
+export async function logoutAdmin() {
+  try {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetch(`${API_BASE}/api/admin/logout`, {
+      method: "POST",
+      credentials: "include", // ✅ কুকি সহ পাঠাবে
+    });
+
+    if (res.ok) {
+      console.log("✅ Logged out successfully");
+      return true;
+    } else {
+      console.warn("❌ Logout failed");
+      return false;
+    }
+  } catch (error) {
+    console.error("⚠️ Logout error:", error);
+    return false;
+  }
 }
