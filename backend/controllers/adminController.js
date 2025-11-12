@@ -10,14 +10,18 @@ export const loginAdmin = async (req, res) => {
     if (admin && (await admin.matchPassword(password))) {
       const token = generateToken(admin);
 
-      // ✅ কুকিতে টোকেন সেট করা
+      // 🌍 Cookie options for both localhost and live server
+      const isProduction = process.env.NODE_ENV === "production";
+
       res.cookie("admin_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
-        domain: process.env.COOKIE_DOMAIN,
+        secure: isProduction, // only true in production (HTTPS)
+        sameSite: isProduction ? "none" : "lax", // cross-site cookie issue fix
+        domain: isProduction
+          ? process.env.COOKIE_DOMAIN || ".habibsfashion.com"
+          : "localhost",
         path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
       res.status(200).json({
@@ -30,6 +34,7 @@ export const loginAdmin = async (req, res) => {
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (err) {
+    console.error("❌ Login Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

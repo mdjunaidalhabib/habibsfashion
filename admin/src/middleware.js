@@ -4,26 +4,26 @@ export function middleware(req) {
   const token = req.cookies.get("admin_token")?.value || "";
   const { pathname, origin } = req.nextUrl;
 
-  // 🌀 Middleware Trigger Log
-  console.log("🌀 [Middleware Triggered]:", pathname);
-
-  // ✅ যদি token না থাকে এবং protected route এ ঢোকে
-  if (pathname.startsWith("/admin")) {
-    if (!token) {
-      return NextResponse.redirect(`${origin}/login`);
-    }
+  // 🌀 Middleware Log (development only)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("🌀 [Middleware Triggered]:", pathname);
   }
 
-  // ✅ যদি already login করা থাকে → login page এ না ঢুকতে দেই
+  // 🛡️ Protected route: admin panel
+  if (pathname.startsWith("/admin") && !token) {
+    return NextResponse.redirect(`${origin}/login`);
+  }
+
+  // 🚫 Prevent logged-in admin from going to login page again
   if (pathname.startsWith("/login") && token) {
     return NextResponse.redirect(`${origin}/admin/dashboard`);
   }
 
-  // ✅ Default: সব ঠিক থাকলে proceed করো
+  // ✅ Everything okay, continue
   return NextResponse.next();
 }
 
-// ✅ কোন route এ middleware কাজ করবে
+// ✅ Middleware scope
 export const config = {
   matcher: ["/admin/:path*", "/login"],
 };
