@@ -4,26 +4,34 @@ export function middleware(req) {
   const token = req.cookies.get("admin_token")?.value || "";
   const { pathname, origin } = req.nextUrl;
 
-  // 🌀 Middleware Log (development only)
-  if (process.env.NODE_ENV !== "production") {
+  const isProd = process.env.NODE_ENV === "production";
+
+  // 🌀 Development Debug Log
+  if (!isProd) {
     console.log("🌀 [Middleware Triggered]:", pathname);
+    console.log("🔑 Token Found:", token ? "✅ Yes" : "❌ No");
   }
 
-  // 🛡️ Protected route: admin panel
+  // 🔒 Protected routes
   if (pathname.startsWith("/admin") && !token) {
-    return NextResponse.redirect(`${origin}/login`);
+    const redirectUrl = `${origin}/login`;
+    if (!isProd) console.log("🔁 Redirecting to:", redirectUrl);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // 🚫 Prevent logged-in admin from going to login page again
+  // 🚫 Prevent logged-in admins from seeing login again
   if (pathname.startsWith("/login") && token) {
-    return NextResponse.redirect(`${origin}/admin/dashboard`);
+    const redirectUrl = `${origin}/admin/dashboard`;
+    if (!isProd)
+      console.log("🚀 Already logged in → Redirecting to:", redirectUrl);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // ✅ Everything okay, continue
+  // ✅ Allow normal access
   return NextResponse.next();
 }
 
-// ✅ Middleware scope
+// ✅ Middleware Scope
 export const config = {
   matcher: ["/admin/:path*", "/login"],
 };

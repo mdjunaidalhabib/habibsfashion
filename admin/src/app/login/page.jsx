@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -20,7 +19,7 @@ export default function LoginPage() {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/login`,
         { email, password },
-        { withCredentials: true }
+        { withCredentials: true } // ✅ কুকি পাঠানো
       );
 
       console.log("✅ Login success:", res.data);
