@@ -1,14 +1,18 @@
 import cloudinary from "./cloudinary.js";
 
-// Cloudinary থেকে ছবি ও ফোল্ডার ডিলিট করার ফাংশন
+// ✅ URL থেকে ডিলিট (পুরোনোটা রেখে দিলাম - Footer/Navbar এ ব্যবহার করো না)
 export const deleteFromCloudinary = async (imageUrl, folder = "products") => {
   try {
+    if (!imageUrl) return;
+
     const publicId = imageUrl.split("/").slice(-1)[0].split(".")[0];
 
-    // ছবি ডিলিট
-    await cloudinary.uploader.destroy(`${folder}/${publicId}`);
+    await cloudinary.uploader.destroy(`${folder}/${publicId}`, {
+      resource_type: "image",
+      invalidate: true,
+    });
 
-    // ✅ Recursive folder delete function
+    // ✅ Recursive folder delete
     const deleteFolderIfEmpty = async (folderPath) => {
       const { resources, folders } = await cloudinary.api.resources({
         type: "upload",
@@ -16,27 +20,66 @@ export const deleteFromCloudinary = async (imageUrl, folder = "products") => {
         max_results: 1,
       });
 
-      // ফোল্ডার খালি কিনা দেখো
-      const isEmpty = resources.length === 0 && (!folders || folders.length === 0);
+      const isEmpty =
+        resources.length === 0 && (!folders || folders.length === 0);
+
       if (isEmpty) {
         await cloudinary.api.delete_folder(folderPath);
-        console.log(`🗂️ Folder deleted: ${folderPath}`);
 
-        // যদি nested folder হয় (যেমন products/gallery)
         const parent = folderPath.includes("/")
           ? folderPath.split("/").slice(0, -1).join("/")
           : null;
-        if (parent) {
-          await deleteFolderIfEmpty(parent); // recursively parent ফোল্ডারও চেক করো
-        }
-      } else {
-        console.log(`✅ Folder not empty: ${folderPath}`);
+
+        if (parent) await deleteFolderIfEmpty(parent);
       }
     };
 
-    // এই ফোল্ডার চেক করা শুরু করো
     await deleteFolderIfEmpty(folder);
   } catch (error) {
-    console.error("❌ Cloudinary delete error:", error);
+    console.error("❌ Cloudinary deleteFromCloudinary error:", error);
+  }
+};
+
+// ✅ public_id দিয়ে ডিলিট (Footer/Navbar Logo এর জন্য সেফ)
+export const deleteByPublicId = async (publicId) => {
+  try {
+    if (!publicId) return;
+
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+      invalidate: true,
+    });
+
+    // ✅ folder empty হলে ডিলিট
+    const folder = publicId.includes("/")
+      ? publicId.split("/").slice(0, -1).join("/")
+      : null;
+
+    if (!folder) return;
+
+    const deleteFolderIfEmpty = async (folderPath) => {
+      const { resources, folders } = await cloudinary.api.resources({
+        type: "upload",
+        prefix: folderPath + "/",
+        max_results: 1,
+      });
+
+      const isEmpty =
+        resources.length === 0 && (!folders || folders.length === 0);
+
+      if (isEmpty) {
+        await cloudinary.api.delete_folder(folderPath);
+
+        const parent = folderPath.includes("/")
+          ? folderPath.split("/").slice(0, -1).join("/")
+          : null;
+
+        if (parent) await deleteFolderIfEmpty(parent);
+      }
+    };
+
+    await deleteFolderIfEmpty(folder);
+  } catch (error) {
+    console.error("❌ Cloudinary deleteByPublicId error:", error);
   }
 };

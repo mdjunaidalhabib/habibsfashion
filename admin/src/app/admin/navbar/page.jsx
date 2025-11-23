@@ -7,7 +7,6 @@ export default function NavbarAdminPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // API Base from .env
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
   // Fetch Navbar Data
@@ -16,7 +15,7 @@ export default function NavbarAdminPanel() {
       try {
         const res = await fetch(`${API_URL}/api/navbar`);
         const data = await res.json();
-        setNavbar(data);
+        setNavbar({ ...data, brand: data.brand || {} });
       } catch (err) {
         toast.error("❌ Failed to fetch navbar data");
       } finally {
@@ -26,21 +25,34 @@ export default function NavbarAdminPanel() {
     fetchNavbar();
   }, [API_URL]);
 
-  // Save Navbar (without file)
-  const handleSave = async (updatedNavbar) => {
+  // ✅ Save Navbar (brand + removeLogo + optional file)
+  const handleSave = async (nextNavbar) => {
     setSaving(true);
     try {
+      const payload = structuredClone(nextNavbar);
+
       const formData = new FormData();
 
-      // Append brand JSON string
-      if (updatedNavbar.brand) {
-        formData.append("brand", JSON.stringify(updatedNavbar.brand));
+      // file থাকলে পাঠাও
+      if (payload.brand?.logoFile) {
+        formData.append("logo", payload.brand.logoFile);
+        delete payload.brand.logoFile;
       }
+
+      // removeLogo flag থাকলে পাঠাও
+      if (payload.removeLogo) {
+        formData.append("removeLogo", "true");
+        delete payload.removeLogo;
+      }
+
+      formData.append("brand", JSON.stringify(payload.brand || {}));
 
       const res = await fetch(`${API_URL}/api/navbar`, {
         method: "POST",
         body: formData,
       });
+
+      if (!res.ok) throw new Error("Save failed");
 
       const data = await res.json();
       setNavbar(data.navbar);
@@ -53,32 +65,22 @@ export default function NavbarAdminPanel() {
     }
   };
 
-  // Upload Logo
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files[0];
+  // ✅ Upload Logo (same endpoint)
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("logo", file);
+    const updated = {
+      ...navbar,
+      brand: { ...navbar.brand, logoFile: file },
+    };
 
-    setSaving(true);
-    try {
-      const res = await fetch(`${API_URL}/api/navbar`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      setNavbar(data.navbar);
-      toast.success("✅ Logo uploaded successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ Logo upload failed");
-    } finally {
-      setSaving(false);
-    }
+    setNavbar(updated);
+    handleSave(updated);
   };
 
   if (loading) return <p>Loading...</p>;
+  if (!navbar) return <p>No navbar data</p>;
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded shadow">
@@ -98,6 +100,7 @@ export default function NavbarAdminPanel() {
             })
           }
           className="w-full border p-2 rounded"
+          disabled={saving}
         />
         <button
           onClick={() => handleSave(navbar)}
@@ -111,15 +114,50 @@ export default function NavbarAdminPanel() {
       {/* Logo Upload */}
       <div className="mb-4">
         <label className="block font-medium mb-1">Logo</label>
-        {navbar?.brand?.logo && (
-          <img
-            src={navbar.brand.logo}
-            alt="Logo"
-            className="h-16 mb-2 rounded border"
-          />
-        )}
-        <input type="file" onChange={handleLogoUpload} />
+
+        {navbar?.brand?.logo ? (
+          <div className="flex items-center gap-3 mb-2">
+            <img
+              src={navbar.brand.logo}
+              alt="Logo"
+              className="h-16 rounded border"
+            />
+
+            {/* ✅ Remove Logo */}
+            <button
+              disabled={saving}
+              onClick={() => {
+                const updated = {
+                  ...navbar,
+                  brand: {
+                    ...navbar.brand,
+                    logo: "",
+                    logoPublicId: "",
+                  },
+                  removeLogo: true,
+                };
+                setNavbar(updated);
+                handleSave(updated);
+                toast.success("🗑 Logo removed");
+              }}
+              className="bg-red-600 text-white px-3 py-1 rounded disabled:opacity-60"
+            >
+              Remove
+            </button>
+          </div>
+        ) : null}
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleLogoUpload}
+          disabled={saving}
+        />
       </div>
+
+      {saving && (
+        <p className="text-sm text-gray-500 italic">Saving changes...</p>
+      )}
     </div>
   );
 }

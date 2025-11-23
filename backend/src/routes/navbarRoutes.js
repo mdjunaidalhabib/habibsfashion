@@ -2,7 +2,7 @@ import express from "express";
 import Navbar from "../models/Navbar.js";
 import upload from "../../utils/upload.js"; // multer
 import fs from "fs";
-import { deleteFromCloudinary } from "../../utils/cloudinaryHelpers.js";
+import { deleteByPublicId } from "../../utils/cloudinaryHelpers.js";
 import cloudinary from "../../utils/cloudinary.js";
 
 const router = express.Router();
@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
     const navbar = await Navbar.findOne();
     res.json(navbar || {});
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error fetching navbar:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -21,12 +21,12 @@ router.get("/", async (req, res) => {
 // POST Navbar + optional logo upload
 router.post("/", upload.single("logo"), async (req, res) => {
   try {
-    let data = {};
+    let data = { ...req.body };
 
     // Parse brand JSON string
-    if (req.body.brand) {
+    if (data.brand && typeof data.brand === "string") {
       try {
-        data.brand = JSON.parse(req.body.brand);
+        data.brand = JSON.parse(data.brand);
       } catch {
         data.brand = {};
       }
@@ -34,31 +34,54 @@ router.post("/", upload.single("logo"), async (req, res) => {
 
     let navbar = await Navbar.findOne();
 
+    // removeLogo request
+    const removeLogo = data.removeLogo === "true";
+    if (removeLogo && navbar?.brand?.logoPublicId) {
+      await deleteByPublicId(navbar.brand.logoPublicId);
+
+      data.brand = data.brand || {};
+      data.brand.logo = "";
+      data.brand.logoPublicId = "";
+      delete data.removeLogo;
+    }
+
     // Handle logo upload
     if (req.file) {
-      // Delete old logo
-      if (navbar?.brand?.logo) await deleteFromCloudinary(navbar.brand.logo);
+      // delete old logo by public id
+      if (navbar?.brand?.logoPublicId) {
+        await deleteByPublicId(navbar.brand.logoPublicId);
+      }
 
-      const result = await cloudinary.uploader.upload(req.file.path, { folder: "brand_logos" });
+      // upload new logo to NAVBAR folder
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "navbar_logos",
+      });
+
       fs.unlinkSync(req.file.path);
 
       data.brand = data.brand || {};
       data.brand.logo = result.secure_url;
+      data.brand.logoPublicId = result.public_id;
+    } else if (navbar?.brand) {
+      // file না এলে আগের logo/publicId রেখে দাও
+      data.brand = {
+        ...navbar.brand,
+        ...(data.brand || {}),
+      };
     }
 
+    // Update or create
     if (!navbar) {
       navbar = await Navbar.create(data);
     } else {
-      if (data.brand) {
-        navbar.brand = { ...navbar.brand, ...data.brand };
-      }
+      Object.assign(navbar, data);
       navbar.updatedAt = new Date();
       await navbar.save();
     }
 
     res.json({ message: "✅ Navbar updated successfully", navbar });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error updating navbar:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

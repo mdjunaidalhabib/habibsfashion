@@ -1,7 +1,7 @@
 import express from "express";
 import Footer from "../models/Footer.js";
 import upload from "../../utils/upload.js"; // multer middleware
-import { deleteFromCloudinary } from "../../utils/cloudinaryHelpers.js";
+import { deleteByPublicId } from "../../utils/cloudinaryHelpers.js";
 import cloudinary from "../../utils/cloudinary.js";
 import fs from "fs";
 
@@ -24,18 +24,49 @@ router.post("/", upload.single("logo"), async (req, res) => {
     let data = { ...req.body };
 
     // Parse brand/contact JSON if sent as string
-    if (data.brand && typeof data.brand === "string") data.brand = JSON.parse(data.brand);
-    if (data.contact && typeof data.contact === "string") data.contact = JSON.parse(data.contact);
+    if (data.brand && typeof data.brand === "string") {
+      data.brand = JSON.parse(data.brand);
+    }
+    if (data.contact && typeof data.contact === "string") {
+      data.contact = JSON.parse(data.contact);
+    }
 
-    // Upload logo if exists
     const footer = await Footer.findOne();
-    if (req.file) {
-      if (footer?.brand?.logo) await deleteFromCloudinary(footer.brand.logo);
 
-      const result = await cloudinary.uploader.upload(req.file.path, { folder: "brand_logos" });
+    // removeLogo request
+    const removeLogo = data.removeLogo === "true";
+    if (removeLogo && footer?.brand?.logoPublicId) {
+      await deleteByPublicId(footer.brand.logoPublicId);
+
+      data.brand = data.brand || {};
+      data.brand.logo = "";
+      data.brand.logoPublicId = "";
+      delete data.removeLogo;
+    }
+
+    // Upload new logo if exists
+    if (req.file) {
+      // delete old logo by public id
+      if (footer?.brand?.logoPublicId) {
+        await deleteByPublicId(footer.brand.logoPublicId);
+      }
+
+      // upload new logo to FOOTER folder
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "footer_logos",
+      });
+
       fs.unlinkSync(req.file.path);
+
       data.brand = data.brand || {};
       data.brand.logo = result.secure_url;
+      data.brand.logoPublicId = result.public_id;
+    } else if (footer?.brand) {
+      // file না এলে আগের logo/publicId রেখে দাও
+      data.brand = {
+        ...footer.brand,
+        ...(data.brand || {}),
+      };
     }
 
     // Update or create
@@ -48,7 +79,10 @@ router.post("/", upload.single("logo"), async (req, res) => {
       updatedFooter = await footer.save();
     }
 
-    res.json({ message: "✅ Footer updated successfully", footer: updatedFooter });
+    res.json({
+      message: "✅ Footer updated successfully",
+      footer: updatedFooter,
+    });
   } catch (err) {
     console.error("❌ Error updating footer:", err);
     res.status(500).json({ message: "Server error" });
@@ -59,7 +93,10 @@ router.post("/", upload.single("logo"), async (req, res) => {
 router.delete("/", async (req, res) => {
   try {
     const footer = await Footer.findOne();
-    if (footer?.brand?.logo) await deleteFromCloudinary(footer.brand.logo);
+
+    if (footer?.brand?.logoPublicId) {
+      await deleteByPublicId(footer.brand.logoPublicId);
+    }
 
     await Footer.deleteMany({});
     res.json({ message: "🗑️ Footer deleted" });

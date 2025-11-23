@@ -16,7 +16,11 @@ export default function FooterAdminPanel() {
     fetch(`${API_URL}/api/footer`)
       .then((res) => res.json())
       .then((data) => {
-        setFooter({ ...data, brand: data.brand || {}, contact: data.contact || {} });
+        setFooter({
+          ...data,
+          brand: data.brand || {},
+          contact: data.contact || {},
+        });
         setLoading(false);
       })
       .catch((err) => {
@@ -26,34 +30,69 @@ export default function FooterAdminPanel() {
       });
   }, [API_URL]);
 
-  const handleSave = async (updatedFooter) => {
+  const handleSave = async (nextFooter) => {
     setSaving(true);
     try {
-      const formData = new FormData();
-      if (updatedFooter.brand?.logoFile) {
-        formData.append("logo", updatedFooter.brand.logoFile);
-        delete updatedFooter.brand.logoFile;
-      }
-      formData.append("brand", JSON.stringify(updatedFooter.brand || {}));
-      formData.append("contact", JSON.stringify(updatedFooter.contact || {}));
-      formData.append("copyrightText", updatedFooter.copyrightText || "");
+      // ✅ clone to avoid mutating React state
+      const payload = structuredClone(nextFooter);
 
-      const res = await fetch(`${API_URL}/api/footer`, { method: "POST", body: formData });
+      const formData = new FormData();
+
+      // ✅ file থাকলে append করো
+      if (payload.brand?.logoFile) {
+        formData.append("logo", payload.brand.logoFile);
+        delete payload.brand.logoFile; // safe because cloned
+      }
+
+      // ✅ removeLogo flag (logo remove করলে যাবে)
+      if (payload.removeLogo) {
+        formData.append("removeLogo", "true");
+        delete payload.removeLogo;
+      }
+
+      formData.append("brand", JSON.stringify(payload.brand || {}));
+      formData.append("contact", JSON.stringify(payload.contact || {}));
+      formData.append("copyrightText", payload.copyrightText || "");
+
+      const res = await fetch(`${API_URL}/api/footer`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Save failed");
+
       const data = await res.json();
       if (data.footer) {
         setFooter(data.footer);
         toast.success("✅ Changes saved!");
-      } else toast.error("❌ Failed to save footer.");
+      } else {
+        toast.error("❌ Failed to save footer.");
+      }
     } catch (err) {
       console.error(err);
       toast.error("❌ Failed to save footer.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const toastOptions = {
-    success: { style: { background: "#16a34a", color: "white", fontWeight: "bold" }, iconTheme: { primary: "white", secondary: "#16a34a" } },
-    error: { style: { background: "#dc2626", color: "white", fontWeight: "bold" }, iconTheme: { primary: "white", secondary: "#dc2626" } },
+    success: {
+      style: {
+        background: "#16a34a",
+        color: "white",
+        fontWeight: "bold",
+      },
+      iconTheme: { primary: "white", secondary: "#16a34a" },
+    },
+    error: {
+      style: {
+        background: "#dc2626",
+        color: "white",
+        fontWeight: "bold",
+      },
+      iconTheme: { primary: "white", secondary: "#dc2626" },
+    },
   };
 
   if (loading) return <p>Loading...</p>;
@@ -63,18 +102,77 @@ export default function FooterAdminPanel() {
   const renderFieldEditor = (section, field, value) =>
     editing === `${section}-${field}` ? (
       <>
-        <input type="text" value={tempItem || ""} onChange={(e) => setTempItem(e.target.value)} className="flex-1 p-2 border rounded" />
+        <input
+          type="text"
+          value={tempItem ?? ""}
+          onChange={(e) => setTempItem(e.target.value)}
+          className="flex-1 p-2 border rounded"
+          disabled={saving}
+        />
         <div className="flex gap-2">
-          <button onClick={() => { const updated = { ...footer, [section]: { ...footer[section], [field]: tempItem } }; setFooter(updated); setEditing(null); handleSave(updated); }} className="bg-green-500 text-white px-2 py-1 rounded">Save</button>
-          <button onClick={() => setEditing(null)} className="bg-gray-400 text-white px-2 py-1 rounded">Cancel</button>
+          <button
+            disabled={saving}
+            onClick={() => {
+              const updated = {
+                ...footer,
+                [section]: {
+                  ...footer[section],
+                  [field]: tempItem,
+                },
+              };
+              setFooter(updated);
+              setEditing(null);
+              setTempItem(null);
+              handleSave(updated);
+            }}
+            className="bg-green-500 text-white px-2 py-1 rounded disabled:opacity-60"
+          >
+            Save
+          </button>
+          <button
+            disabled={saving}
+            onClick={() => {
+              setEditing(null);
+              setTempItem(null);
+            }}
+            className="bg-gray-400 text-white px-2 py-1 rounded disabled:opacity-60"
+          >
+            Cancel
+          </button>
         </div>
       </>
     ) : (
       <>
-        <p className="flex-1"><strong>{field}:</strong> {value || "Not set"}</p>
+        <p className="flex-1">
+          <strong>{field}:</strong> {value || "Not set"}
+        </p>
         <div className="flex gap-2">
-          <button onClick={() => { setEditing(`${section}-${field}`); setTempItem(value || ""); }} className="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-          <button onClick={() => { const updated = { ...footer, [section]: { ...footer[section] } }; delete updated[section][field]; setFooter(updated); handleSave(updated); toast.success(`🗑 Deleted ${section} field: ${field}`); }} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+          <button
+            disabled={saving}
+            onClick={() => {
+              setEditing(`${section}-${field}`);
+              setTempItem(value || "");
+            }}
+            className="bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-60"
+          >
+            Edit
+          </button>
+          <button
+            disabled={saving}
+            onClick={() => {
+              const updated = {
+                ...footer,
+                [section]: { ...footer[section] },
+              };
+              delete updated[section][field];
+              setFooter(updated);
+              handleSave(updated);
+              toast.success(`🗑 Deleted ${section} field: ${field}`);
+            }}
+            className="bg-red-500 text-white px-2 py-1 rounded disabled:opacity-60"
+          >
+            Delete
+          </button>
         </div>
       </>
     );
@@ -87,21 +185,81 @@ export default function FooterAdminPanel() {
       {/* BRAND INFO */}
       <div className="space-y-2 border p-3 rounded">
         <h3 className="font-semibold">Brand Info</h3>
-        <div className="flex justify-between items-center gap-4 border-b py-1">{renderFieldEditor("brand", "title", footer.brand?.title || "")}</div>
-        <div className="flex justify-between items-center gap-4 border-b py-1">{renderFieldEditor("brand", "about", footer.brand?.about || "")}</div>
+
+        <div className="flex justify-between items-center gap-4 border-b py-1">
+          {renderFieldEditor("brand", "title", footer.brand?.title || "")}
+        </div>
+
+        <div className="flex justify-between items-center gap-4 border-b py-1">
+          {renderFieldEditor("brand", "about", footer.brand?.about || "")}
+        </div>
 
         {/* Logo */}
         <div className="flex flex-col gap-2 border-b py-1">
           <label className="text-sm font-medium">Logo</label>
+
           {footer.brand?.logo ? (
             <div className="flex items-center gap-3">
-              <img src={footer.brand.logo} alt="Brand Logo" className="h-12 w-auto border rounded" />
-              <button onClick={() => { const updated = { ...footer, brand: { ...footer.brand, logo: "" } }; setFooter(updated); handleSave(updated); toast.error("❌ Logo removed"); }} className="bg-red-600 text-white px-2 py-1 rounded">🗑 Remove</button>
+              <img
+                src={footer.brand.logo}
+                alt="Brand Logo"
+                className="h-12 w-auto border rounded"
+              />
+
+              {/* ✅ Remove logo with removeLogo flag */}
+              <button
+                disabled={saving}
+                onClick={() => {
+                  const updated = {
+                    ...footer,
+                    brand: {
+                      ...footer.brand,
+                      logo: "",
+                      logoPublicId: "", // ✅ clear public id
+                    },
+                    removeLogo: true, // ✅ backend will delete old
+                  };
+                  setFooter(updated);
+                  handleSave(updated);
+                  toast.error("❌ Logo removed");
+                }}
+                className="bg-red-600 text-white px-2 py-1 rounded disabled:opacity-60"
+              >
+                🗑 Remove
+              </button>
             </div>
           ) : (
             <>
-              <input type="file" id="logoUpload" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files[0]; if (!file) return; const updated = { ...footer, brand: { ...footer.brand, logoFile: file } }; setFooter(updated); handleSave(updated); }} />
-              <button onClick={() => document.getElementById("logoUpload").click()} className="bg-blue-600 text-white px-3 py-1 rounded">☁ Upload Logo</button>
+              <input
+                type="file"
+                id="logoUpload"
+                accept="image/*"
+                className="hidden"
+                disabled={saving}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+
+                  const updated = {
+                    ...footer,
+                    brand: {
+                      ...footer.brand,
+                      logoFile: file, // ✅ keep file only for upload
+                    },
+                  };
+
+                  setFooter(updated);
+                  handleSave(updated);
+                }}
+              />
+
+              <button
+                disabled={saving}
+                onClick={() => document.getElementById("logoUpload")?.click()}
+                className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-60"
+              >
+                ☁ Upload Logo
+              </button>
             </>
           )}
         </div>
@@ -112,8 +270,12 @@ export default function FooterAdminPanel() {
         <h3 className="font-semibold flex justify-between items-center">
           Contact Info
         </h3>
+
         {Object.keys(footer.contact).map((field) => (
-          <div key={field} className="flex justify-between items-center gap-4 border-b py-1">
+          <div
+            key={field}
+            className="flex justify-between items-center gap-4 border-b py-1"
+          >
             {renderFieldEditor("contact", field, footer.contact[field])}
           </div>
         ))}
@@ -122,19 +284,64 @@ export default function FooterAdminPanel() {
       {/* COPYRIGHT */}
       <div className="space-y-2 border p-3 rounded">
         <h3 className="font-semibold">Copyright</h3>
+
         {editing === "copyright" ? (
           <div className="flex gap-2">
-            <input type="text" value={tempItem || ""} onChange={(e) => setTempItem(e.target.value)} className="flex-1 p-2 border rounded" />
-            <button onClick={() => { const updated = { ...footer, copyrightText: tempItem }; setFooter(updated); setEditing(null); handleSave(updated); }} className="bg-green-500 text-white px-2 py-1 rounded">Save</button>
-            <button onClick={() => setEditing(null)} className="bg-gray-400 text-white px-2 py-1 rounded">Cancel</button>
+            <input
+              type="text"
+              value={tempItem ?? ""}
+              onChange={(e) => setTempItem(e.target.value)}
+              className="flex-1 p-2 border rounded"
+              disabled={saving}
+            />
+            <button
+              disabled={saving}
+              onClick={() => {
+                const updated = {
+                  ...footer,
+                  copyrightText: tempItem,
+                };
+                setFooter(updated);
+                setEditing(null);
+                setTempItem(null);
+                handleSave(updated);
+              }}
+              className="bg-green-500 text-white px-2 py-1 rounded disabled:opacity-60"
+            >
+              Save
+            </button>
+            <button
+              disabled={saving}
+              onClick={() => {
+                setEditing(null);
+                setTempItem(null);
+              }}
+              className="bg-gray-400 text-white px-2 py-1 rounded disabled:opacity-60"
+            >
+              Cancel
+            </button>
           </div>
         ) : (
           <div className="flex justify-between items-center">
             <p>{footer.copyrightText || "Not set"}</p>
-            <button onClick={() => { setEditing("copyright"); setTempItem(footer.copyrightText || ""); }} className="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+            <button
+              disabled={saving}
+              onClick={() => {
+                setEditing("copyright");
+                setTempItem(footer.copyrightText || "");
+              }}
+              className="bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-60"
+            >
+              Edit
+            </button>
           </div>
         )}
       </div>
+
+      {/* Saving indicator */}
+      {saving && (
+        <p className="text-sm text-gray-500 italic">Saving changes...</p>
+      )}
     </div>
   );
 }
