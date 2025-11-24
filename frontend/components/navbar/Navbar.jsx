@@ -113,7 +113,7 @@ export default function Navbar() {
               </div>
             )}
             {navbar?.brand?.name ? (
-              <span className="text-lg font-semibold text-gray-800 block min-w-[100px] truncate">
+              <span className="text-lg font-semibold text-pink-600 block min-w-[100px] truncate">
                 {navbar.brand.name}
               </span>
             ) : (
