@@ -108,7 +108,7 @@ export default function Navbar() {
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-full bg-gray-100">
+              <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-full bg-pink-50">
                 <FaUserCircle className="text-gray-400 w-6 h-6" />
               </div>
             )}

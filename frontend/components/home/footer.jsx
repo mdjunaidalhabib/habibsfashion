@@ -97,8 +97,8 @@ export default function Footer() {
                 unoptimized
               />
             ) : (
-              <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-gray-700 rounded-lg">
-                <FaUserCircle className="text-gray-300 w-6 h-6" />
+              <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-pink-50 rounded-lg">
+                <FaUserCircle className="text-gray-400 w-6 h-6" />
               </div>
             )}
 
@@ -231,11 +231,20 @@ export default function Footer() {
 
       <hr className="border-t border-gray-400 mt-6" />
 
-      <div className="text-center text-sm text-gray-700 mt-2">
-        {copyrightText ||
-          `© ${new Date().getFullYear()} ${
-            brand.title || "Habib's Fashion"
-          }. All Rights Reserved.`}
+      <div className="mt-2 text-center text-xs text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis px-2">
+        <span>© {new Date().getFullYear()} All Rights Reserved</span>
+        <span className="mx-1 text-gray-400">•</span>
+        <span className="text-gray-600">
+          Developed by{" "}
+          <a
+            href="https://hikmahit.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-pink-600 hover:underline underline-offset-4"
+          >
+            Hikmah IT
+          </a>
+        </span>
       </div>
     </footer>
   );

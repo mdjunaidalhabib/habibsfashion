@@ -59,7 +59,7 @@ const POLICY = [
       {
         label: "ফুল রিফান্ড",
         icon: FaMoneyBillWave,
-        text: "অনলাইন পেমেন্ট (Bkash/Nagad/Card ইত্যাদি) করলে সেই একই পেমেন্ট মাধ্যমেই টাকা ফেরত দেওয়া হবে। ক্যাশ অন ডেলিভারি-তে টাকা প্রদান করলে অনুমোদিত পেমেন্ট সিস্টেম (Bkash, Nagad, Bank ইত্যাদি) মাধ্যমে রিফান্ড দেওয়া হবে।",
+        text: "অনলাইন পেমেন্ট (Bkash/Nagad/Bank ইত্যাদি) করলে সেই একই পেমেন্ট মাধ্যমেই টাকা ফেরত দেওয়া হবে। ক্যাশ অন ডেলিভারি-তে টাকা প্রদান করলে অনুমোদিত পেমেন্ট সিস্টেম (Bkash, Nagad, Bank ইত্যাদি) মাধ্যমে রিফান্ড দেওয়া হবে।",
       },
       {
         label: "রিপ্লেসমেন্ট",
@@ -185,43 +185,44 @@ const SectionCard = ({ section }) => {
 
 const ReturnRefundPolicy = () => {
   return (
-    <div className="bg-gradient-to-b from-pink-50 to-fuchsia-50">
+    <div className="bg-pink-50 ">
       <div className="mx-auto max-w-5xl px-4 py-8 md:py-14">
         {/* Page header */}
-        <header className="relative overflow-hidden rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-50/90 to-fuchsia-50/90 p-6 shadow-sm md:p-8">
+        <header className="relative overflow-hidden rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 bg-fuchsia-50/70 p-6 shadow-sm md:p-8">
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-pink-200/40 blur-3xl" />
           <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-fuchsia-200/40 blur-3xl" />
 
-          <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-600 to-fuchsia-500 px-3 py-1 text-white shadow">
+          {/* ✅ UPDATED: always column, centered */}
+          <div className="relative flex flex-col gap-4 items-center">
+            <div className="min-w-0 text-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-600 to-fuchsia-500 px-3 py-1 text-white shadow mx-auto">
                 <FaShoppingBag className="shrink-0" />
                 <span className="text-sm font-semibold break-words whitespace-normal">
                   Habib’s Fashion
                 </span>
               </div>
 
-              <h1 className="mt-3 text-2xl font-extrabold text-slate-900 md:text-3xl break-words whitespace-normal">
+              {/* ✅ heading centered */}
+              <h1 className="mt-3 text-2xl font-extrabold text-slate-900 md:text-3xl break-words whitespace-normal text-center">
                 রিটার্ন ও রিফান্ড পলিসি
               </h1>
 
-              <p className="mt-2 text-slate-700 break-words whitespace-normal leading-relaxed [text-align:justify] [text-justify:inter-word]">
+              <p className="mt-2 text-slate-700 break-words whitespace-normal leading-relaxed text-center [text-justify:inter-word]">
                 Habib’s Fashion এ আমরা সবসময় গ্রাহকের সন্তুষ্টিকে সর্বোচ্চ
-                গুরুত্ব দিই। একটি স্বচ্ছ ও ঝামেলাহীন শপিং অভিজ্ঞতা নিশ্চিত করার
-                জন্য আমরা দিচ্ছি প্রিমিয়াম মানের রিটার্ন ও রিফান্ড সুবিধা।
+                গুরুত্ব দিই...
               </p>
             </div>
 
-            <div className="rounded-2xl border border-pink-200 bg-pink-50/80 p-4 text-sm text-slate-800 md:w-72 break-words whitespace-normal shadow-sm">
-              <div className="flex items-center gap-2 font-semibold text-slate-900 min-w-0">
-                <FaExclamationTriangle className="text-pink-700 shrink-0" />
-                <span className="break-words whitespace-normal">
-                  গুরুত্বপূর্ণ
+            <div className="rounded-2xl border border-pink-200 bg-fuchsia-50/60 p-5 md:p-6 text-base text-slate-800 w-full mx-auto shadow-sm">
+              <div className="flex items-center gap-2 flex-wrap font-semibold text-slate-900">
+                <FaExclamationTriangle className="text-pink-700 text-lg" />
+
+                <span className="whitespace-nowrap">গুরুত্বপূর্ণ:</span>
+
+                <span className="font-normal break-words">
+                  ডেলিভারির ৭ দিনের মধ্যে রিটার্ন/এক্সচেঞ্জ রিকোয়েস্ট করতে হবে।
                 </span>
               </div>
-              <p className="mt-1 break-words whitespace-normal [text-align:justify] [text-justify:inter-word]">
-                ডেলিভারির ৭ দিনের মধ্যে রিটার্ন/এক্সচেঞ্জ রিকোয়েস্ট করতে হবে।
-              </p>
             </div>
           </div>
         </header>
