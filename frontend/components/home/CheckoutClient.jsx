@@ -1,4 +1,5 @@
 "use client";
+import { useUser } from "../../context/UserContext";
 import { apiFetch } from "../../utils/api";
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -8,6 +9,7 @@ import CheckoutButton from "./CheckoutButton";
 import Toast from "./Toast";
 
 export default function CheckoutPage() {
+  const { me } = useUser();
   const { cart, setCart, updateCart, removeFromCart, calcSubtotal } = useCartUtils();
   const searchParams = useSearchParams();
 
@@ -98,6 +100,7 @@ export default function CheckoutPage() {
       paymentMethod,
       paymentStatus: "pending",
       status: "pending",
+      userId: me?.userId || null,
     };
 
     try {

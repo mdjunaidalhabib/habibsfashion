@@ -60,7 +60,9 @@ export default function Header() {
             </motion.aside>
           </>
         )}
+        
       </AnimatePresence>
+      
     </header>
   );
 }

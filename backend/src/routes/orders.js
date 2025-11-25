@@ -9,6 +9,12 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const filter = {};
+
+    // ✅ Filter by userId
+    if (req.query.userId) {
+      filter.userId = req.query.userId;
+    }
+
     if (req.query.status) filter.status = req.query.status;
     if (req.query.paymentStatus) filter.paymentStatus = req.query.paymentStatus;
 
@@ -16,21 +22,25 @@ router.get("/", async (req, res) => {
     res.json(orders);
   } catch (err) {
     console.error("❌ Failed to fetch orders:", err);
-    res.status(500).json({ error: "Failed to fetch orders", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch orders", details: err.message });
   }
 });
 
 /**
  * GET /api/orders/:id
  */
-router.get("/:id", async (req, res) => {
+http: router.get("/:id", async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
     res.json(order);
   } catch (err) {
     console.error("❌ Error fetching order:", err);
-    res.status(500).json({ error: "Failed to fetch order", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch order", details: err.message });
   }
 });
 

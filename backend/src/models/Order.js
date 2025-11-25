@@ -25,7 +25,7 @@ const orderSchema = new mongoose.Schema(
     },
 
     promoCode: String,
-    userId: { type: String },
+    userId: { type: Number },
 
     // Payment
     paymentMethod: {
@@ -37,7 +37,14 @@ const orderSchema = new mongoose.Schema(
     // Order lifecycle
     status: {
       type: String,
-      enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"],
+      enum: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
       default: "pending",
     },
     trackingId: { type: String },
