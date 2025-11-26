@@ -170,20 +170,29 @@ export default function CartPage() {
     <main className="bg-pink-50 ">
       <div className="container mx-auto px-3 sm:px-6 py-6">
         {/* ✅ Header */}
-        <div className="flex items-center justify-between mb-6 relative">
-          {/* মাঝখানে টাইটেল */}
-          <h2 className="absolute left-1/2 transform -translate-x-1/2 text-xl sm:text-2xl font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-600 text-transparent bg-clip-text text-center">
+
+        <div className="mb-2">
+          {/* টাইটেল — সবসময় প্রথম লাইনে */}
+          <h2 className="text-center text-xl sm:text-2xl font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-600 text-transparent bg-clip-text mb-3">
             🛒 আপনার কার্ট
           </h2>
 
-          {/* ডান পাশে বাটন */}
+          {/* বাটন — সবসময় দ্বিতীয় লাইনে */}
           {items.length > 0 && !loading && (
-            <button
-              onClick={handleClearCart}
-              className="ml-auto bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition"
-            >
-              সব মুছে ফেলুন
-            </button>
+            <div className="flex justify-end">
+              <button
+                onClick={handleClearCart}
+                className="
+          bg-red-500 text-white 
+          px-3 py-1.5 sm:px-4 sm:py-2
+          text-xs sm:text-sm font-medium
+          rounded-md sm:rounded-lg
+          hover:bg-red-600 transition
+        "
+              >
+                সব মুছে ফেলুন
+              </button>
+            </div>
           )}
         </div>
 
