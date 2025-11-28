@@ -33,13 +33,11 @@ export default function NavbarAdminPanel() {
 
       const formData = new FormData();
 
-      // file থাকলে পাঠাও
       if (payload.brand?.logoFile) {
         formData.append("logo", payload.brand.logoFile);
         delete payload.brand.logoFile;
       }
 
-      // removeLogo flag থাকলে পাঠাও
       if (payload.removeLogo) {
         formData.append("removeLogo", "true");
         delete payload.removeLogo;
@@ -77,6 +75,9 @@ export default function NavbarAdminPanel() {
 
     setNavbar(updated);
     handleSave(updated);
+
+    // ✅ VERY IMPORTANT: reset input so same file triggers onChange again
+    e.target.value = "";
   };
 
   if (loading) return <p>Loading...</p>;
@@ -84,7 +85,31 @@ export default function NavbarAdminPanel() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded shadow">
-      <Toaster />
+      {/* ✅ Footer-like Toast Style (ONLY UI) */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#0f172a",
+            color: "#fff",
+            padding: "12px 14px",
+            borderRadius: "10px",
+            fontSize: "14px",
+            fontWeight: 600,
+            boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+          },
+          success: {
+            style: { background: "#16a34a" },
+            iconTheme: { primary: "#fff", secondary: "#16a34a" },
+          },
+          error: {
+            style: { background: "#dc2626" },
+            iconTheme: { primary: "#fff", secondary: "#dc2626" },
+          },
+        }}
+      />
+
       <h2 className="text-xl font-bold mb-4">🛠 Navbar Admin Panel</h2>
 
       {/* Brand Name */}
@@ -113,17 +138,17 @@ export default function NavbarAdminPanel() {
 
       {/* Logo Upload */}
       <div className="mb-4">
-        <label className="block font-medium mb-1">Logo</label>
+        <label className="block font-medium mb-2">Logo</label>
 
         {navbar?.brand?.logo ? (
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-3">
             <img
               src={navbar.brand.logo}
               alt="Logo"
               className="h-16 rounded border"
             />
 
-            {/* ✅ Remove Logo */}
+            {/* ✅ Remove Logo (logic same) */}
             <button
               disabled={saving}
               onClick={() => {
@@ -138,7 +163,7 @@ export default function NavbarAdminPanel() {
                 };
                 setNavbar(updated);
                 handleSave(updated);
-                toast.success("🗑 Logo removed");
+                toast.error("❌ Logo removed");
               }}
               className="bg-red-600 text-white px-3 py-1 rounded disabled:opacity-60"
             >
@@ -147,12 +172,32 @@ export default function NavbarAdminPanel() {
           </div>
         ) : null}
 
+        {/* ✅ Hidden file input (same logic) */}
         <input
           type="file"
+          id="logoUpload"
           accept="image/*"
           onChange={handleLogoUpload}
           disabled={saving}
+          className="hidden"
         />
+
+        {/* ✅ Extra compact upload UI */}
+        {!navbar?.brand?.logo && (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => document.getElementById("logoUpload")?.click()}
+            className="w-full flex items-center justify-center gap-2 
+                       border border-dashed border-gray-300 
+                       hover:border-blue-400 hover:bg-blue-50 
+                       text-gray-700 px-3 py-2 rounded-md transition 
+                       text-sm disabled:opacity-60"
+          >
+            <span className="text-base">🖼️</span>
+            <span className="font-medium">Upload Logo</span>
+          </button>
+        )}
       </div>
 
       {saving && (

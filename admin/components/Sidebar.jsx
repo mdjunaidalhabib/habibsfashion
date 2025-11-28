@@ -28,20 +28,6 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-60 h-screen p-4 bg-white shadow-lg">
-      {/* User info */}
-      {user && (
-        <div className="flex flex-col items-center mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
-          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold uppercase mb-2">
-            {user.name ? user.name[0] : "A"}
-          </div>
-          <div className="font-semibold text-lg">{user.name}</div>
-          <div className="text-xs opacity-80">{user.email}</div>
-          <div className="text-xs mt-1 uppercase bg-white/25 px-2 py-0.5 rounded-full">
-            {user.role}
-          </div>
-        </div>
-      )}
-
       {/* FULL HEIGHT menubar */}
       <div className="flex-1 flex flex-col">
         <MenuBar

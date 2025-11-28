@@ -33,18 +33,14 @@ export default function FooterAdminPanel() {
   const handleSave = async (nextFooter) => {
     setSaving(true);
     try {
-      // ✅ clone to avoid mutating React state
       const payload = structuredClone(nextFooter);
-
       const formData = new FormData();
 
-      // ✅ file থাকলে append করো
       if (payload.brand?.logoFile) {
         formData.append("logo", payload.brand.logoFile);
-        delete payload.brand.logoFile; // safe because cloned
+        delete payload.brand.logoFile;
       }
 
-      // ✅ removeLogo flag (logo remove করলে যাবে)
       if (payload.removeLogo) {
         formData.append("removeLogo", "true");
         delete payload.removeLogo;
@@ -52,7 +48,6 @@ export default function FooterAdminPanel() {
 
       formData.append("brand", JSON.stringify(payload.brand || {}));
       formData.append("contact", JSON.stringify(payload.contact || {}));
-      formData.append("copyrightText", payload.copyrightText || "");
 
       const res = await fetch(`${API_URL}/api/footer`, {
         method: "POST",
@@ -76,22 +71,25 @@ export default function FooterAdminPanel() {
     }
   };
 
+  // ✅ Navbar-এর মতো same Toaster UI style
   const toastOptions = {
+    duration: 3000,
+    style: {
+      background: "#0f172a",
+      color: "#fff",
+      padding: "12px 14px",
+      borderRadius: "10px",
+      fontSize: "14px",
+      fontWeight: 600,
+      boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+    },
     success: {
-      style: {
-        background: "#16a34a",
-        color: "white",
-        fontWeight: "bold",
-      },
-      iconTheme: { primary: "white", secondary: "#16a34a" },
+      style: { background: "#16a34a" },
+      iconTheme: { primary: "#fff", secondary: "#16a34a" },
     },
     error: {
-      style: {
-        background: "#dc2626",
-        color: "white",
-        fontWeight: "bold",
-      },
-      iconTheme: { primary: "white", secondary: "#dc2626" },
+      style: { background: "#dc2626" },
+      iconTheme: { primary: "#fff", secondary: "#dc2626" },
     },
   };
 
@@ -206,7 +204,6 @@ export default function FooterAdminPanel() {
                 className="h-12 w-auto border rounded"
               />
 
-              {/* ✅ Remove logo with removeLogo flag */}
               <button
                 disabled={saving}
                 onClick={() => {
@@ -215,9 +212,9 @@ export default function FooterAdminPanel() {
                     brand: {
                       ...footer.brand,
                       logo: "",
-                      logoPublicId: "", // ✅ clear public id
+                      logoPublicId: "",
                     },
-                    removeLogo: true, // ✅ backend will delete old
+                    removeLogo: true,
                   };
                   setFooter(updated);
                   handleSave(updated);
@@ -230,6 +227,7 @@ export default function FooterAdminPanel() {
             </div>
           ) : (
             <>
+              {/* hidden input */}
               <input
                 type="file"
                 id="logoUpload"
@@ -244,21 +242,31 @@ export default function FooterAdminPanel() {
                     ...footer,
                     brand: {
                       ...footer.brand,
-                      logoFile: file, // ✅ keep file only for upload
+                      logoFile: file,
                     },
                   };
 
                   setFooter(updated);
                   handleSave(updated);
+
+                  // ✅ same fix as navbar (reset input)
+                  e.target.value = "";
                 }}
               />
 
+              {/* extra compact upload UI */}
               <button
+                type="button"
                 disabled={saving}
                 onClick={() => document.getElementById("logoUpload")?.click()}
-                className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 
+                           border border-dashed border-gray-300 
+                           hover:border-blue-400 hover:bg-blue-50 
+                           text-gray-700 px-3 py-2 rounded-md transition 
+                           text-sm disabled:opacity-60"
               >
-                ☁ Upload Logo
+                <span className="text-base">🖼️</span>
+                <span className="font-medium">Upload Logo</span>
               </button>
             </>
           )}
@@ -281,64 +289,6 @@ export default function FooterAdminPanel() {
         ))}
       </div>
 
-      {/* COPYRIGHT */}
-      <div className="space-y-2 border p-3 rounded">
-        <h3 className="font-semibold">Copyright</h3>
-
-        {editing === "copyright" ? (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tempItem ?? ""}
-              onChange={(e) => setTempItem(e.target.value)}
-              className="flex-1 p-2 border rounded"
-              disabled={saving}
-            />
-            <button
-              disabled={saving}
-              onClick={() => {
-                const updated = {
-                  ...footer,
-                  copyrightText: tempItem,
-                };
-                setFooter(updated);
-                setEditing(null);
-                setTempItem(null);
-                handleSave(updated);
-              }}
-              className="bg-green-500 text-white px-2 py-1 rounded disabled:opacity-60"
-            >
-              Save
-            </button>
-            <button
-              disabled={saving}
-              onClick={() => {
-                setEditing(null);
-                setTempItem(null);
-              }}
-              className="bg-gray-400 text-white px-2 py-1 rounded disabled:opacity-60"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <div className="flex justify-between items-center">
-            <p>{footer.copyrightText || "Not set"}</p>
-            <button
-              disabled={saving}
-              onClick={() => {
-                setEditing("copyright");
-                setTempItem(footer.copyrightText || "");
-              }}
-              className="bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-60"
-            >
-              Edit
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Saving indicator */}
       {saving && (
         <p className="text-sm text-gray-500 italic">Saving changes...</p>
       )}

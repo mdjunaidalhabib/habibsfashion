@@ -21,32 +21,12 @@ export default function ProductForm({ product, onClose, onSaved }) {
 
   const [previewImage, setPreviewImage] = useState("");
 
-  // 🧭 ক্যাটাগরি লোড + প্রোডাক্ট সেট
-  useEffect(() => {
-    loadCategories();
-
-    if (product) {
-      setForm({
-        name: product.name || "",
-        price: Number(product.price) || 0,
-        oldPrice: Number(product.oldPrice) || 0,
-        stock: Number(product.stock) || 0,
-        rating: Number(product.rating) || 0,
-        description: product.description || "",
-        additionalInfo: product.additionalInfo || "",
-        category: product.category?._id || "",
-        image: null,
-        images: product.images || [],
-        reviews: product.reviews || [],
-      });
-      setPreviewImage(product.image || "");
-    }
-  }, [product]);
-
   // 🗂️ ক্যাটাগরি ফেচ
   const loadCategories = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
+      );
       if (!res.ok) throw new Error("ক্যাটাগরি লোড করতে সমস্যা হয়েছে!");
       setCategories(await res.json());
     } catch (err) {
@@ -54,6 +34,50 @@ export default function ProductForm({ product, onClose, onSaved }) {
       setCategories([]);
     }
   };
+
+  // 🧭 ক্যাটাগরি লোড + প্রোডাক্ট সেট (React19 safe)
+  useEffect(() => {
+    const init = async () => {
+      await loadCategories();
+
+      if (product) {
+        setForm({
+          name: product.name || "",
+          price: Number(product.price) || 0,
+          oldPrice: Number(product.oldPrice) || 0,
+          stock: Number(product.stock) || 0,
+          rating: Number(product.rating) || 0,
+          description: product.description || "",
+          additionalInfo: product.additionalInfo || "",
+          category: product.category?._id || "",
+          image: null,
+          images: product.images || [],
+          reviews: product.reviews || [],
+        });
+
+        setPreviewImage(product.image || "");
+      } else {
+        // নতুন প্রোডাক্ট খুললে ফর্ম reset
+        setForm((prev) => ({
+          ...prev,
+          name: "",
+          price: "",
+          oldPrice: "",
+          stock: 0,
+          rating: "",
+          description: "",
+          additionalInfo: "",
+          category: "",
+          image: null,
+          images: [],
+          reviews: [],
+        }));
+        setPreviewImage("");
+      }
+    };
+
+    init();
+  }, [product]);
 
   // 🖼️ প্রধান ইমেজ (Fast Preview)
   const handleSingleImage = (e) => {
@@ -70,7 +94,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
 
   // 📸 গ্যালারি ইমেজ (Fast Preview সহ)
   const handleGalleryFiles = (files) => {
-    const imgFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const imgFiles = Array.from(files).filter((f) =>
+      f.type.startsWith("image/")
+    );
     if (imgFiles.length) {
       setForm((prev) => ({
         ...prev,
@@ -103,7 +129,8 @@ export default function ProductForm({ product, onClose, onSaved }) {
     const avgRating =
       validRatings.length > 0
         ? (
-            validRatings.reduce((a, b) => a + Number(b), 0) / validRatings.length
+            validRatings.reduce((a, b) => a + Number(b), 0) /
+            validRatings.length
           ).toFixed(1)
         : 0;
 
@@ -112,6 +139,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
 
   const removeReview = (idx) => {
     const newReviews = form.reviews.filter((_, i) => i !== idx);
+
     const validRatings = newReviews
       .map((r) => Number(r.rating))
       .filter((r) => !isNaN(r) && r > 0);
@@ -119,7 +147,8 @@ export default function ProductForm({ product, onClose, onSaved }) {
     const avgRating =
       validRatings.length > 0
         ? (
-            validRatings.reduce((a, b) => a + Number(b), 0) / validRatings.length
+            validRatings.reduce((a, b) => a + Number(b), 0) /
+            validRatings.length
           ).toFixed(1)
         : 0;
 
@@ -139,6 +168,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
         if (["image", "images", "reviews"].includes(key)) continue;
         data.append(key, form[key]);
       }
+
       if (form.image) data.append("image", form.image);
       form.images.forEach((img) => data.append("images", img));
       data.append("reviews", JSON.stringify(form.reviews));
@@ -150,7 +180,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
 
       const res = await fetch(url, { method, body: data });
       if (res.ok) {
-        alert(product ? "✅ প্রোডাক্ট আপডেট হয়েছে!" : "✅ প্রোডাক্ট সংরক্ষিত হয়েছে!");
+        alert(
+          product ? "✅ প্রোডাক্ট আপডেট হয়েছে!" : "✅ প্রোডাক্ট সংরক্ষিত হয়েছে!"
+        );
         onSaved();
       } else alert("❌ ডেটা সেভ করতে সমস্যা হয়েছে!");
     } catch (err) {
@@ -187,7 +219,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
               type="number"
               className="border p-2 rounded-lg w-full"
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+              onChange={(e) =>
+                setForm({ ...form, price: Number(e.target.value) })
+              }
             />
           </div>
           <div>
@@ -196,7 +230,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
               type="number"
               className="border p-2 rounded-lg w-full"
               value={form.oldPrice}
-              onChange={(e) => setForm({ ...form, oldPrice: Number(e.target.value) })}
+              onChange={(e) =>
+                setForm({ ...form, oldPrice: Number(e.target.value) })
+              }
             />
           </div>
         </div>
@@ -208,7 +244,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
               type="number"
               className="border p-2 rounded-lg w-full"
               value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+              onChange={(e) =>
+                setForm({ ...form, stock: Number(e.target.value) })
+              }
             />
           </div>
           <div>
@@ -258,19 +296,28 @@ export default function ProductForm({ product, onClose, onSaved }) {
 
       {/* 🖼️ প্রধান ছবি */}
       <div className="bg-white p-4 rounded-xl shadow">
-        <h2 className="text-lg font-bold text-purple-600 mb-2">🖼️ প্রধান ছবি</h2>
-        <input type="file" onChange={handleSingleImage} className="w-full border p-2 rounded-lg" />
+        <h2 className="text-lg font-bold text-purple-600 mb-2">
+          🖼️ প্রধান ছবি
+        </h2>
+        <input
+          type="file"
+          onChange={handleSingleImage}
+          className="w-full border p-2 rounded-lg"
+        />
         {previewImage && (
           <img
             src={previewImage}
             className="h-24 mt-3 rounded-lg shadow-md object-cover mx-auto"
+            alt="preview"
           />
         )}
       </div>
 
       {/* 📸 গ্যালারির ছবি */}
       <div className="bg-white p-4 rounded-xl shadow">
-        <h2 className="text-lg font-bold text-pink-600 mb-2">📸 গ্যালারির ছবি</h2>
+        <h2 className="text-lg font-bold text-pink-600 mb-2">
+          📸 গ্যালারির ছবি
+        </h2>
         <input
           type="file"
           multiple
@@ -283,6 +330,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
               <img
                 src={typeof img === "string" ? img : URL.createObjectURL(img)}
                 className="h-20 w-full rounded-lg border object-cover"
+                alt="gallery"
               />
               <button
                 type="button"
@@ -308,6 +356,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
             + নতুন রিভিউ যোগ করুন
           </button>
         </div>
+
         {form.reviews.map((r, idx) => (
           <div key={idx} className="border rounded-lg p-3 mt-2 bg-gray-50">
             <div className="flex justify-between items-center mb-2">
@@ -320,13 +369,13 @@ export default function ProductForm({ product, onClose, onSaved }) {
                 🗑 মুছুন
               </button>
             </div>
+
             <input
               className="w-full border p-2 rounded-lg mb-2"
               value={r.user}
-              onChange={(e) =>
-                handleReviewChange(idx, "user", e.target.value)
-              }
+              onChange={(e) => handleReviewChange(idx, "user", e.target.value)}
             />
+
             <label className="font-semibold">রেটিং (০–৫):</label>
             <input
               type="number"
@@ -338,6 +387,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
                 handleReviewChange(idx, "rating", e.target.value)
               }
             />
+
             <label className="font-semibold">মন্তব্য:</label>
             <textarea
               className="w-full border p-2 rounded-lg"

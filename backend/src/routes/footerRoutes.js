@@ -1,6 +1,6 @@
 import express from "express";
 import Footer from "../models/Footer.js";
-import upload from "../../utils/upload.js"; // multer middleware
+import upload from "../../utils/upload.js";
 import { deleteByPublicId } from "../../utils/cloudinaryHelpers.js";
 import cloudinary from "../../utils/cloudinary.js";
 import fs from "fs";

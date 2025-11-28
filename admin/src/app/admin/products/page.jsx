@@ -20,7 +20,9 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/products`
+      );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -49,7 +51,7 @@ export default function ProductsPage() {
         { method: "DELETE" }
       );
       if (res.ok) {
-        setToast({ message: "🗑 Product deleted!", type: "error" });
+        setToast({ message: "🗑 Product deleted!", type: "success" });
         setDeleteModal(null);
         loadProducts();
       } else {
@@ -107,65 +109,96 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* ===================== Add/Edit Modal (same system) ===================== */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl sm:max-w-4xl p-4 sm:p-6 overflow-y-auto max-h-[90vh] relative">
-            <ProductForm
-              product={editProduct}
-              onClose={() => setShowForm(false)}
-              onSaved={() => {
-                setShowForm(false);
-                loadProducts();
-                setToast({
-                  message: editProduct ? "✅ Product updated!" : "✅ Product added!",
-                  type: "success",
-                });
-              }}
-            />
-          </div>
-        </div>
-      )}
+        <>
+          {/* light overlay: background visible but locked */}
+          <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-40" />
 
-      {/* Delete Modal */}
-      {deleteModal && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 p-4"
-          onClick={() => !deleting && setDeleteModal(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md shadow-xl border border-gray-200"
-          >
-            <h2 className="text-xl font-bold mb-3 text-red-600">⚠ Delete Product</h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold text-black">{deleteModal.name}</span>?
-            </p>
-            <div className="flex flex-col sm:flex-row justify-end gap-3">
-              <button
-                onClick={() => setDeleteModal(null)}
-                disabled={deleting}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-100 w-full sm:w-auto"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 w-full sm:w-auto"
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
+          {/* center modal */}
+          <div className="fixed inset-0 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl sm:max-w-4xl p-4 sm:p-6 overflow-y-auto max-h-[90vh] relative animate-[zoomIn_.2s_ease-out]">
+              <ProductForm
+                product={editProduct}
+                onClose={() => setShowForm(false)} // শুধু Cancel/Close button দিয়েই বন্ধ হবে
+                onSaved={() => {
+                  setShowForm(false);
+                  loadProducts();
+                  setToast({
+                    message: editProduct
+                      ? "✅ Product updated!"
+                      : "✅ Product added!",
+                    type: "success",
+                  });
+                }}
+              />
             </div>
           </div>
-        </div>
+        </>
+      )}
+
+      {/* ===================== Delete Modal (same system) ===================== */}
+      {deleteModal && (
+        <>
+          {/* light overlay */}
+          <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-40" />
+
+          {/* center delete popup */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md shadow-xl border border-gray-200 animate-[zoomIn_.2s_ease-out]">
+              <h2 className="text-xl font-bold mb-3 text-red-600">
+                ⚠ Delete Product
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-black">
+                  {deleteModal.name}
+                </span>
+                ?
+              </p>
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <button
+                  onClick={() => setDeleteModal(null)}
+                  disabled={deleting}
+                  className="px-4 py-2 border rounded-lg hover:bg-gray-100 w-full sm:w-auto"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 w-full sm:w-auto"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Toast */}
       {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
+
+      {/* zoom animation */}
+      <style jsx global>{`
+        @keyframes zoomIn {
+          from {
+            transform: scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }

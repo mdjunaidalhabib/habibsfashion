@@ -20,7 +20,6 @@ export default function Toast({ message, type = "info", onClose }) {
         className={`${color} text-white px-5 py-3 rounded-lg shadow-xl text-sm font-medium flex items-center gap-2`}
       >
         <span>{message}</span>
-        <button onClick={onClose} className="ml-2 hover:opacity-80">✖</button>
       </div>
     </div>
   );

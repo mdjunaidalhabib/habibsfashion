@@ -21,8 +21,8 @@ const CategorySchema = new mongoose.Schema({
 const FooterSchema = new mongoose.Schema({
   brand: {
     title: String,
-    logo: String, // URL
-    logoPublicId: String, // ✅ cloudinary public_id এখানে সেভ হবে
+    logo: String,
+    logoPublicId: String, 
     about: String,
   },
   socials: [SocialSchema],
@@ -34,7 +34,6 @@ const FooterSchema = new mongoose.Schema({
     email: String,
     website: String,
   },
-  copyrightText: { type: String, default: "" },
   updatedAt: { type: Date, default: Date.now },
 });
 
