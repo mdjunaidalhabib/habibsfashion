@@ -28,7 +28,7 @@ export default function CategoryPage() {
     setProdError(false);
 
     axios
-      .get(`${API_URL}/api/products/category/${categoryId}`)
+      .get(`${API_URL}/products/category/${categoryId}`)
       .then((res) => {
         setProducts(Array.isArray(res.data) ? res.data : []);
       })
@@ -50,7 +50,7 @@ export default function CategoryPage() {
         setLoading(true);
         setCatError(false);
 
-        const res = await axios.get(`${API_URL}/api/categories`);
+        const res = await axios.get(`${API_URL}/categories`);
         if (cancelled) return;
 
         const data = Array.isArray(res.data) ? res.data : [];

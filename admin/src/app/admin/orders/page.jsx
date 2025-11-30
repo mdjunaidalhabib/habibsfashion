@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
@@ -11,21 +12,37 @@ import OrdersGrid from "../../../../components/orders/OrdersGrid";
 import OrdersTable from "../../../../components/orders/OrdersTable";
 import EditOrderModal from "../../../../components/orders/EditOrderModal";
 import OrdersSkeleton from "../../../../components/Skeleton/OrdersSkeleton";
+import Toast from "../../../../components/Toast";
 
 export default function OrdersPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
 
-  // ✅ useOrders থেকে সব কিছু পাওয়া যাবে
   const {
     filtered,
     loading,
     filter,
     setFilter,
     fetchOrders,
-    sendingId,
-    sendToCourier, // 🔥 নতুন Dynamic Courier Function
+
+    // delete
+    deleteModal,
+    deleting,
+    confirmDelete,
+    handleDelete,
+    setDeleteModal,
+
+    // courier
+    courierModal,
+    courierSending,
+    confirmCourierSend,
+    sendCourierNow,
+    setCourierModal,
+
+    // toast
+    toast,
+    setToast,
+
     updateStatus,
-    deleteOrder,
   } = useOrders(API);
 
   const [open, setOpen] = useState(false);
@@ -38,7 +55,6 @@ export default function OrdersPage() {
     billing: { name: "", phone: "", address: "" },
   });
 
-  // 🔹 Edit Modal খোলা
   const openEdit = (order) => {
     setCurrentId(order._id);
     setForm({
@@ -55,119 +71,26 @@ export default function OrdersPage() {
     setOpen(true);
   };
 
-  // ✅ Order আপডেট ফাংশন
   const updateOrder = async (updatedForm) => {
     try {
-      const res = await fetch(`${API}/api/orders/${currentId}`, {
+      const res = await fetch(`${API}/admin/orders/${currentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedForm),
       });
-      if (!res.ok) throw new Error("Update failed");
+
+      if (!res.ok) throw new Error();
+
       fetchOrders();
       setOpen(false);
-      return { success: true };
-    } catch (e) {
-      console.error("Update error:", e);
-      alert("Failed to update order.");
-      return { success: false };
+      setToast({ message: "✔ Order updated", type: "success" });
+    } catch {
+      setToast({ message: "❌ Update failed", type: "error" });
     }
-  };
-
-  // 🔹 CSV / Excel / PDF Export Functions (আগের মতোই থাকবে)
-  const exportCSV = () => {
-    const csv = Papa.unparse(
-      filtered.map((o) => ({
-        OrderID: o._id,
-        Customer: o.billing?.name || "",
-        Phone: o.billing?.phone || "",
-        Address: o.billing?.address || "",
-        Status: o.status,
-        Method: o.paymentMethod,
-        Total: o.total,
-        Date: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
-      }))
-    );
-    saveAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), "orders.csv");
-  };
-
-  const exportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      filtered.map((o) => ({
-        OrderID: o._id,
-        Customer: o.billing?.name || "",
-        Phone: o.billing?.phone || "",
-        Address: o.billing?.address || "",
-        Status: o.status,
-        Method: o.paymentMethod,
-        Total: o.total,
-        Date: o.createdAt ? new Date(o.createdAt).toLocaleString() : "",
-      }))
-    );
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    saveAs(
-      new Blob([excelBuffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      }),
-      "orders.xlsx"
-    );
-  };
-
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Orders Report", 14, 16);
-    const tableData = filtered.map((o) => [
-      o._id,
-      o.billing?.name || "",
-      o.billing?.phone || "",
-      o.status,
-      o.paymentMethod?.toUpperCase(),
-      "৳" + o.total,
-      o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "",
-    ]);
-    autoTable(doc, {
-      head: [
-        ["OrderID", "Customer", "Phone", "Status", "Method", "Total", "Date"],
-      ],
-      body: tableData,
-      startY: 20,
-      styles: { fontSize: 8 },
-    });
-    doc.save("orders.pdf");
   };
 
   return (
     <div className="space-y-4 px-2 sm:px-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold">Orders</h2>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={exportCSV}
-            className="bg-indigo-600 text-white px-3 py-1 rounded text-sm"
-          >
-            CSV
-          </button>
-          <button
-            onClick={exportExcel}
-            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-          >
-            Excel
-          </button>
-          <button
-            onClick={exportPDF}
-            className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-          >
-            PDF
-          </button>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
         <input
@@ -195,6 +118,7 @@ export default function OrdersPage() {
             </option>
           ))}
         </select>
+
         <button
           onClick={fetchOrders}
           className="bg-gray-700 text-white px-4 py-2 rounded text-sm"
@@ -211,23 +135,22 @@ export default function OrdersPage() {
           <OrdersGrid
             orders={filtered}
             onEdit={openEdit}
-            onDelete={deleteOrder}
+            onDelete={confirmDelete}
             onStatusChange={updateStatus}
-            onSendCourier={sendToCourier} // ✅ নতুন prop
-            sendingId={sendingId}
+            onSendCourier={confirmCourierSend}
           />
+
           <OrdersTable
             orders={filtered}
             onEdit={openEdit}
-            onDelete={deleteOrder}
+            onDelete={confirmDelete}
             onStatusChange={updateStatus}
-            onSendCourier={sendToCourier} // ✅ নতুন prop
-            sendingId={sendingId}
+            onSendCourier={confirmCourierSend}
           />
         </>
       )}
 
-      {/* Edit Modal */}
+      {/* EDIT MODAL */}
       <EditOrderModal
         open={open}
         form={form}
@@ -235,6 +158,98 @@ export default function OrdersPage() {
         onSave={() => updateOrder(form)}
         onClose={() => setOpen(false)}
       />
+
+      {/* DELETE POPUP */}
+      {deleteModal && (
+        <>
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"></div>
+          <div className="fixed inset-0 flex justify-center items-center z-50 p-4">
+            <div className="bg-white p-6 rounded-xl w-full max-w-sm shadow">
+              <h2 className="text-xl font-bold text-red-600 mb-3">
+                ⚠ Delete Order
+              </h2>
+              <p className="mb-6">
+                Are you sure you want to delete order{" "}
+                <strong>{deleteModal._id}</strong>?
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setDeleteModal(null)}
+                  className="px-4 py-2 border rounded"
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded"
+                  disabled={deleting}
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* COURIER POPUP */}
+      {courierModal && (
+        <>
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"></div>
+          <div className="fixed inset-0 flex justify-center items-center z-50 p-4">
+            <div className="bg-white p-6 rounded-xl w-full max-w-sm shadow">
+              <h2 className="text-xl font-bold text-blue-600 mb-3">
+                🚚 Send to Courier
+              </h2>
+
+              <p className="mb-4">
+                Send order <strong>{courierModal._id}</strong> to courier?
+              </p>
+
+              <div className="text-sm text-gray-600 mb-4">
+                <p>
+                  <strong>Name:</strong> {courierModal.billing?.name}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {courierModal.billing?.phone}
+                </p>
+                <p>
+                  <strong>Total:</strong> ৳{courierModal.total}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setCourierModal(null)}
+                  className="px-4 py-2 border rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={sendCourierNow}
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                  disabled={courierSending}
+                >
+                  {courierSending ? "Sending..." : "Confirm"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* TOAST */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

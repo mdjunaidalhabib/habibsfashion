@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
+import Toast from "../../../../components/Toast";
 
 export default function CourierSettingsPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
+
   const [couriers, setCouriers] = useState([]);
   const [activeCourier, setActiveCourier] = useState(null);
+
   const [form, setForm] = useState({
     courier: "steadfast",
     merchantName: "",
@@ -12,14 +15,22 @@ export default function CourierSettingsPage() {
     secretKey: "",
     baseUrl: "",
   });
+
   const [loading, setLoading] = useState(false);
+
+  // ✅ custom toast
+  const [toast, setToast] = useState(null);
+
+  // ✅ confirm modal state
+  const [confirmModal, setConfirmModal] = useState(null);
+  // { type: "active"|"delete", payload: any }
 
   // 🔹 Load couriers and active courier separately
   const fetchCouriers = async () => {
     try {
       const [courierRes, activeRes] = await Promise.all([
-        fetch(`${API}/api/courier-settings`),
-        fetch(`${API}/api/active-courier`),
+        fetch(`${API}/admin/courier-settings`),
+        fetch(`${API}/admin/active-courier`),
       ]);
 
       const list = await courierRes.json();
@@ -29,6 +40,7 @@ export default function CourierSettingsPage() {
       setActiveCourier(active || null);
     } catch (e) {
       console.error("Fetch error:", e);
+      setToast({ message: "⚠️ ডেটা লোড করা যায়নি!", type: "error" });
     }
   };
 
@@ -38,16 +50,35 @@ export default function CourierSettingsPage() {
 
   // 🔹 Save or update courier
   const saveCourier = async () => {
+    if (
+      !form.merchantName ||
+      !form.apiKey ||
+      !form.secretKey ||
+      !form.baseUrl
+    ) {
+      setToast({ message: "⚠️ সব ফিল্ড পূরণ করুন!", type: "error" });
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/courier-settings`, {
+      const res = await fetch(`${API}/admin/courier-settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+
       const data = await res.json();
-      alert(data.message);
+
+      if (!res.ok) throw new Error(data.message);
+
+      setToast({
+        message: data.message || "✅ Courier Saved!",
+        type: "success",
+      });
+
       await fetchCouriers();
+
       setForm({
         courier: "steadfast",
         merchantName: "",
@@ -57,56 +88,95 @@ export default function CourierSettingsPage() {
       });
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to save courier!");
+      setToast({
+        message: err.message || "❌ Failed to save courier!",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Set active courier (Only one active allowed)
-  const setActive = async (courier, merchantName) => {
-    if (!confirm(`Activate ${courier} (${merchantName})?`)) return;
+  // 🔹 Open confirm modal for set active
+  const askSetActive = (courier, merchantName) => {
+    setConfirmModal({
+      type: "active",
+      payload: { courier, merchantName },
+    });
+  };
+
+  // 🔹 Set active courier (modal confirm)
+  const setActive = async () => {
+    if (!confirmModal || confirmModal.type !== "active") return;
+    const { courier, merchantName } = confirmModal.payload;
+
     try {
-      const res = await fetch(`${API}/api/set-active-courier`, {
+      const res = await fetch(`${API}/admin/set-active-courier`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courier, merchantName }),
       });
-      const data = await res.json();
 
+      const data = await res.json();
       if (!res.ok)
         throw new Error(data.message || "Failed to activate courier");
 
-      alert(data.message);
+      setToast({ message: data.message || "✅ Activated!", type: "success" });
 
-      // ✅ Re-fetch active courier immediately (to update UI instantly)
-      const activeRes = await fetch(`${API}/api/active-courier`);
+      // ✅ update UI instantly
+      const activeRes = await fetch(`${API}/admin/active-courier`);
       const active = await activeRes.json();
       setActiveCourier(active);
 
-      // ✅ Refresh the courier list too
-      const courierRes = await fetch(`${API}/api/courier-settings`);
+      const courierRes = await fetch(`${API}/admin/courier-settings`);
       const list = await courierRes.json();
       setCouriers(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error(err);
-      alert("❌ Could not set active courier!");
+      setToast({
+        message: err.message || "❌ Could not set active courier!",
+        type: "error",
+      });
+    } finally {
+      setConfirmModal(null);
     }
   };
 
-  // 🔹 Delete courier
-  const deleteCourier = async (id) => {
-    if (!confirm("Are you sure you want to delete this courier?")) return;
+  // 🔹 Open confirm modal for delete
+  const askDeleteCourier = (courierObj) => {
+    setConfirmModal({
+      type: "delete",
+      payload: courierObj,
+    });
+  };
+
+  // 🔹 Delete courier (modal confirm)
+  const deleteCourier = async () => {
+    if (!confirmModal || confirmModal.type !== "delete") return;
+    const c = confirmModal.payload;
+
     try {
-      const res = await fetch(`${API}/api/courier-settings/${id}`, {
+      const res = await fetch(`${API}/admin/courier-settings/${c._id}`, {
         method: "DELETE",
       });
       const data = await res.json();
-      alert(data.message);
+
+      if (!res.ok) throw new Error(data.message);
+
+      setToast({
+        message: data.message || "🗑 Courier deleted!",
+        type: "success",
+      });
+
       await fetchCouriers();
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to delete courier!");
+      setToast({
+        message: err.message || "❌ Failed to delete courier!",
+        type: "error",
+      });
+    } finally {
+      setConfirmModal(null);
     }
   };
 
@@ -117,6 +187,7 @@ export default function CourierSettingsPage() {
       {/* Form */}
       <div className="bg-white p-4 rounded-lg shadow border space-y-3">
         <h3 className="text-lg font-semibold">Add / Update Courier</h3>
+
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <label className="text-sm font-medium">Courier</label>
@@ -228,14 +299,14 @@ export default function CourierSettingsPage() {
                   <td className="p-2 text-center">
                     {!isActive && (
                       <button
-                        onClick={() => setActive(c.courier, c.merchantName)}
+                        onClick={() => askSetActive(c.courier, c.merchantName)}
                         className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700"
                       >
                         Set Active
                       </button>
                     )}
                     <button
-                      onClick={() => deleteCourier(c._id)}
+                      onClick={() => askDeleteCourier(c)}
                       className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 ml-2"
                     >
                       Delete
@@ -247,6 +318,85 @@ export default function CourierSettingsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* ✅ CONFIRM MODAL (No browser popup) */}
+      {confirmModal && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-40" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl border">
+              {confirmModal.type === "active" ? (
+                <>
+                  <h3 className="text-lg font-bold mb-2 text-indigo-600">
+                    Activate Courier?
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    আপনি কি{" "}
+                    <span className="font-semibold">
+                      {confirmModal.payload.courier} (
+                      {confirmModal.payload.merchantName})
+                    </span>{" "}
+                    একটিভ করতে চান?
+                  </p>
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      onClick={() => setConfirmModal(null)}
+                      className="px-3 py-2 border rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={setActive}
+                      className="px-3 py-2 bg-indigo-600 text-white rounded"
+                    >
+                      Yes, Activate
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold mb-2 text-red-600">
+                    Delete Courier?
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    আপনি কি{" "}
+                    <span className="font-semibold">
+                      {confirmModal.payload.courier} (
+                      {confirmModal.payload.merchantName})
+                    </span>{" "}
+                    ডিলিট করতে চান?
+                  </p>
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      onClick={() => setConfirmModal(null)}
+                      className="px-3 py-2 border rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={deleteCourier}
+                      className="px-3 py-2 bg-red-600 text-white rounded"
+                    >
+                      Yes, Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ✅ TOAST */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

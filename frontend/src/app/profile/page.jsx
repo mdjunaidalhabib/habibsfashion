@@ -14,7 +14,7 @@ export default function ProfilePage() {
     if (me?.userId) {
       (async () => {
         try {
-          const data = await apiFetch(`/api/orders?userId=${me.userId}`);
+          const data = await apiFetch(`/orders?userId=${me.userId}`);
           setOrderCount(data.length || 0);
         } catch (err) {
           console.error("❌ Failed to fetch orders:", err);

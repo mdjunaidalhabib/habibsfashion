@@ -3,7 +3,7 @@ export async function getAdmin() {
   try {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-    const res = await fetch(`${API_BASE}/api/admin/verify`, {
+    const res = await fetch(`${API_BASE}/admin/verify`, {
       method: "GET",
       credentials: "include", // ✅ কুকি পাঠাবে
       cache: "no-store", // 🔄 সবসময় fresh ডেটা আনবে
@@ -24,7 +24,7 @@ export async function logoutAdmin() {
   try {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-    const res = await fetch(`${API_BASE}/api/admin/logout`, {
+    const res = await fetch(`${API_BASE}/admin/logout`, {
       method: "POST",
       credentials: "include", // ✅ কুকি সহ পাঠাবে
     });

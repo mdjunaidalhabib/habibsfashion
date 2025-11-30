@@ -152,15 +152,10 @@ export default function OrdersTable({
                   </button>
 
                   <button
-                    onClick={() => onDelete(o._id)}
-                    disabled={deletingId === o._id}
-                    className={`${
-                      deletingId === o._id
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-red-600 hover:bg-red-700"
-                    } text-white px-3 py-1 rounded text-sm`}
+                    onClick={() => onDelete(o)}
+                    className="bg-red-600 text-white px-3 py-1 rounded text-sm"
                   >
-                    {deletingId === o._id ? "Deleting..." : "Delete"}
+                    Delete
                   </button>
 
                   {/* ✅ Send to Courier */}

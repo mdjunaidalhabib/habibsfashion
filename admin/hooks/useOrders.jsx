@@ -1,12 +1,20 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 
 export default function useOrders(API) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: "", q: "" });
-  const [sendingId, setSendingId] = useState(null);
+
+  const [toast, setToast] = useState(null);
+
+  // 🚚 Courier Modal
+  const [courierModal, setCourierModal] = useState(null);
+  const [courierSending, setCourierSending] = useState(false);
+
+  // 🗑 Delete Modal
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // 🔹 Fetch Orders
   const fetchOrders = async () => {
@@ -14,12 +22,13 @@ export default function useOrders(API) {
       setLoading(true);
       const params = new URLSearchParams();
       if (filter.status) params.append("status", filter.status);
-      const res = await fetch(`${API}/api/orders?${params.toString()}`);
+
+      const res = await fetch(`${API}/admin/orders?${params.toString()}`);
       const data = await res.json();
+
       setOrders(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      setOrders([]);
+    } catch {
+      setToast({ message: "⚠ Failed to load orders", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -29,23 +38,34 @@ export default function useOrders(API) {
     fetchOrders();
   }, [filter.status]);
 
-  // 🔍 Search Filter
+  // 🔍 Search
   const filtered = useMemo(() => {
     if (!filter.q) return orders;
+
     const q = filter.q.toLowerCase();
     return orders.filter((o) => {
-      const idHit = o._id?.toLowerCase().includes(q);
-      const nameHit = o.billing?.name?.toLowerCase().includes(q);
-      const phoneHit = o.billing?.phone?.toLowerCase().includes(q);
-      return idHit || nameHit || phoneHit;
+      return (
+        o._id?.toLowerCase().includes(q) ||
+        o.billing?.name?.toLowerCase().includes(q) ||
+        o.billing?.phone?.toLowerCase().includes(q)
+      );
     });
   }, [orders, filter.q]);
 
-  // ✅ Send to Courier (Dynamic system)
-  const sendToCourier = async (order) => {
-    if (!confirm(`Send order ${order._id} to active courier?`)) return;
+  // 🛑 Open courier modal
+  const confirmCourierSend = (order) => {
+    setCourierModal(order);
+  };
+
+  // 🚚 Final courier send
+  const sendCourierNow = async () => {
+    if (!courierModal) return;
+
     try {
-      setSendingId(order._id);
+      setCourierSending(true);
+
+      const order = courierModal;
+
       const res = await fetch(`${API}/api/send-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,45 +79,60 @@ export default function useOrders(API) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to send order!");
-      alert(data.message || "✅ Sent to Courier Successfully!");
+
+      if (!res.ok) throw new Error(data.message);
+
+      setToast({ message: "🚚 Sent to courier", type: "success" });
+      setCourierModal(null);
       fetchOrders();
-    } catch (err) {
-      console.error(err);
-      alert("❌ Failed to send order!");
+    } catch {
+      setToast({ message: "❌ Courier sending failed", type: "error" });
     } finally {
-      setSendingId(null);
+      setCourierSending(false);
     }
   };
 
-  // ✅ Update Order Status
+  // 🗑 Open delete modal
+  const confirmDelete = (order) => setDeleteModal(order);
+
+  const handleDelete = async () => {
+    if (!deleteModal) return;
+
+    setDeleting(true);
+
+    try {
+      const res = await fetch(`${API}/admin/orders/${deleteModal._id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error();
+
+      setToast({ message: "🗑 Order deleted", type: "success" });
+      setDeleteModal(null);
+      fetchOrders();
+    } catch {
+      setToast({ message: "❌ Delete failed", type: "error" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ✏️ Update Status
   const updateStatus = async (id, newStatus) => {
     try {
-      const res = await fetch(`${API}/api/orders/${id}`, {
+      await fetch(`${API}/admin/orders/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error("Status update failed");
+
+      setToast({ message: "✔ Status updated", type: "success" });
+
       setOrders((prev) =>
         prev.map((o) => (o._id === id ? { ...o, status: newStatus } : o))
       );
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update status!");
-    }
-  };
-
-  // ✅ Delete Order
-  const deleteOrder = async (id) => {
-    if (!confirm("Are you sure you want to delete this order?")) return;
-    try {
-      const res = await fetch(`${API}/api/orders/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
-      fetchOrders();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to delete order.");
+    } catch {
+      setToast({ message: "❌ Status update failed", type: "error" });
     }
   };
 
@@ -108,9 +143,24 @@ export default function useOrders(API) {
     filter,
     setFilter,
     fetchOrders,
-    sendingId,
-    sendToCourier, // ✅ Updated function
+
+    // delete modal
+    deleteModal,
+    deleting,
+    confirmDelete,
+    handleDelete,
+    setDeleteModal,
+
+    // courier modal
+    courierModal,
+    courierSending,
+    confirmCourierSend,
+    sendCourierNow,
+    setCourierModal,
+
+    toast,
+    setToast,
+
     updateStatus,
-    deleteOrder,
   };
 }

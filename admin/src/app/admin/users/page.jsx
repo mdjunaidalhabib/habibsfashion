@@ -12,7 +12,7 @@ export default function UsersPage() {
     async function fetchUsers() {
       try {
         setLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`);
         const data = await res.json();
         setUsers(Array.isArray(data) ? data : []);
       } catch (error) {

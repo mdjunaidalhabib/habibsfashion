@@ -21,7 +21,7 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/products`
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/products`
       );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
@@ -47,7 +47,7 @@ export default function ProductsPage() {
     setDeleting(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/products/${deleteModal._id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/products/${deleteModal._id}`,
         { method: "DELETE" }
       );
       if (res.ok) {

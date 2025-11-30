@@ -1,10 +1,11 @@
 import express from "express";
-import Order from "../models/Order.js";
+import Order from "../../models/Order.js";
 
 const router = express.Router();
 
 /**
- * GET /api/orders
+ * GET /api/v1/admin/orders
+ * Admin সব অর্ডার দেখবে + filter করতে পারবে
  */
 router.get("/", async (req, res) => {
   try {
@@ -29,9 +30,10 @@ router.get("/", async (req, res) => {
 });
 
 /**
- * GET /api/orders/:id
+ * GET /api/v1/admin/orders/:id
+ * Admin যেকোনো অর্ডার ডিটেইল দেখবে
  */
-http: router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
@@ -45,43 +47,8 @@ http: router.get("/:id", async (req, res) => {
 });
 
 /**
- * POST /api/orders
- */
-router.post("/", async (req, res) => {
-  try {
-    const { items, subtotal, deliveryCharge, total, billing } = req.body;
-    if (!items?.length || !subtotal || !deliveryCharge || !total || !billing?.name) {
-      return res.status(400).json({ error: "Missing required order fields" });
-    }
-
-    const orderData = {
-      items: req.body.items,
-      subtotal: req.body.subtotal,
-      deliveryCharge: req.body.deliveryCharge,
-      discount: req.body.discount || 0,
-      total: req.body.total,
-      billing: req.body.billing,
-      promoCode: req.body.promoCode || "",
-      userId: req.body.userId || null,
-      paymentMethod: req.body.paymentMethod || "cod",
-      paymentStatus: req.body.paymentStatus || "pending",
-      status: req.body.status || "pending",
-      trackingId: req.body.trackingId || "",
-      cancelReason: req.body.cancelReason || "",
-    };
-
-    const newOrder = new Order(orderData);
-    await newOrder.save();
-
-    res.status(201).json({ order: newOrder });
-  } catch (err) {
-    console.error("❌ Failed to create order:", err);
-    res.status(400).json({ error: "Failed to create order", details: err.message });
-  }
-});
-
-/**
- * PUT /api/orders/:id
+ * PUT /api/v1/admin/orders/:id
+ * Admin অর্ডার আপডেট করবে (status/paymentStatus/trackingId etc)
  */
 router.put("/:id", async (req, res) => {
   try {
@@ -93,12 +60,15 @@ router.put("/:id", async (req, res) => {
     res.json(updated);
   } catch (err) {
     console.error("❌ Failed to update order:", err);
-    res.status(400).json({ error: "Failed to update order", details: err.message });
+    res
+      .status(400)
+      .json({ error: "Failed to update order", details: err.message });
   }
 });
 
 /**
- * DELETE /api/orders/:id
+ * DELETE /api/v1/admin/orders/:id
+ * Admin অর্ডার ডিলিট করবে
  */
 router.delete("/:id", async (req, res) => {
   try {
@@ -107,7 +77,9 @@ router.delete("/:id", async (req, res) => {
     res.json({ message: "Order deleted successfully" });
   } catch (err) {
     console.error("❌ Failed to delete order:", err);
-    res.status(500).json({ error: "Failed to delete order", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to delete order", details: err.message });
   }
 });
 

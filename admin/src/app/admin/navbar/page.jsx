@@ -13,7 +13,7 @@ export default function NavbarAdminPanel() {
   useEffect(() => {
     const fetchNavbar = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/navbar`);
+        const res = await fetch(`${API_URL}/navbar`);
         const data = await res.json();
         setNavbar({ ...data, brand: data.brand || {} });
       } catch (err) {
@@ -45,7 +45,7 @@ export default function NavbarAdminPanel() {
 
       formData.append("brand", JSON.stringify(payload.brand || {}));
 
-      const res = await fetch(`${API_URL}/api/navbar`, {
+      const res = await fetch(`${API_URL}/admin/navbar`, {
         method: "POST",
         body: formData,
       });

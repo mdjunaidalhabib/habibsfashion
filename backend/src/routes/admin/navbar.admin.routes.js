@@ -1,24 +1,14 @@
 import express from "express";
-import Navbar from "../models/Navbar.js";
-import upload from "../../utils/upload.js"; // multer
+import Navbar from "../../models/Navbar.js";
+import upload from "../../../utils/upload.js"; // multer
 import fs from "fs";
-import { deleteByPublicId } from "../../utils/cloudinaryHelpers.js";
-import cloudinary from "../../utils/cloudinary.js";
+import { deleteByPublicId } from "../../../utils/cloudinaryHelpers.js";
+import cloudinary from "../../../utils/cloudinary.js";
 
 const router = express.Router();
 
-// GET Navbar
-router.get("/", async (req, res) => {
-  try {
-    const navbar = await Navbar.findOne();
-    res.json(navbar || {});
-  } catch (err) {
-    console.error("❌ Error fetching navbar:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// POST Navbar + optional logo upload
+// ✅ POST Navbar + optional logo upload (Admin only)
+// FINAL path: POST /api/v1/admin/navbar
 router.post("/", upload.single("logo"), async (req, res) => {
   try {
     let data = { ...req.body };

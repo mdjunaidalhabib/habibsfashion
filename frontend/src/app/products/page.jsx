@@ -3,7 +3,7 @@ import Link from "next/link";
 import { apiFetch } from "../../../utils/api";
 
 async function getProducts() {
-  return await apiFetch("/api/products", {
+  return await apiFetch("/products", {
     cache: "no-store", // ✅ সর্বদা fresh data
   });
 }

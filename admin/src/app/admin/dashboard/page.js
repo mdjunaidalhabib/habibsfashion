@@ -17,8 +17,11 @@ import DashboardSkeleton from "../../../../components/Skeleton/DashboardSkeleton
 
 export default function DashboardPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalSales: 0,
@@ -29,12 +32,25 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
+        setErr("");
         setLoading(true);
-        const res = await fetch(`${API}/api/orders`);
+
+        // ✅ cookie সহ request যাবে
+        const res = await fetch(`${API}/admin/orders`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          throw new Error("Orders fetch failed");
+        }
+
         const data = await res.json();
 
         if (Array.isArray(data)) {
           setOrders(data);
+
           const totalOrders = data.length;
           const totalSales = data.reduce((sum, o) => sum + (o.total || 0), 0);
           const pendingOrders = data.filter(
@@ -43,17 +59,23 @@ export default function DashboardPage() {
           const deliveredOrders = data.filter(
             (o) => o.status === "delivered"
           ).length;
+
           setStats({ totalOrders, totalSales, pendingOrders, deliveredOrders });
+        } else {
+          setOrders([]);
         }
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+        setErr("❌ Orders load করা যায়নি");
       } finally {
         setLoading(false);
       }
     }
+
     fetchOrders();
   }, [API]);
 
+  // ====== chart data calculations (ag er motoi) ======
   const salesData = (() => {
     const last7 = {};
     const now = new Date();
@@ -124,6 +146,8 @@ export default function DashboardPage() {
 
       {loading ? (
         <DashboardSkeleton />
+      ) : err ? (
+        <div className="bg-white shadow rounded-xl p-6 text-red-500">{err}</div>
       ) : (
         <>
           {/* 🔹 Stats Cards */}

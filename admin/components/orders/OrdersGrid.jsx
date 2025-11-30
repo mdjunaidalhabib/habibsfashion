@@ -126,7 +126,7 @@ export default function OrdersGrid({
               Edit
             </button>
             <button
-              onClick={() => onDelete(o._id)}
+              onClick={() => onDelete(o)}
               className="bg-red-600 text-white px-3 py-1 rounded text-sm"
             >
               Delete

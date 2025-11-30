@@ -43,8 +43,8 @@ export default function Footer() {
     const controller = new AbortController();
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
-    const apiUrl = `${apiBase}/api/footer`;
-    const categoriesUrl = `${apiBase}/api/categories`;
+    const apiUrl = `${apiBase}/footer`;
+    const categoriesUrl = `${apiBase}/categories`;
 
     const fetchData = async () => {
       try {

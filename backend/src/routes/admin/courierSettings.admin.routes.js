@@ -1,10 +1,11 @@
 import express from "express";
-import CourierSetting from "../models/CourierSetting.js";
+import CourierSetting from "../../models/CourierSetting.js";
 
 const router = express.Router();
 
 // ✅ Save or Update Courier Settings
-router.post("/api/courier-settings", async (req, res) => {
+// FINAL path: POST /api/v1/admin/courier-settings
+router.post("/courier-settings", async (req, res) => {
   try {
     const { courier, merchantName, apiKey, secretKey, baseUrl, isActive } =
       req.body;
@@ -46,7 +47,8 @@ router.post("/api/courier-settings", async (req, res) => {
 });
 
 // ✅ Get All Couriers
-router.get("/api/courier-settings", async (req, res) => {
+// FINAL path: GET /api/v1/admin/courier-settings
+router.get("/courier-settings", async (req, res) => {
   try {
     const settings = await CourierSetting.find();
     res.json(settings);
@@ -56,7 +58,8 @@ router.get("/api/courier-settings", async (req, res) => {
 });
 
 // ✅ Get Active Courier (Only one active allowed)
-router.get("/api/active-courier", async (req, res) => {
+// FINAL path: GET /api/v1/admin/active-courier
+router.get("/active-courier", async (req, res) => {
   try {
     const active = await CourierSetting.findOne({ isActive: true });
     res.json(active || null);
@@ -66,7 +69,8 @@ router.get("/api/active-courier", async (req, res) => {
 });
 
 // ✅ Set Active Courier (Only one global active)
-router.post("/api/set-active-courier", async (req, res) => {
+// FINAL path: POST /api/v1/admin/set-active-courier
+router.post("/set-active-courier", async (req, res) => {
   try {
     const { courier, merchantName } = req.body;
 
@@ -108,8 +112,10 @@ router.post("/api/set-active-courier", async (req, res) => {
     });
   }
 });
+
 // ✅ Delete Courier
-router.delete("/api/courier-settings/:id", async (req, res) => {
+// FINAL path: DELETE /api/v1/admin/courier-settings/:id
+router.delete("/courier-settings/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -141,6 +147,5 @@ router.delete("/api/courier-settings/:id", async (req, res) => {
     });
   }
 });
-
 
 export default router;

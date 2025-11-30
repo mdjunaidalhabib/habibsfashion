@@ -55,7 +55,7 @@ export default function Navbar() {
   useEffect(() => {
     const fetchNavbar = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/navbar`);
+        const res = await fetch(`${API_URL}/navbar`);
         const data = await res.json();
         setNavbar(data);
       } catch (err) {

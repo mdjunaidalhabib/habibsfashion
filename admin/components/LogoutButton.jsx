@@ -12,7 +12,7 @@ export default function LogoutButton() {
       setLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-      const res = await fetch(`${apiUrl}/api/admin/logout`, {
+      const res = await fetch(`${apiUrl}/admin/logout`, {
         method: "POST",
         credentials: "include", // ✅ cookie delete হবে
       });

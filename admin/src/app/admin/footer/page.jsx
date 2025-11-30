@@ -13,7 +13,7 @@ export default function FooterAdminPanel() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
   useEffect(() => {
-    fetch(`${API_URL}/api/footer`)
+    fetch(`${API_URL}/admin/footer`)
       .then((res) => res.json())
       .then((data) => {
         setFooter({
@@ -49,7 +49,7 @@ export default function FooterAdminPanel() {
       formData.append("brand", JSON.stringify(payload.brand || {}));
       formData.append("contact", JSON.stringify(payload.contact || {}));
 
-      const res = await fetch(`${API_URL}/api/footer`, {
+      const res = await fetch(`${API_URL}/admin/footer`, {
         method: "POST",
         body: formData,
       });

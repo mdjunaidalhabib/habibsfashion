@@ -37,7 +37,7 @@ export default function OrdersPage() {
     if (!loadingUser && me) {
       (async () => {
         try {
-          const data = await apiFetch(`/api/orders?userId=${me.userId}`);
+          const data = await apiFetch(`/orders?userId=${me.userId}`);
           setOrders(data || []);
           setFilteredOrders(data || []);
         } catch (err) {
@@ -241,7 +241,7 @@ export default function OrdersPage() {
 
                     {/* ⬇️ PDF Download */}
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL}/api/receipts/${order._id}?download=true`}
+                      href={`${process.env.NEXT_PUBLIC_API_URL}/receipts/${order._id}?download=true`}
                       className="px-3 py-1 bg-gradient-to-r from-green-600 to-green-500 text-white text-xs rounded-md hover:from-green-700 hover:to-green-600 shadow-sm transition"
                     >
                       ⬇️ Download

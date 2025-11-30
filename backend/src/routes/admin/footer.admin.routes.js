@@ -1,13 +1,14 @@
 import express from "express";
-import Footer from "../models/Footer.js";
-import upload from "../../utils/upload.js";
-import { deleteByPublicId } from "../../utils/cloudinaryHelpers.js";
-import cloudinary from "../../utils/cloudinary.js";
+import Footer from "../../models/Footer.js";
+import upload from "../../../utils/upload.js";
+import { deleteByPublicId } from "../../../utils/cloudinaryHelpers.js";
+import cloudinary from "../../../utils/cloudinary.js";
 import fs from "fs";
 
 const router = express.Router();
 
-// GET Footer
+// ✅ GET Footer (Public)
+// FINAL path: GET /api/v1/footer
 router.get("/", async (req, res) => {
   try {
     const footer = await Footer.findOne();
@@ -18,7 +19,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST Footer + optional logo
+// ✅ POST Footer + optional logo (Admin only)
+// FINAL path: POST /api/v1/admin/footer
 router.post("/", upload.single("logo"), async (req, res) => {
   try {
     let data = { ...req.body };
@@ -89,7 +91,8 @@ router.post("/", upload.single("logo"), async (req, res) => {
   }
 });
 
-// DELETE Footer
+// ✅ DELETE Footer (Admin only)
+// FINAL path: DELETE /api/v1/admin/footer
 router.delete("/", async (req, res) => {
   try {
     const footer = await Footer.findOne();

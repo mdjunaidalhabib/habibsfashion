@@ -1,14 +1,14 @@
-// File: backend/routes/steadfastRoute.js
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import Order from "../models/Order.js";
+import Order from "../../models/Order.js";
 
 dotenv.config();
 const router = express.Router();
 
 // ✅ Send order to Steadfast Courier (Packzy API)
-router.post("/api/send-to-steadfast", async (req, res) => {
+// FINAL path: POST /api/v1/admin/steadfast/send-to-steadfast
+router.post("/send-to-steadfast", async (req, res) => {
   try {
     const { invoice, name, phone, address, cod_amount } = req.body;
 
@@ -21,15 +21,6 @@ router.post("/api/send-to-steadfast", async (req, res) => {
       });
     }
 
-    console.log("🔗 Base URL from .env:", process.env.STEADFAST_BASE_URL);
-    console.log("📦 Sending order to Steadfast:", {
-      invoice,
-      name,
-      phone,
-      address,
-      cod_amount,
-    });
-
     // 🧠 Step 2: Prepare request data (based on Steadfast official docs)
     const payload = {
       invoice, // must be unique
@@ -38,8 +29,8 @@ router.post("/api/send-to-steadfast", async (req, res) => {
       recipient_address: address,
       cod_amount: cod_amount,
       delivery_type: 0, // 0 = home delivery, 1 = point delivery
-      item_description: "General parcel", // optional
-      note: "Deliver within office hours", // optional
+      item_description: "General parcel",
+      note: "Deliver within office hours",
     };
 
     // 🧠 Step 3: Make POST request to Steadfast API
@@ -51,7 +42,6 @@ router.post("/api/send-to-steadfast", async (req, res) => {
     };
 
     const response = await axios.post(apiUrl, payload, { headers });
-    console.log("✅ Steadfast Response:", response.data);
 
     // 🧠 Step 4: Extract tracking code
     const trackingCode =
@@ -84,7 +74,7 @@ router.post("/api/send-to-steadfast", async (req, res) => {
         .json({ success: false, message: "Order not found in database!" });
     }
 
-    // 🧠 Step 7: Send success response to frontend
+    // 🧠 Step 7: Send success response to admin panel
     res.json({
       success: true,
       message:
@@ -95,7 +85,6 @@ router.post("/api/send-to-steadfast", async (req, res) => {
     });
   } catch (error) {
     console.error("🚨 Steadfast Error:", error.message);
-    console.error("🚨 Error Data:", error.response?.data || error);
 
     res.status(error.response?.status || 500).json({
       success: false,
@@ -106,7 +95,8 @@ router.post("/api/send-to-steadfast", async (req, res) => {
 });
 
 // ✅ Delete (Cancel) order from Steadfast Courier
-router.post("/api/delete-steadfast-order", async (req, res) => {
+// FINAL path: POST /api/v1/admin/steadfast/delete-steadfast-order
+router.post("/delete-steadfast-order", async (req, res) => {
   try {
     const { invoice, trackingId } = req.body;
 
@@ -136,8 +126,6 @@ router.post("/api/delete-steadfast-order", async (req, res) => {
       { headers }
     );
 
-    console.log("🗑 Steadfast Order Cancel Response:", response.data);
-
     // 🧩 Update local database status
     await Order.findByIdAndUpdate(invoice, { status: "cancelled" });
 
@@ -148,6 +136,7 @@ router.post("/api/delete-steadfast-order", async (req, res) => {
     });
   } catch (error) {
     console.error("🚨 Delete from Steadfast Error:", error.message);
+
     res.status(500).json({
       success: false,
       message: "❌ Failed to delete order from Steadfast",
@@ -155,6 +144,5 @@ router.post("/api/delete-steadfast-order", async (req, res) => {
     });
   }
 });
-
 
 export default router;

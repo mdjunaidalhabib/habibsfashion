@@ -23,7 +23,7 @@ export default function CategoriesPage() {
     try {
       setPageLoading(true);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/categories`
       );
       const data = await res.json();
       setCategories(Array.isArray(data) ? data : []);
@@ -60,7 +60,7 @@ export default function CategoriesPage() {
     data.append("name", name);
     if (file) data.append("image", file);
 
-    let url = `${process.env.NEXT_PUBLIC_API_URL}/api/categories`;
+    let url = `${process.env.NEXT_PUBLIC_API_URL}/admin/categories`;
     let method = "POST";
 
     if (editId) {
@@ -98,7 +98,7 @@ export default function CategoriesPage() {
     setDeleting(true);
 
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/categories/${deleteModal._id}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/categories/${deleteModal._id}`,
       { method: "DELETE" }
     );
 

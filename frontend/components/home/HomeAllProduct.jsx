@@ -22,8 +22,8 @@ export default function CategoryTabsSection() {
         setError(false);
 
         const [pRes, cRes] = await Promise.all([
-          apiFetch("/api/products"),
-          apiFetch("/api/categories"),
+          apiFetch("/products"),
+          apiFetch("/categories"),
         ]);
 
         if (cancelled) return;

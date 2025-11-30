@@ -2,10 +2,12 @@
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -17,16 +19,15 @@ export default function LoginPage() {
 
     try {
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/login`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/login`,
         { email, password },
-        { withCredentials: true } // Cookie পাঠাবে
+        { withCredentials: true }
       );
 
       console.log("✅ Login success:", res.data);
 
-      // ⏳ Cookie সেট হওয়ার জন্য delay (150–300ms)
       setTimeout(() => {
-        window.location.href = "/admin/dashboard"; // clean redirect
+        window.location.href = "/admin/dashboard";
       }, 200);
     } catch (err) {
       console.error("❌ Login error:", err);
@@ -55,14 +56,26 @@ export default function LoginPage() {
           required
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 mb-4 rounded outline-none focus:ring-2 focus:ring-blue-400"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        {/* ✅ Password field with eye icon */}
+        <div className="relative mb-4">
+          <input
+            type={showPass ? "text" : "password"}
+            placeholder="Password"
+            className="w-full border p-2 pr-10 rounded outline-none focus:ring-2 focus:ring-blue-400"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPass((s) => !s)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            aria-label={showPass ? "Hide password" : "Show password"}
+          >
+            {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
 
         <button
           type="submit"

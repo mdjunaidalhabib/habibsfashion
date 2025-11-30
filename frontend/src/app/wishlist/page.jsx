@@ -13,7 +13,7 @@ export default function WishlistPage() {
 
   // 🔹 Load all products
   useEffect(() => {
-    apiFetch("/api/products")
+    apiFetch("/products")
       .then((data) => {
         setAllProducts(data);
         setLoading(false);

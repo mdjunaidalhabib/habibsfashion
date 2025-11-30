@@ -1,14 +1,15 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import Order from "../models/Order.js";
-import CourierSetting from "../models/CourierSetting.js";
+import Order from "../../models/Order.js";
+import CourierSetting from "../../models/CourierSetting.js";
 
 dotenv.config();
 const router = express.Router();
 
 // ✅ Generic order sender (works for all couriers)
-router.post("/api/send-order", async (req, res) => {
+// FINAL path: POST /api/v1/admin/send-order
+router.post("/send-order", async (req, res) => {
   try {
     const { invoice, name, phone, address, cod_amount } = req.body;
 
@@ -83,6 +84,14 @@ router.post("/api/send-order", async (req, res) => {
       { trackingId: trackingCode, courier },
       { new: true }
     );
+
+    // যদি order না পাওয়া যায়
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found in database!",
+      });
+    }
 
     res.json({
       success: true,

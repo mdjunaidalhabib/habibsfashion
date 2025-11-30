@@ -5,7 +5,7 @@ import {
   ShoppingCart,
   ChartBarStacked,
   CreditCard,
-  Bell,
+  User,
   Settings,
   LayoutDashboard,
 } from "lucide-react";
@@ -25,15 +25,11 @@ export const navItems = [
   },
   { icon: <Users size={18} />, label: "Users", href: "/admin/users" },
   {
-    icon: <CreditCard size={18} />,
-    label: "Payments",
-    href: "/admin/payments",
+    icon: <User size={18} />,
+    label: "Profile",
+    href: "/admin/profile",
   },
-  {
-    icon: <Bell size={18} />,
-    label: "Notifications",
-    href: "/admin/notifications",
-  },
+
   { icon: <Settings size={18} />, label: "Settings", href: "/admin/settings" },
 ];
 

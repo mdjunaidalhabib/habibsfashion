@@ -131,7 +131,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch("/api/products")
+    apiFetch("/products")
       .then((data) => {
         setAllProducts(data);
         setLoading(false);
