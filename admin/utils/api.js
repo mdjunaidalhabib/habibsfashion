@@ -1,4 +1,5 @@
 // frontend/utils/api.js
+
 export async function apiFetch(path, options = {}) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const url = `${baseUrl}${path}`;
@@ -13,6 +14,31 @@ export async function apiFetch(path, options = {}) {
       ...options,
     });
 
+    // ✅ যদি 401 হয় → auto logout + redirect
+    if (res.status === 401) {
+      try {
+        // backend logout কল (cookie clear করার জন্য)
+        await fetch(`${baseUrl}/admin/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        // ignore
+      }
+
+      // client-side clean + redirect
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("admin");
+        } catch {}
+
+        window.location.href = "/login";
+      }
+
+      // error throw যাতে caller বুঝতে পারে
+      throw new Error("Session expired. Redirecting to login.");
+    }
+
     if (!res.ok) {
       let errorText = "";
       try {
@@ -21,7 +47,6 @@ export async function apiFetch(path, options = {}) {
         errorText = "Unknown error";
       }
 
-      // ❌ console.error বাদ → শুধু error throw করবো
       throw new Error(
         `API error: ${res.status} ${res.statusText} → ${errorText}`
       );
@@ -30,8 +55,6 @@ export async function apiFetch(path, options = {}) {
     // ✅ সবসময় JSON ফেরত দেবে
     return await res.json();
   } catch (err) {
-    // ❌ console.error বাদ
-    // caller (Navbar, ProductPage ইত্যাদি) নিজে handle করবে
     throw err;
   }
 }
