@@ -29,21 +29,32 @@ app.use(
   })
 );
 
-// ✅ CORS
+// ✅ CORS (ENV driven)
 const allowedOrigins = (process.env.CLIENT_URLS || "")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
 
+console.log("✅ Allowed CORS Origins:", allowedOrigins);
+
 app.use(
   cors({
     origin: (origin, cb) => {
+      // allow requests with no origin (Postman, curl, server-to-server)
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
+
+      if (allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+
+      // debug log for blocked origin
+      console.log("❌ Blocked by CORS Origin:", origin);
+      return cb(new Error(`Not allowed by CORS: ${origin}`));
     },
-    credentials: true,
+    credentials: true, // ✅ allow cookies
     exposedHeaders: ["Content-Disposition"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -67,10 +78,12 @@ app.get("/health", (req, res) => {
   });
 });
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught error:", err);
   res.status(500).json({
