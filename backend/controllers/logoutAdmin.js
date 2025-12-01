@@ -1,14 +1,17 @@
 export const logoutAdmin = async (req, res) => {
   try {
     const isProd = process.env.NODE_ENV === "production";
+    const cookieDomain = process.env.COOKIE_DOMAIN || ".habibsfashion.com";
 
-    res.clearCookie("admin_token", {
+    const clearOptions = {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      domain: isProd ? process.env.COOKIE_DOMAIN : "localhost",
       path: "/",
-    });
+      ...(isProd ? { domain: cookieDomain } : {}),
+    };
+
+    res.clearCookie("admin_token", clearOptions);
 
     console.log("🧹 Cookie cleared successfully");
     return res.status(200).json({ message: "✅ Logged out successfully" });

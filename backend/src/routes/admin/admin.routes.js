@@ -16,7 +16,7 @@ import { logoutAdmin } from "../../../controllers/logoutAdmin.js";
 const router = express.Router();
 
 /* =========================
-   AUTH ROUTES (আগের মতোই)
+   AUTH ROUTES
 ========================= */
 
 router.post("/login", loginAdmin);
@@ -24,8 +24,18 @@ router.post("/logout", protect, logoutAdmin);
 
 // ✅ Verify admin session (protected) — fresh admin return
 router.get("/verify", protect, async (req, res) => {
+  console.log("🟩 [VERIFY HIT]: /admin/verify");
+  console.log("Origin:", req.headers.origin);
+  console.log("Cookies:", req.cookies);
+  console.log("Token (cookie):", req.cookies?.admin_token ? "✅ Yes" : "❌ No");
+
   try {
     const freshAdmin = await Admin.findById(req.admin._id).select("-password");
+
+    if (!freshAdmin) {
+      console.log("❌ Admin not found in DB");
+      return res.status(401).json({ message: "Admin not found" });
+    }
 
     res.json({
       message: "✅ Auth verified",
@@ -33,43 +43,6 @@ router.get("/verify", protect, async (req, res) => {
     });
   } catch (error) {
     console.error("Verify Error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ✅ Create new admin (Super Admin only)
-router.post("/register", protect, superAdminOnly, async (req, res) => {
-  try {
-    const { name, email, password, role, username, phone } = req.body;
-
-    const exists = await Admin.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ message: "❌ Admin already exists" });
-    }
-
-    const newAdmin = await Admin.create({
-      name,
-      email,
-      password,
-      role,
-      username,
-      phone,
-    });
-
-    res.status(201).json({
-      message: "✅ New admin created successfully",
-      admin: {
-        id: newAdmin._id,
-        name: newAdmin.name,
-        email: newAdmin.email,
-        role: newAdmin.role,
-        username: newAdmin.username,
-        phone: newAdmin.phone,
-        avatar: newAdmin.avatar,
-      },
-    });
-  } catch (err) {
-    console.error("Register Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -98,7 +71,7 @@ router.put("/me", protect, upload.single("avatar"), async (req, res) => {
   try {
     let data = { ...req.body };
 
-    // Parse profile JSON string (navbar brand-এর মতো)
+    // Parse profile JSON string
     if (data.profile && typeof data.profile === "string") {
       try {
         data = JSON.parse(data.profile);
@@ -110,7 +83,7 @@ router.put("/me", protect, upload.single("avatar"), async (req, res) => {
     const admin = await Admin.findById(req.admin._id);
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
-    // ✅ removeAvatar request (logo remove pattern)
+    // ✅ removeAvatar request
     const removeAvatar = data.removeAvatar === "true";
     if (removeAvatar && admin.avatarPublicId) {
       await deleteByPublicId(admin.avatarPublicId);
@@ -120,14 +93,12 @@ router.put("/me", protect, upload.single("avatar"), async (req, res) => {
       delete data.removeAvatar;
     }
 
-    // ✅ Handle avatar upload (exact navbar style)
+    // ✅ Handle avatar upload
     if (req.file) {
-      // delete old avatar by public id
       if (admin.avatarPublicId) {
         await deleteByPublicId(admin.avatarPublicId);
       }
 
-      // upload new avatar to ADMIN folder
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "admin_avatars",
       });

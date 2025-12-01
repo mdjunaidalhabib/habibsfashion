@@ -7,7 +7,7 @@ export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    console.log("🔥 NEW loginAdmin running"); // ✅ test
+    console.log("🔥 NEW loginAdmin running");
 
     const admin = await Admin.findOne({ email });
     if (!admin) {
@@ -51,7 +51,7 @@ export const loginAdmin = async (req, res) => {
         }
       : null;
 
-    // ✅ save
+    // ✅ save login info
     admin.lastLoginAt = new Date();
     admin.lastLoginIp = ip;
     admin.lastLoginDevice = deviceType;
@@ -62,22 +62,22 @@ export const loginAdmin = async (req, res) => {
 
     await admin.save();
 
-    console.log("✅ Saved device:", deviceType);
-    console.log("✅ Saved os:", admin.lastLoginOS);
-    console.log("✅ Saved browser:", admin.lastLoginBrowser);
-    console.log("✅ Saved ip:", ip);
-
     const token = generateToken(admin);
 
     const isProd = process.env.NODE_ENV === "production";
-    res.cookie("admin_token", token, {
+    const cookieDomain = process.env.COOKIE_DOMAIN || ".habibsfashion.com";
+
+    // ✅ cookie options
+    const cookieOptions = {
       httpOnly: true,
-      secure: isProd,
+      secure: isProd, // prod https → true
       sameSite: isProd ? "none" : "lax",
-      domain: isProd ? process.env.COOKIE_DOMAIN : "localhost",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+      ...(isProd ? { domain: cookieDomain } : {}), // dev এ domain দেব না
+    };
+
+    res.cookie("admin_token", token, cookieOptions);
 
     return res.status(200).json({
       message: "✅ লগইন সফল হয়েছে!",

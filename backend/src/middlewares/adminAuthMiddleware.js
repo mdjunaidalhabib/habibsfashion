@@ -3,16 +3,24 @@ import Admin from "../models/Admin.js";
 
 export const protect = async (req, res, next) => {
   try {
-    const token = req.cookies?.admin_token;
+    // ✅ token cookie বা header দুই জায়গা থেকেই নাও
+    const cookieToken = req.cookies?.admin_token;
+    const headerToken = req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : null;
+
+    const token = cookieToken || headerToken;
 
     if (!token) {
       return res.status(401).json({ message: "Not authorized, no token" });
     }
 
+    // ✅ verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ full admin data (lastLoginAt/Ip সহ)
+    // ✅ full admin data (password বাদে)
     const admin = await Admin.findById(decoded.id).select("-password");
+
     if (!admin) {
       return res.status(401).json({ message: "Admin not found" });
     }
@@ -20,15 +28,15 @@ export const protect = async (req, res, next) => {
     req.admin = admin;
     next();
   } catch (error) {
-    console.error("Auth Error:", error);
+    console.error("Auth Error:", error?.message || error);
 
-    if (error.name === "TokenExpiredError") {
+    if (error?.name === "TokenExpiredError") {
       return res
         .status(401)
         .json({ message: "Session expired, please log in again" });
     }
 
-    res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
