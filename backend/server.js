@@ -1,3 +1,4 @@
+// import express from "express";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -29,10 +30,13 @@ app.use(
   })
 );
 
+// ✅ Helper: normalize URL (remove trailing slash, trim spaces)
+const normalize = (url = "") => url.replace(/\/$/, "").trim();
+
 // ✅ CORS (ENV driven)
 const allowedOrigins = (process.env.CLIENT_URLS || "")
   .split(",")
-  .map((o) => o.trim())
+  .map(normalize)
   .filter(Boolean);
 
 console.log("✅ Allowed CORS Origins:", allowedOrigins);
@@ -40,16 +44,18 @@ console.log("✅ Allowed CORS Origins:", allowedOrigins);
 app.use(
   cors({
     origin: (origin, cb) => {
-      // allow requests with no origin (Postman, curl, server-to-server)
+      // ✅ allow requests with no origin (Postman, curl, server-to-server)
       if (!origin) return cb(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = normalize(origin);
+
+      if (allowedOrigins.includes(normalizedOrigin)) {
         return cb(null, true);
       }
 
       // debug log for blocked origin
       console.log("❌ Blocked by CORS Origin:", origin);
-      return cb(new Error(`Not allowed by CORS: ${origin}`));
+      return cb(new Error(`Not allowed by CORS: ${origin}`), false);
     },
     credentials: true, // ✅ allow cookies
     exposedHeaders: ["Content-Disposition"],
