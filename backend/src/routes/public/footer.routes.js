@@ -2,9 +2,6 @@ import express from "express";
 import Footer from "../../models/Footer.js";
 
 const router = express.Router();
-
-// ✅ GET Footer (Public)
-// FINAL path: GET /api/v1/footer
 router.get("/", async (req, res) => {
   try {
     const footer = await Footer.findOne();

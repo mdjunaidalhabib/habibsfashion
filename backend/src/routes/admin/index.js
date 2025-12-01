@@ -13,6 +13,7 @@ import courierSettingsAdminRoutes from "./courierSettings.admin.routes.js";
 import sendOrderAdminRoutes from "./sendOrder.admin.routes.js";
 import steadfastAdminRoutes from "./steadfast.admin.routes.js";
 import categoryAdminRoutes from "./category.admin.routes.js";
+import slidersAdminRoutes from "./slider.admin.routes.js";
 
 const router = express.Router();
 
@@ -25,6 +26,9 @@ router.use("/orders", orderAdminRoutes);
 router.use("/users", usersAdminRoutes);
 router.use("/navbar", navbarAdminRoutes);
 router.use("/footer", footerAdminRoutes);
+router.use("/sliders", slidersAdminRoutes);
+
+
 
 // এগুলোর ভেতরে নিজস্ব path আছে:
 router.use("/", courierSettingsAdminRoutes);

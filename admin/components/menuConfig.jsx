@@ -4,7 +4,7 @@ import {
   Package,
   ShoppingCart,
   ChartBarStacked,
-  CreditCard,
+  SlidersHorizontal,
   User,
   Settings,
   LayoutDashboard,
@@ -24,6 +24,12 @@ export const navItems = [
     href: "/admin/category",
   },
   { icon: <Users size={18} />, label: "Users", href: "/admin/users" },
+  {
+    icon: <SlidersHorizontal size={18} />, // lucide-react icon
+    label: "Sliders",
+    href: "/admin/sliders",
+  },
+
   {
     icon: <User size={18} />,
     label: "Profile",

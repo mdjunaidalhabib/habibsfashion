@@ -7,6 +7,8 @@ import orderRoutes from "./order.routes.js";
 import navbarRoutes from "./navbar.routes.js";
 import footerRoutes from "./footer.routes.js";
 import receiptRoutes from "./receipt.routes.js";
+import sliderRoutes from "./slider.routes.js";
+
 
 const router = express.Router();
 
@@ -17,5 +19,6 @@ router.use("/orders", orderRoutes);
 router.use("/navbar", navbarRoutes);
 router.use("/footer", footerRoutes);
 router.use("/receipts", receiptRoutes);
+router.use("/slider-images", sliderRoutes);
 
 export default router;

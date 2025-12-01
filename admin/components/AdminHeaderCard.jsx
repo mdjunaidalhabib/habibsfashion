@@ -1,25 +1,35 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import AdminHeaderCardSkeleton from "./Skeleton/AdminHeaderCardSkeleton";
 
 export default function AdminHeaderCard() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
   const [admin, setAdmin] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadAdmin = async () => {
       try {
+        setLoading(true);
         const res = await axios.get(`${API_BASE}/admin/verify`, {
           withCredentials: true,
         });
         setAdmin(res.data.admin);
       } catch (e) {
         console.log(e);
+      } finally {
+        setLoading(false);
       }
     };
+
     loadAdmin();
   }, [API_BASE]);
 
+  // ✅ Skeleton while loading
+  if (loading) return <AdminHeaderCardSkeleton />;
+
+  // if still no admin after load
   if (!admin) return null;
 
   return (

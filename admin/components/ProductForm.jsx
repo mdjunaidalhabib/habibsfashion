@@ -168,12 +168,16 @@ export default function ProductForm({ product, onClose, onSaved }) {
   };
 
   // Submit
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.price || !form.category) {
+    // ✅ main image required check (new + edit both)
+    const hasMainImage = !!form.image || !!previewImage;
+
+    if (!form.name || !form.price || !form.category || !hasMainImage) {
       setToast({
-        message: "⚠️ নাম, দাম ও ক্যাটাগরি দেওয়া জরুরি!",
+        message: "⚠️ নাম, দাম, ক্যাটাগরি ও প্রধান ছবি দেওয়া জরুরি!",
         type: "error",
       });
       return;

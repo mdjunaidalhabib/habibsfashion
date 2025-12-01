@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import EditProfileForm from "./EditProfileForm";
 import ChangePasswordForm from "./ChangePasswordForm";
+import AdminProfileSkeleton from "../../../../components/Skeleton/AdminProfileSkeleton";
 
 export default function AdminProfilePage() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -35,7 +36,9 @@ export default function AdminProfilePage() {
     loadAdmin();
   }, []);
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  // ✅ Skeleton while loading
+  if (loading) return <AdminProfileSkeleton />;
+
   if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!admin) return <div className="p-6">No admin found</div>;
 
