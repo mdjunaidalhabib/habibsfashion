@@ -28,8 +28,6 @@ export const protect = async (req, res, next) => {
     req.admin = admin;
     next();
   } catch (error) {
-    console.error("Auth Error:", error?.message || error);
-
     if (error?.name === "TokenExpiredError") {
       return res
         .status(401)

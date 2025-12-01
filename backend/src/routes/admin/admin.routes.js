@@ -24,11 +24,6 @@ router.post("/logout", protect, logoutAdmin);
 
 // ✅ Verify admin session (protected) — fresh admin return
 router.get("/verify", protect, async (req, res) => {
-  console.log("🟩 [VERIFY HIT]: /admin/verify");
-  console.log("Origin:", req.headers.origin);
-  console.log("Cookies:", req.cookies);
-  console.log("Token (cookie):", req.cookies?.admin_token ? "✅ Yes" : "❌ No");
-
   try {
     const freshAdmin = await Admin.findById(req.admin._id).select("-password");
 
@@ -122,7 +117,6 @@ router.put("/me", protect, upload.single("avatar"), async (req, res) => {
       admin,
     });
   } catch (err) {
-    console.error("❌ Error updating admin profile:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -151,7 +145,6 @@ router.put("/me/password", protect, async (req, res) => {
 
     res.json({ message: "✅ Password updated successfully" });
   } catch (err) {
-    console.error("Password Change Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
