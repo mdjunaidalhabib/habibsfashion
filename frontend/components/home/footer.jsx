@@ -19,18 +19,16 @@ import {
 const iconMap = { FaFacebookF, FaYoutube, FaInstagram, FaTiktok };
 
 const socialLinksData = [
-  { icon: "FaFacebookF", url: "https://www.facebook.com/habibsfashion" },
-  { icon: "FaYoutube", url: "https://youtube.com" },
-  { icon: "FaInstagram", url: "https://instagram.com" },
-  { icon: "FaTiktok", url: "https://tiktok.com" },
+  { icon: "FaFacebookF", url: "https://www.facebook.com/openupbd" },
+  { icon: "FaYoutube", url: "https://youtube.com/@openupbd" },
+  { icon: "FaInstagram", url: "https://instagram.com/openupbd" },
+  { icon: "FaTiktok", url: "https://tiktok.com/@openupbd.com" },
 ];
 
 const quickLinksData = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/products" },
   { label: "Categories", href: "/categories" },
-  { label: "Return & Refund", href: "/ReturnRefund" },
-  { label: "FAQ", href: "/faq" },
 ];
 
 export default function Footer() {
@@ -103,12 +101,12 @@ export default function Footer() {
             )}
 
             <span className="text-xl font-bold text-pink-600 block min-w-[100px] truncate">
-              {brand.title || "Your fashion name"}
+              {brand.title || "Your business name"}
             </span>
           </div>
 
           <p className="text-sm mb-4">
-            {brand.about || "Your fashion destination."}
+            {brand.about || "Your business destination."}
           </p>
 
           <div className="flex gap-4 text-xl">
@@ -149,9 +147,9 @@ export default function Footer() {
           <ul className="space-y-2 text-sm">
             {categories.length > 0 ? (
               categories.map((cat) => (
-                <li key={cat._id || cat.name}>
+                <li key={cat.name}>
                   <Link
-                    href={`/categories/${cat._id}`}
+                    href={`/categories`}
                     className="hover:text-pink-600 block min-w-[100px] truncate"
                   >
                     {cat.name}
@@ -172,8 +170,7 @@ export default function Footer() {
               <li className="flex items-center gap-2">
                 <FaMapMarkerAlt />
                 <a
-                  href={`https://www.google.com/maps/search/${encodeURIComponent(
-                    contact.address
+                  href={`https://maps.app.goo.gl/Qvc2AX1ELx5JCaWY9?g_st=ipc
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
