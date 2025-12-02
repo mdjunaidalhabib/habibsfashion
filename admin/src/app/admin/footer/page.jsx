@@ -12,14 +12,25 @@ export default function FooterAdminPanel() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+  // ✅ Contact fields fixed list (facebook/twitter বাদ, website যোগ)
+  const CONTACT_FIELDS = ["email", "phone", "address", "website"];
+
   useEffect(() => {
     fetch(`${API_URL}/admin/footer`)
       .then((res) => res.json())
       .then((data) => {
+        const brand = data.brand || {};
+        const contact = data.contact || {};
+
+        // ✅ Missing contact fields auto add (empty string)
+        CONTACT_FIELDS.forEach((key) => {
+          if (!(key in contact)) contact[key] = "";
+        });
+
         setFooter({
           ...data,
-          brand: data.brand || {},
-          contact: data.contact || {},
+          brand,
+          contact,
         });
         setLoading(false);
       })
@@ -58,7 +69,14 @@ export default function FooterAdminPanel() {
 
       const data = await res.json();
       if (data.footer) {
-        setFooter(data.footer);
+        // ✅ server থেকে আসা footer তেও missing fields add
+        const newFooter = data.footer;
+        newFooter.contact = newFooter.contact || {};
+        CONTACT_FIELDS.forEach((key) => {
+          if (!(key in newFooter.contact)) newFooter.contact[key] = "";
+        });
+
+        setFooter(newFooter);
         toast.success("✅ Changes saved!");
       } else {
         toast.error("❌ Failed to save footer.");
@@ -71,7 +89,6 @@ export default function FooterAdminPanel() {
     }
   };
 
-  // ✅ Navbar-এর মতো same Toaster UI style
   const toastOptions = {
     duration: 3000,
     style: {
@@ -104,6 +121,7 @@ export default function FooterAdminPanel() {
           type="text"
           value={tempItem ?? ""}
           onChange={(e) => setTempItem(e.target.value)}
+          placeholder="Set value..."
           className="flex-1 p-2 border rounded"
           disabled={saving}
         />
@@ -155,17 +173,21 @@ export default function FooterAdminPanel() {
           >
             Edit
           </button>
+
+          {/* ✅ Delete = value clear only (field stays always) */}
           <button
             disabled={saving}
             onClick={() => {
               const updated = {
                 ...footer,
-                [section]: { ...footer[section] },
+                [section]: {
+                  ...footer[section],
+                  [field]: "",
+                },
               };
-              delete updated[section][field];
               setFooter(updated);
               handleSave(updated);
-              toast.success(`🗑 Deleted ${section} field: ${field}`);
+              toast.success(`🗑 Cleared ${section} field: ${field}`);
             }}
             className="bg-red-500 text-white px-2 py-1 rounded disabled:opacity-60"
           >
@@ -227,7 +249,6 @@ export default function FooterAdminPanel() {
             </div>
           ) : (
             <>
-              {/* hidden input */}
               <input
                 type="file"
                 id="logoUpload"
@@ -249,12 +270,10 @@ export default function FooterAdminPanel() {
                   setFooter(updated);
                   handleSave(updated);
 
-                  // ✅ same fix as navbar (reset input)
                   e.target.value = "";
                 }}
               />
 
-              {/* extra compact upload UI */}
               <button
                 type="button"
                 disabled={saving}
@@ -279,12 +298,13 @@ export default function FooterAdminPanel() {
           Contact Info
         </h3>
 
-        {Object.keys(footer.contact).map((field) => (
+        {/* ✅ Fixed fields show always */}
+        {CONTACT_FIELDS.map((field) => (
           <div
             key={field}
             className="flex justify-between items-center gap-4 border-b py-1"
           >
-            {renderFieldEditor("contact", field, footer.contact[field])}
+            {renderFieldEditor("contact", field, footer.contact?.[field] || "")}
           </div>
         ))}
       </div>

@@ -103,7 +103,7 @@ export default function Footer() {
             )}
 
             <span className="text-xl font-bold text-pink-600 block min-w-[100px] truncate">
-              {brand.title || "Habib's Fashion"}
+              {brand.title || "Your fashion name"}
             </span>
           </div>
 
