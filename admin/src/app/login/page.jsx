@@ -4,13 +4,23 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
+// ✅ axios global
+axios.defaults.withCredentials = true;
+
+// ✅ normalize helper (trailing slash remove)
+const normalize = (url = "") => url.replace(/\/$/, "").trim();
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const router = useRouter();
+
+  // ✅ ENV থেকে API URL
+  const API_URL = normalize(process.env.NEXT_PUBLIC_API_URL);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,20 +28,32 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      if (!API_URL) {
+        throw new Error("NEXT_PUBLIC_API_URL is missing in .env");
+      }
+
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/login`,
+        `${API_URL}/admin/login`,
         { email, password },
         { withCredentials: true }
       );
 
       console.log("✅ Login success:", res.data);
 
+      // cookie সেট হতে একটু সময় দাও
       setTimeout(() => {
-        window.location.href = "/admin/dashboard";
-      }, 200);
+        router.push("/admin/dashboard");
+      }, 250);
     } catch (err) {
       console.error("❌ Login error:", err);
-      setError("Invalid email or password");
+
+      if (err?.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError("Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +78,6 @@ export default function LoginPage() {
           required
         />
 
-        {/* ✅ Password field with eye icon */}
         <div className="relative mb-4">
           <input
             type={showPass ? "text" : "password"}

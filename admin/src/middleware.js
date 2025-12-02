@@ -9,7 +9,6 @@ function isJwtExpired(token) {
       Buffer.from(parts[1], "base64").toString("utf8")
     );
 
-    // exp সেকেন্ডে থাকে
     if (!payload?.exp) return true;
 
     const now = Math.floor(Date.now() / 1000);
@@ -23,21 +22,10 @@ export function middleware(req) {
   const token = req.cookies.get("admin_token")?.value || "";
   const { pathname, origin } = req.nextUrl;
 
-  const isProd = process.env.NODE_ENV === "production";
-
-  // 🌀 Dev Debug Log
-  if (!isProd) {
-    console.log("🌀 [Middleware Triggered]:", pathname);
-    console.log("🔑 Token Found:", token ? "✅ Yes" : "❌ No");
-  }
-
-  // ✅ token থাকলে কিন্তু expire হলে → cookie clear + login redirect
+  // ✅ token থাকলে কিন্তু expire হলে → cookie clear + login এ পাঠাবে
   if (token && isJwtExpired(token)) {
-    if (!isProd) console.log("⏳ Token expired → clearing cookie + redirect");
-
     const res = NextResponse.redirect(`${origin}/login`);
 
-    // cookie clear (client side)
     res.cookies.set("admin_token", "", {
       path: "/",
       expires: new Date(0),
@@ -46,19 +34,15 @@ export function middleware(req) {
     return res;
   }
 
-  // 🔒 Protected routes (/admin)
+  // 🔒 /admin এর ভিতরের যেকোনো route এ token না থাকলে → login
   if (pathname.startsWith("/admin") && !token) {
-    const redirectUrl = `${origin}/login`;
-    if (!isProd) console.log("🔁 Redirecting to:", redirectUrl);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(`${origin}/login`);
   }
 
-  // 🚫 Prevent logged-in admins from seeing login again
-  if (pathname.startsWith("/login") && token) {
-    const redirectUrl = `${origin}/admin/dashboard`;
-    if (!isProd)
-      console.log("🚀 Already logged in → Redirecting to:", redirectUrl);
-    return NextResponse.redirect(redirectUrl);
+  // 🚫 শুধু exact /login এ গেলে এবং token থাকলে → dashboard
+  // (old code এ startsWith("/login") ছিল, এতে loop হচ্ছিল)
+  if (pathname === "/login" && token) {
+    return NextResponse.redirect(`${origin}/admin/dashboard`);
   }
 
   return NextResponse.next();

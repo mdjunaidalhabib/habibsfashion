@@ -3,6 +3,9 @@ import Admin from "../src/models/Admin.js";
 import { UAParser } from "ua-parser-js";
 import geoip from "geoip-lite";
 
+/**
+ * POST /admin/login
+ */
 export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -62,19 +65,20 @@ export const loginAdmin = async (req, res) => {
 
     await admin.save();
 
+    // ✅ JWT generate
     const token = generateToken(admin);
 
+    // ✅ COOKIE CONFIG (ENV domain + dev/prod safe)
     const isProd = process.env.NODE_ENV === "production";
     const cookieDomain = process.env.COOKIE_DOMAIN || ".habibsfashion.com";
 
-    // ✅ cookie options
     const cookieOptions = {
       httpOnly: true,
-      secure: isProd, // prod https → true
-      sameSite: isProd ? "none" : "lax",
+      secure: isProd, // prod=true, dev=false
+      sameSite: isProd ? "none" : "lax", // prod=none, dev=lax
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      ...(isProd ? { domain: cookieDomain } : {}), // dev এ domain দেব না
+      ...(isProd ? { domain: cookieDomain } : {}), // ✅ domain only in prod
     };
 
     res.cookie("admin_token", token, cookieOptions);
@@ -97,6 +101,6 @@ export const loginAdmin = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Login Error:", err);
-    res.status(500).json({ message: "⚠️ সার্ভারে কিছু সমস্যা হয়েছে" });
+    return res.status(500).json({ message: "⚠️ সার্ভারে কিছু সমস্যা হয়েছে" });
   }
 };

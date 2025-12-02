@@ -1,10 +1,10 @@
-// import express from "express";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import passport from "passport";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+
 import dbConnect from "./src/lib/db.js";
 import { configurePassport } from "./src/auth/passport.js";
 import createSuperAdmin from "./src/config/createSuperAdmin.js";
@@ -18,10 +18,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 
+// ✅ trust nginx / proxy for secure cookies
 app.set("trust proxy", 1);
+
 app.use(cookieParser());
 
-// ✅ Helmet PDF-safe
+// ✅ Helmet
 app.use(
   helmet({
     contentSecurityPolicy: isProd ? undefined : false,
@@ -30,10 +32,10 @@ app.use(
   })
 );
 
-// ✅ Helper: normalize URL (remove trailing slash, trim spaces)
+// ✅ normalize helper
 const normalize = (url = "") => url.replace(/\/$/, "").trim();
 
-// ✅ CORS (ENV driven)
+// ✅ CORS allow list
 const allowedOrigins = (process.env.CLIENT_URLS || "")
   .split(",")
   .map(normalize)
@@ -44,16 +46,13 @@ console.log("✅ Allowed CORS Origins:", allowedOrigins);
 app.use(
   cors({
     origin: (origin, cb) => {
-      // ✅ allow requests with no origin (Postman, curl, server-to-server)
-      if (!origin) return cb(null, true);
+      if (!origin) return cb(null, true); // allow Postman/curl
 
       const normalizedOrigin = normalize(origin);
-
       if (allowedOrigins.includes(normalizedOrigin)) {
         return cb(null, true);
       }
 
-      // debug log for blocked origin
       console.log("❌ Blocked by CORS Origin:", origin);
       return cb(new Error(`Not allowed by CORS: ${origin}`), false);
     },
