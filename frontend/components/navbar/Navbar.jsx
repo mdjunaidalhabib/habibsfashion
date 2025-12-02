@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
 import SearchBox from "./SearchBox";
-import AccountMenuDesktop from "./AccountMenuDesktop"; // ✅ Updated Component
+import AccountMenuDesktop from "./AccountMenuDesktop";
 import AccountMenuMobile from "./AccountMenuMobile";
 import CartIcon from "./CartIcon";
 import WishlistIcon from "./WishlistIcon";
@@ -57,13 +57,24 @@ export default function Navbar() {
       try {
         const res = await fetch(`${API_URL}/navbar`);
         const data = await res.json();
-        setNavbar(data);
+
+        // ✅ ensure brand exists always
+        const brand = data?.brand || {};
+        if (!("name" in brand)) brand.name = "";
+        if (!("logo" in brand)) brand.logo = "";
+
+        setNavbar({ ...data, brand });
       } catch (err) {
         console.error("❌ Failed to load navbar:", err);
       }
     };
     fetchNavbar();
-  }, []);
+  }, [API_URL]);
+
+  // ✅ logo change হলে imgError reset (Footer-like behavior)
+  useEffect(() => {
+    setImgError(false);
+  }, [navbar?.brand?.logo]);
 
   // 🔹 ESC close
   useEffect(() => {
@@ -98,27 +109,24 @@ export default function Navbar() {
             <FaSearch className="w-5 h-5 text-pink-600" />
           </button>
 
-          {/* 🏷 Brand */}
-          <Link href="/" className="flex items-center gap-2">
+          {/* 🏷 Brand (Footer-like UI) */}
+          <Link href="/" className="flex items-center gap-3">
             {navbar?.brand?.logo && !imgError ? (
               <img
                 src={navbar.brand.logo}
-                alt="Logo"
-                className="h-8 w-8 md:h-10 md:w-10 object-cover rounded-full"
+                alt={navbar?.brand?.name || "Brand"}
+                className="h-8 w-8 md:h-10 md:w-10 object-cover rounded-lg"
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-full bg-pink-50">
+              <div className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center bg-pink-50 rounded-lg">
                 <FaUserCircle className="text-gray-400 w-6 h-6" />
               </div>
             )}
-            {navbar?.brand?.name ? (
-              <span className="text-lg font-semibold text-pink-600 block min-w-[100px] truncate">
-                {navbar.brand.name}
-              </span>
-            ) : (
-              <div className="h-5 md:h-6 w-24 md:w-28 bg-gray-200 rounded block" />
-            )}
+
+            <span className="text-xl font-bold text-pink-600 block min-w-[100px] truncate">
+              {navbar?.brand?.name?.trim() || "Your fashion name"}
+            </span>
           </Link>
 
           {/* 📱 Hamburger */}
@@ -158,6 +166,7 @@ export default function Navbar() {
             >
               Home
             </Link>
+
             <Link
               href="/products"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
@@ -168,6 +177,7 @@ export default function Navbar() {
             >
               All Products
             </Link>
+
             <Link
               href="/categories"
               className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-200 ${
@@ -254,6 +264,7 @@ export default function Navbar() {
               className="fixed inset-0 bg-black z-40"
               onClick={() => setMenuOpen(false)}
             />
+
             <motion.div
               variants={sideMenu}
               initial="hidden"
