@@ -10,6 +10,9 @@ axios.defaults.withCredentials = true;
 // ✅ normalize helper (trailing slash remove)
 const normalize = (url = "") => url.replace(/\/$/, "").trim();
 
+// ✅ tiny sleep helper
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,10 +43,14 @@ export default function LoginPage() {
 
       console.log("✅ Login success:", res.data);
 
-      // cookie সেট হতে একটু সময় দাও
-      setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 250);
+      // ✅ cookie save হতে একটু সময় দাও
+      await sleep(400);
+
+      // ✅ middleware fresh cookie পেতে router refresh
+      router.refresh();
+
+      // ✅ সবচেয়ে reliable redirect (new request with cookie)
+      window.location.href = "/admin/dashboard";
     } catch (err) {
       console.error("❌ Login error:", err);
 
