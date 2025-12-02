@@ -4,7 +4,7 @@ import { apiFetch } from "../../../../utils/api";
 // 🟢 একক প্রোডাক্ট লোড
 async function getProduct(id) {
   try {
-    const product = await apiFetch(`/api/products/${id}`, { cache: "no-store" });
+    const product = await apiFetch(`/products/${id}`, { cache: "no-store" });
 
     // ✅ fallback: main image না থাকলে gallery image থেকে সেট করো
     if (!product?.image && product?.images?.length > 0) {
