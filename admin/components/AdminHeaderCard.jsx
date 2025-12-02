@@ -30,7 +30,7 @@ export default function AdminHeaderCard() {
   if (loading) return <AdminHeaderCardSkeleton />;
 
   // if still no admin after load
-  if (!admin) return null;
+  if (!admin) return <AdminHeaderCardSkeleton />;
 
   return (
     <div className="bg-white shadow rounded-2xl p-2">
