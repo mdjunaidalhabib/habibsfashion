@@ -4,6 +4,7 @@ import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/home/footer";
 import { UserProvider } from "../../context/UserContext";
 import PWARegister from "../../components/pwa-register";
+import FloatingActionButton from "../../components/home/FloatingActionButton";
 
 export const metadata = {
   title: "Habib's Fashion",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
           <CartProvider>
             <Navbar />
             <main className="flex-grow bg-pink-50">{children}</main>
+            <FloatingActionButton />
             <Footer />
           </CartProvider>
         </UserProvider>
